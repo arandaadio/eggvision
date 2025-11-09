@@ -1,5 +1,5 @@
 Aku ngedit:
-- app.py
+- app.py, kyknya ada bbrp hal yg diminta salah satu file kamu dan diapus
 - requirements.txt
 - file path eggmonitormu
 
