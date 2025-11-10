@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - EggVision</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-black': '#000000',
+                        'pure-white': '#FFFFFF',
+                        'premium-gold': '#FFD700',
+                        'dark-gray': '#1a1a1a',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-primary-black">
+    <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div class="sm:mx-auto sm:w-full sm:max-w-md">
+            <!-- Logo -->
+            <div class="text-center">
+                <div class="text-4xl mb-4">🥚</div>
+                <h2 class="text-3xl font-bold text-premium-gold">EggVision</h2>
+                <p class="mt-2 text-sm text-gray-400">Platform Grading Telur Otomatis</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                <div class="bg-dark-gray py-8 px-6 shadow border border-gray-800 rounded-lg sm:px-10">
+                    <form class="space-y-6" action="{{ url_for('auth_login') }}" method="POST">
+                        <!-- Email -->
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+                                Alamat Email
+                            </label>
+                            <div class="mt-1">
+                                <input id="email" name="email" type="email" autocomplete="email" required 
+                                       class="w-full px-3 py-3 bg-black border border-gray-700 rounded-lg placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-premium-gold focus:border-premium-gold transition duration-200"
+                                       placeholder="email@example.com">
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+                                Password
+                            </label>
+                            <div class="mt-1">
+                                <input id="password" name="password" type="password" autocomplete="current-password" required 
+                                       class="w-full px-3 py-3 bg-black border border-gray-700 rounded-lg placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-premium-gold focus:border-premium-gold transition duration-200"
+                                       placeholder="••••••••">
+                            </div>
+                        </div>
+
+                        <!-- Remember Me & Forgot Password -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input id="remember" name="remember" type="checkbox" 
+                                       class="h-4 w-4 text-premium-gold focus:ring-premium-gold border-gray-700 rounded bg-black">
+                                <label for="remember" class="ml-2 block text-sm text-gray-400">
+                                    Ingat saya
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div>
+                            <button type="submit" 
+                                    class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-primary-black bg-premium-gold hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-premium-gold focus:ring-offset-primary-black transition duration-200 font-semibold">
+                                Masuk
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Register Link -->
+                    <div class="mt-6">
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center">
+                                <div class="w-full border-t border-gray-700"></div>
+                            </div>
+                            <div class="relative flex justify-center text-sm">
+                                <span class="px-2 bg-dark-gray text-gray-400">
+                                    Belum punya akun?
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 text-center">
+                            <a href="{{ url_for('auth_register') }}" class="text-premium-gold hover:text-yellow-500 transition duration-200 font-medium">
+                                Daftar akun baru
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Back to Home -->
+                    <div class="mt-6 text-center">
+                        <a href="{{ url_for('comprof_beranda') }}" class="text-gray-400 hover:text-white transition duration-200 text-sm">
+                            ← Kembali ke beranda
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize dark mode
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+</body>
+</html>

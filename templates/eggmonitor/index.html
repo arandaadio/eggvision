@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "eggmonitor/base.html" %}
 {% block title %}Dashboard · EggVision{% endblock %}
 
 {% block body %}
@@ -37,7 +37,7 @@
 
     <!-- Profile -->
     <div class="p-4 border-t border-sidebar-border">
-      <a href="/profile" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+      <a href="{{ url_for('eggmonitor_profile') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
         <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
           <img
             src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"

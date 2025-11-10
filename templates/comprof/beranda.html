@@ -1,0 +1,56 @@
+{% extends "comprof/base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-primary-black to-gray-900 text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+        <h1 class="text-5xl font-bold mb-6 font-canela">Selamat Datang di EggVision</h1>
+        <p class="text-xl mb-8 font-jakarta">Platform Inovatif untuk Grading Telur Otomatis, Monitoring Produksi, dan E-Commerce Terintegrasi</p>
+        <div class="space-x-4">
+            <a href="{{ url_for('comprof_layanan') }}" class="bg-premium-gold text-primary-black px-8 py-3 rounded-lg font-semibold hover:bg-yellow-500 font-jakarta">
+                Pelajari Layanan Kami
+            </a>
+            <a href="{{ url_for('comprof_kontak') }}" class="border-2 border-premium-gold text-premium-gold px-8 py-3 rounded-lg font-semibold hover:bg-premium-gold hover:text-primary-black font-jakarta">
+                Hubungi Kami
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16 bg-white dark:bg-dark-gray">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12 text-premium-gold font-canela">Mengapa Memilih EggVision?</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="text-center p-6 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-lg transition dark:bg-primary-black">
+                <div class="text-4xl mb-4">🥚</div>
+                <h3 class="text-xl font-semibold mb-3 text-white font-canela">Grading Otomatis</h3>
+                <p class="text-gray-600 dark:text-gray-400 font-jakarta">Teknologi AI canggih untuk grading telur sesuai standar SNI 3926:2023</p>
+            </div>
+            
+            <div class="text-center p-6 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-lg transition dark:bg-primary-black">
+                <div class="text-4xl mb-4">📊</div>
+                <h3 class="text-xl font-semibold mb-3 text-white font-canela">Monitoring Real-time</h3>
+                <p class="text-gray-600 dark:text-gray-400 font-jakarta">Pantau produksi telur Anda secara real-time dengan dashboard canggih</p>
+            </div>
+            
+            <div class="text-center p-6 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-lg transition dark:bg-primary-black">
+                <div class="text-4xl mb-4">🛒</div>
+                <h3 class="text-xl font-semibold mb-3 text-white font-canela">Marketplace Terintegrasi</h3>
+                <p class="text-gray-600 dark:text-gray-400 font-jakarta">Jual telur berkualitas langsung ke konsumen melalui platform kami</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-gray-100 dark:bg-gray-900">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+        <h2 class="text-3xl font-bold mb-6 text-premium-gold font-canela">Siap Mengubah Bisnis Peternakan Telur Anda?</h2>
+        <p class="text-xl text-gray-600 dark:text-gray-400 mb-8 font-jakarta">Bergabunglah dengan peternakan modern yang sudah menggunakan EggVision</p>
+        <a href="{{ url_for('comprof_kontak') }}" class="bg-premium-gold text-primary-black px-8 py-3 rounded-lg font-semibold hover:bg-yellow-500 font-jakarta">
+            Mulai Sekarang
+        </a>
+    </div>
+</section>
+{% endblock %}
