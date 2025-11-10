@@ -1,0 +1,167 @@
+{% extends "eggmin/base.html" %}
+
+{% block title %}EggMin - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold text-premium-gold font-canela mb-4">Admin Dashboard</h1>
+    <p class="text-gray-600 dark:text-gray-400 text-lg">Kelola seluruh sistem EggVision dari sini</p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Users -->
+    <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div class="flex items-center">
+        <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+          <i data-lucide="users" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white font-canela">156</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Products -->
+    <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div class="flex items-center">
+        <div class="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+          <i data-lucide="package" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Products</p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white font-canela">{{ products|length }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Orders -->
+    <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div class="flex items-center">
+        <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
+          <i data-lucide="shopping-cart" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Orders</p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white font-canela">89</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue -->
+    <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div class="flex items-center">
+        <div class="p-3 bg-premium-gold rounded-lg">
+          <i data-lucide="dollar-sign" class="w-6 h-6 text-primary-black"></i>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white font-canela">Rp12.5M</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Left Column -->
+    <div class="space-y-6">
+      <!-- User Management -->
+      <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 font-canela">User Management</h3>
+        <div class="space-y-3">
+          <button class="w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center justify-between">
+              <span>Manage Users</span>
+              <i data-lucide="users" class="w-5 h-5 text-gray-400"></i>
+            </div>
+          </button>
+          <button class="w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center justify-between">
+              <span>Role Management</span>
+              <i data-lucide="shield" class="w-5 h-5 text-gray-400"></i>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content Management -->
+      <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 font-canela">Content Management</h3>
+        <div class="space-y-3">
+          <button class="w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center justify-between">
+              <span>Manage News</span>
+              <i data-lucide="newspaper" class="w-5 h-5 text-gray-400"></i>
+            </div>
+          </button>
+          <button class="w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center justify-between">
+              <span>Site Settings</span>
+              <i data-lucide="settings" class="w-5 h-5 text-gray-400"></i>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="space-y-6">
+      <!-- System Overview -->
+      <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 font-canela">System Overview</h3>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">System Status</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+              <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i>
+              Operational
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Database</span>
+            <span class="text-sm text-gray-900 dark:text-white">Connected</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600 dark:text-gray-400">Last Backup</span>
+            <span class="text-sm text-gray-900 dark:text-white">2 hours ago</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 font-canela">Recent Activity</h3>
+        <div class="space-y-3">
+          <div class="flex items-center space-x-3 text-sm">
+            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span class="text-gray-600 dark:text-gray-400">New user registration</span>
+            <span class="text-gray-400 text-xs">5 min ago</span>
+          </div>
+          <div class="flex items-center space-x-3 text-sm">
+            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span class="text-gray-600 dark:text-gray-400">Product added</span>
+            <span class="text-gray-400 text-xs">15 min ago</span>
+          </div>
+          <div class="flex items-center space-x-3 text-sm">
+            <div class="w-2 h-2 bg-premium-gold rounded-full"></div>
+            <span class="text-gray-600 dark:text-gray-400">New order placed</span>
+            <span class="text-gray-400 text-xs">1 hour ago</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Welcome Message -->
+  <div class="bg-gradient-to-r from-primary-black to-gray-900 rounded-lg p-8 text-white">
+    <div class="text-center">
+      <h2 class="text-2xl font-bold font-canela mb-2">Selamat Datang, {{ current_user.name }}!</h2>
+      <p class="text-gray-300">Anda login sebagai Administrator dengan akses penuh ke sistem EggVision.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

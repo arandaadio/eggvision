@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}EggVision - Platform Grading Telur Otomatis{% endblock %}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Colors & Fonts -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'primary-black': '#000000',
+            'pure-white': '#FFFFFF',
+            'premium-gold': '#FFD700',
+            'dark-gray': '#1a1a1a',
+            'light-gray': '#f8f9fa'
+          },
+          fontFamily: {
+            'canela': ['Canela Bold', 'serif'],
+            'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Fonts CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+
+  <!-- Plus Jakarta Sans Google Fonts CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .theme-transition {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+  </style>
+  
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-white dark:bg-primary-black theme-transition font-jakarta">
+  <!-- Navigation - DESIGN TETAP SAMA UNTUK SEMUA -->
+  <nav class="bg-white dark:bg-primary-black border-b border-gray-200 dark:border-gray-800 shadow-lg theme-transition">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <div class="flex items-center">
+          <a href="{{ url_for('comprof_beranda') }}" class="text-xl font-bold text-premium-gold font-canela">🥚 EggVision</a>
+        </div>
+
+        <!-- Navigation Links - TETAP SAMA -->
+        <div class="flex space-x-4 items-center">
+          <a href="{{ url_for('comprof_beranda') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Beranda</a>
+          <a href="{{ url_for('comprof_berita') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Berita</a>
+          <a href="{{ url_for('comprof_layanan') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Layanan</a>
+          <a href="{{ url_for('comprof_produk') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Produk</a>
+          <a href="{{ url_for('comprof_tentang_kami') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Tentang Kami</a>
+          <a href="{{ url_for('comprof_kontak') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Kontak</a>
+          
+          <!-- Dark/Light Mode Toggle -->
+          <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 theme-transition">
+            <span class="dark:hidden">🌙</span>
+            <span class="hidden dark:inline">☀️</span>
+          </button>
+
+          <!-- Auth Links - TAMPILAN TETAP SAMA, HANYA LINK YANG BERBEDA -->
+          {% if current_user.is_authenticated %}
+            <!-- Role-based Links - HANYA TOMBOL, TIDAK MENGUBAH DESIGN -->
+            {% if current_user.role == 'pengusaha' %}
+              <a href="{{ url_for('eggmonitor') }}" class="text-green-600 font-semibold px-3 py-2 border border-green-600 rounded hover:bg-green-600 hover:text-white theme-transition text-sm">EggMonitor</a>
+            {% elif current_user.role == 'pembeli' %}
+              <a href="{{ url_for('eggmart') }}" class="text-blue-600 font-semibold px-3 py-2 border border-blue-600 rounded hover:bg-blue-600 hover:text-white theme-transition text-sm">EggMart</a>
+            {% elif current_user.role == 'admin' %}
+              <a href="{{ url_for('eggmin') }}" class="text-red-600 font-semibold px-3 py-2 border border-red-600 rounded hover:bg-red-600 hover:text-white theme-transition text-sm">EggMin</a>
+            {% endif %}
+            
+            <!-- User Menu -->
+            <div class="relative group">
+              <button class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition text-sm">
+                {{ current_user.name }}
+              </button>
+              <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-gray border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible theme-transition z-50">
+                <!-- Role-specific dashboard links instead of generic dashboard -->
+                {% if current_user.role == 'pengusaha' %}
+                  <a href="{{ url_for('eggmonitor') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition text-sm">Dashboard Saya</a>
+                {% elif current_user.role == 'pembeli' %}
+                  <a href="{{ url_for('eggmart') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition text-sm">Dashboard Saya</a>
+                {% elif current_user.role == 'admin' %}
+                  <a href="{{ url_for('eggmin') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition text-sm">Dashboard Saya</a>
+                {% else %}
+                  <a href="{{ url_for('comprof_beranda') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition text-sm">Dashboard Saya</a>
+                {% endif %}
+                <a href="{{ url_for('auth_logout') }}" class="block px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 theme-transition text-sm">Logout</a>
+              </div>
+            </div>
+          {% else %}
+            <!-- Untuk Guest, tampilkan login/register -->
+            <a href="{{ url_for('auth_login') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Login</a>
+            <a href="{{ url_for('auth_register') }}" class="bg-premium-gold text-primary-black px-4 py-2 rounded-lg hover:bg-yellow-500 font-semibold theme-transition text-sm">Daftar</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  <div class="max-w-7xl mx-auto px-4 mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="p-4 mb-4 rounded-lg theme-transition {% if category == 'error' %}bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-600 dark:text-red-300{% elif category == 'success' %}bg-green-100 border border-green-400 text-green-700 dark:bg-green-900 dark:border-green-600 dark:text-green-300{% else %}bg-blue-100 border border-blue-400 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Main Content -->
+  <main class="theme-transition">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 dark:bg-dark-gray text-white mt-16 theme-transition">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <div class="text-center">
+        <p class="font-canela text-premium-gold text-lg">EggVision</p>
+        <p class="text-gray-400 text-sm mt-2">Platform Grading Telur Otomatis</p>
+        <p class="text-gray-500 text-xs mt-1">eggvision.com</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Dark/Light Mode Toggle
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.theme = 'light';
+      } else {
+        html.classList.add('dark');
+        localStorage.theme = 'dark';
+      }
+    }
+
+    // Initialize theme
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set initial theme
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+
+      // Render lucide icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    });
+  </script>
+  
+  {% block scripts %}{% endblock %}
+</body>
+</html>
