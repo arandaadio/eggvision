@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}EggMin - Admin Dashboard{% endblock %}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Colors & Fonts -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'primary-black': '#000000',
+            'pure-white': '#FFFFFF',
+            'premium-gold': '#FFD700',
+            'dark-gray': '#1a1a1a',
+            'light-gray': '#f8f9fa'
+          },
+          fontFamily: {
+            'canela': ['Canela Bold', 'serif'],
+            'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Fonts CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+
+  <!-- Plus Jakarta Sans Google Fonts CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .theme-transition {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+  </style>
+  
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-white dark:bg-primary-black theme-transition font-jakarta">
+  <!-- Navigation -->
+  <nav class="bg-white dark:bg-primary-black border-b border-gray-200 dark:border-gray-800 shadow-lg theme-transition">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo & Navigation -->
+        <div class="flex items-center space-x-8">
+          <a href="{{ url_for('eggmin') }}" class="text-xl font-bold text-premium-gold font-canela">👑 EggMin</a>
+          <div class="flex space-x-4">
+            <a href="{{ url_for('eggmin') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition font-medium">Dashboard</a>
+            <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Users</a>
+            <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Products</a>
+            <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Orders</a>
+            <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">News</a>
+          </div>
+        </div>
+
+        <!-- Right Section -->
+        <div class="flex space-x-4 items-center">
+          <!-- Dark/Light Mode Toggle -->
+          <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 theme-transition">
+            <span class="dark:hidden">🌙</span>
+            <span class="hidden dark:inline">☀️</span>
+          </button>
+
+          <!-- User Menu -->
+          <div class="relative group">
+            <button class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">
+              <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                <span class="text-white text-sm font-bold">A</span>
+              </div>
+              <span>{{ current_user.name }}</span>
+            </button>
+            <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-gray border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible theme-transition z-50">
+              <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">Dashboard</a>
+              <a href="{{ url_for('comprof_beranda') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">Kembali ke Comprof</a>
+              <a href="{{ url_for('auth_logout') }}" class="block px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 theme-transition">Logout</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  <div class="max-w-7xl mx-auto px-4 mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="p-4 mb-4 rounded-lg theme-transition {% if category == 'error' %}bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-600 dark:text-red-300{% elif category == 'success' %}bg-green-100 border border-green-400 text-green-700 dark:bg-green-900 dark:border-green-600 dark:text-green-300{% else %}bg-blue-100 border border-blue-400 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Main Content -->
+  <main class="theme-transition">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 dark:bg-dark-gray text-white mt-16 theme-transition">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <div class="text-center">
+        <p class="font-canela text-premium-gold text-lg">EggMin Admin</p>
+        <p class="text-gray-400 text-sm mt-2">Administration Dashboard</p>
+        <p class="text-gray-500 text-xs mt-1">Part of EggVision Ecosystem</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Dark/Light Mode Toggle
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.theme = 'light';
+      } else {
+        html.classList.add('dark');
+        localStorage.theme = 'dark';
+      }
+    }
+
+    // Initialize theme and icons
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set initial theme
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+
+      // Render lucide icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    });
+  </script>
+  
+  {% block scripts %}{% endblock %}
+</body>
+</html>
