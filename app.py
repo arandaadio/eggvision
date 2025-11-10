@@ -57,7 +57,7 @@ def upload():
     confidence = float(np.max(pred) * 100)
 
     return render_template(
-        "index.html",
+        "eggmonitor/index.html",
         **build_dashboard_data(),
         uploaded_image=url_for("static", filename=f"uploads/{filename}"),
         prediction=prediction_label,
@@ -71,7 +71,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 db_config = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', ''),
+    'password': os.getenv('DB_PASSWORD', 'ReksaSyahputra1012!'),
     'database': os.getenv('DB_NAME', 'eggvision'),
     'charset': 'utf8mb4',
     'collation': 'utf8mb4_unicode_ci'
@@ -248,7 +248,7 @@ def init_db():
         admin_count = result[0] if result else 0
         
         if admin_count == 0:
-            hashed_password = generate_password_hash('eggmin123')
+            hashed_password = generate_password_hash('eggmin123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
                 ('EggMin Admin', 'eggmin@eggvision.com', hashed_password, 'admin')
@@ -261,7 +261,7 @@ def init_db():
         pembeli_count = result[0] if result else 0
         
         if pembeli_count == 0:
-            hashed_password = generate_password_hash('pembeli123')
+            hashed_password = generate_password_hash('pembeli123',method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
                 ('Budi Santoso', 'pembeli@eggvision.com', hashed_password, 'pembeli')
@@ -274,7 +274,7 @@ def init_db():
         pengusaha_count = result[0] if result else 0
         
         if pengusaha_count == 0:
-            hashed_password = generate_password_hash('pengusaha123')
+            hashed_password = generate_password_hash('pengusaha123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
                 ('Sari Farm', 'pengusaha@eggvision.com', hashed_password, 'pengusaha')
@@ -553,7 +553,7 @@ def auth_register():
             return render_template('auth/register.html')
         
         # Create new user as Pembeli
-        hashed_password = generate_password_hash(password)
+        hashed_password = generate_password_hash(password , method='pbkdf2:sha256')
         conn = get_db_connection()
         if not conn:
             flash('Database connection error!', 'error')
@@ -796,4 +796,4 @@ with app.app_context():
     init_db()
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)

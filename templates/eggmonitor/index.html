@@ -156,28 +156,29 @@
       <!-- Right Column -->
       <div>
        
+<div class="bg-card rounded-lg p-6 border border-border" style="height: 435px;">
+  <h3 class="text-lg font-semibold mb-4">Upload Gambar Telur</h3>
 
-        <div class="bg-card rounded-lg p-6 border border-border" >
-    <h3 class="text-lg font-semibold mb-4">Upload Gambar Telur</h3>
+  <form action="/upload" method="POST" enctype="multipart/form-data" class="mb-4">
+    <input type="file" name="file" accept="image/*" required class="text-sm">
+    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md text-sm">
+      Prediksi Warna Telur
+    </button>
+  </form>
 
-    <form action="/upload" method="POST" enctype="multipart/form-data" class="mb-4">
-        <input type="file" name="file" accept="image/*" required class="text-sm">
-        <button type="submit"
-            class="px-4 py-2 bg-primary text-white rounded-md text-sm">
-            Prediksi Warna Telur
-        </button>
-    </form>
+  {% if uploaded_image %}
+  <div class="mt-4 relative w-full h-[250px] flex justify-center overflow-hidden rounded-lg">
+    <img src="{{ uploaded_image }}" class="h-full object-cover rounded-lg" alt="Uploaded image" />
 
-    {% if uploaded_image %}
-    <div class="mt-4">
-        <img src="{{ uploaded_image }}" class="rounded-lg w-full object-cover" />
-        <p class="mt-3 text-center text-sm font-semibold">
-            Prediksi: <span class="text-primary">{{ prediction }}</span><br>
-            Akurasi: {{ confidence }}
-        </p>
-    </div>
-    {% endif %}
+  </div>
+
+  <p class="mt-3 text-center text-sm font-semibold">
+    Prediksi: <span class="text-primary">{{ prediction }}</span><br>
+    Akurasi: {{ confidence }}
+  </p>
+  {% endif %}
 </div>
+
 
       </div>
     </div>
