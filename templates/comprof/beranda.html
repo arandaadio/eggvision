@@ -10,15 +10,25 @@
     }
 
     .hero-bg {
-        background-image: url("{{ url_for('static', filename='img/eggs.jpg') }}");
+        background-image: url("{{ url_for('static', filename='img/eggsbg.jpg') }}");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         position: relative;
     }
     
-    .hero-overlay {
+    /* .hero-overlay {
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.671) 60%, rgba(0,0,0,1) 100%);
+    } */
+
+    /* Default (Light Mode) Overlay */
+    .hero-overlay {
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 10%, rgba(255, 255, 255, 1) 100%);
+    }
+
+    /* Dark Mode Overlay */
+    .dark .hero-overlay {
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 40%, rgba(0, 0, 0, 1) 100%);
     }
     
     .service-image {
@@ -63,14 +73,14 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="hero-section relative flex items-center justify-center text-center text-pure-white overflow-hidden hero-bg">
+<section id="hero" class="hero-section relative flex items-center justify-center text-center text-pure-white overflow-hidden hero-bg">
     <div class="hero-overlay absolute inset-0 z-0"></div>
 
     <div class="relative z-10 p-6 max-w-6xl mx-auto">
-        <h1 class="font-title text-6xl md:text-8xl font-bold mb-6">
+        <h1 class="font-title text-6xl md:text-8xl font-bold mb-6 text-gray-900 dark:text-pure-white">
             EggVision
         </h1>
-        <p class="font-sans text-xl md:text-2xl max-w-2xl mx-auto mb-8 text-gray-300">
+        <p class="font-sans text-xl md:text-2xl max-w-2xl mx-auto mb-16 text-gray-700 dark:text-gray-300">
             Revolusi industri peternakan dengan otomatisasi bertenaga AI dan akses pasar langsung.
         </p>
         <a href="{{ url_for('comprof_kontak') }}" 
@@ -81,7 +91,7 @@
 </section>
 
 <!-- Layanan dan Produk Section -->
-<section class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
+<section id="layanan" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
         <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
             Layanan dan Produk
@@ -89,8 +99,8 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             <!-- EggMart Card -->
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 rounded-lg flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
-                <div class="w-full h-56 rounded-md mb-6 overflow-hidden">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
+                <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggMart Platform" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
                 <h3 class="font-sans text-3xl font-semibold mb-4 text-gray-800 dark:text-pure-white">EggMart</h3>
@@ -104,8 +114,8 @@
             </div>
             
             <!-- EggVision Machine Card -->
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 rounded-lg flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
-                <div class="w-full h-56 rounded-md mb-6 overflow-hidden">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
+                <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggVision Grading Machine" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
                 <h3 class="font-sans text-3xl font-semibold mb-4 text-gray-800 dark:text-pure-white">EggVision</h3>
@@ -119,8 +129,8 @@
             </div>
             
             <!-- EggMonitor Card -->
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 rounded-lg flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
-                <div class="w-full h-56 rounded-md mb-6 overflow-hidden">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
+                <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggMonitor Dashboard" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
                 <h3 class="font-sans text-3xl font-semibold mb-4 text-gray-800 dark:text-pure-white">EggMonitor</h3>
@@ -138,7 +148,7 @@
 </section>
 
 <!-- Berita Terkini Section -->
-<section class="py-24 bg-gray-100 dark:bg-dark-gray text-gray-900 dark:text-pure-white">
+<section id="berita" class="py-24 bg-gray-100 dark:bg-dark-gray text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
         <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
             Berita Terkini
@@ -186,38 +196,38 @@
 </section>
 
 <!-- Testimoni Section -->
-<section id="ulasan" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
+<section id="testimoni" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
         <h2 class="font-title text-5xl font-bold text-center mb-24 text-gray-800 dark:text-pure-white">
             Apa Kata Mereka?
         </h2>
         <div class="space-y-20 max-w-5xl mx-auto font-sans">
             
-            <!-- Testimonial 1 - Budi Santoso -->
+            <!-- Testimonial 1 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                <div class="w-full h-80 rounded-lg overflow-hidden">
-                    <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="Budi Santoso - Peternakan Maju Jaya" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
+                <div class="w-full h-80 overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/fulan.jpg') }}" alt="Budi Santoso - Peternakan Maju Jaya" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
                 <div class="text-left">
                     <blockquote class="text-xl italic text-gray-700 dark:text-gray-300 border-l-4 border-amber-600 dark:border-premium-gold pl-6 mb-6">
                         "Sejak pakai EggMonitor, saya bisa pantau peternakan saya dari rumah. Efisiensi operasional naik pesat dan kebocoran produksi bisa ditekan."
                     </blockquote>
-                    <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Budi Santoso</p>
+                    <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Pak Fulan</p>
                     <p class="text-amber-600 dark:text-premium-gold">Pemilik, Peternakan Maju Jaya</p>
                 </div>
             </div>
             
-            <!-- Testimonial 2 - Sari Farm (Reversed layout) -->
+            <!-- Testimonial 2 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div class="text-left">
                     <blockquote class="text-xl italic text-gray-700 dark:text-gray-300 border-l-4 border-amber-600 dark:border-premium-gold pl-6 mb-6">
                         "Sebagai pembeli di EggMart, saya selalu dapat telur dengan kualitas terjamin. Sistem grading-nya benar-benar transparan dan terpercaya."
                     </blockquote>
-                    <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Sari Farm</p>
+                    <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Bu Fulana</p>
                     <p class="text-amber-600 dark:text-premium-gold">Pemilik, Katering Sehat</p>
                 </div>
-                <div class="w-full h-80 rounded-lg overflow-hidden">
-                    <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="Sari Farm - Katering Sehat" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
+                <div class="w-full h-80 overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/fulana.jpg') }}" alt="Sari Farm - Katering Sehat" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
             </div>
 
@@ -226,7 +236,7 @@
 </section>
 
 <!-- CTA Section -->
-<section class="py-24 bg-gray-100 dark:bg-dark-gray text-center text-gray-900 dark:text-pure-white">
+<section id="cta" class="py-24 bg-gray-100 dark:bg-dark-gray text-center text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
         <h2 class="font-title text-5xl font-bold mb-6 text-gray-800 dark:text-pure-white">
             Siap Merevolusi Bisnis Anda?
@@ -274,4 +284,3 @@
     });
     </script>
 {% endblock %}
-

@@ -6,20 +6,37 @@
             <!-- Logo -->
             <div class="flex-shrink-0">
                 <a href="{{ url_for('comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text" title="EggVision Home">
-                    <img src="{{ url_for('static', filename='/img/logo.png') }}" alt="EggVision" class="h-16 w-auto" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span style="display: none;">🥚 EggVision</span>
+                    <span class="text-xl font-bold text-premium-gold">🥚 EggVision</span>
                 </a>
             </div>
 
             <!-- Right Section -->
             <div class="flex items-center space-x-4">
                 <!-- Dark/Light Mode Toggle -->
-                <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 theme-transition">
-                    <span class="dark:hidden">🌙</span>
-                    <span class="hidden dark:inline">☀️</span>
+                <button 
+                    onclick="toggleDarkMode()" 
+                    class="relative inline-flex items-center w-14 h-7 rounded-full transition-colors duration-300 ease-in-out 
+                        bg-gray-300 dark:bg-gray-600 hover:ring-2 hover:ring-premium-gold focus:outline-none"
+                    aria-label="Toggle dark mode"
+                >
+                <span 
+                    class="absolute left-1 top-1 w-5 h-5 rounded-full bg-white dark:bg-primary-black transform transition-transform duration-300 ease-in-out 
+                        dark:translate-x-7"
+                ></span>
+                <svg xmlns="http://www.w3.org/2000/svg" 
+                    class="absolute left-1.5 top-1.5 w-4 h-4 text-gray-700 dark:hidden" 
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M12 3v1m0 16v1m8.66-9H21M3 12H2m15.36-6.36l.7.7M6.34 17.66l.7.7M17.66 17.66l.7-.7M6.34 6.34l.7-.7M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" 
+                    class="absolute right-1.5 top-1.5 w-4 h-4 hidden dark:block text-yellow-400" 
+                    fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a8 8 0 107.446 5.032A6 6 0 0110 2z"/>
+                </svg>
                 </button>
 
-                <!-- Auth Links (Simplified - No Login/Register buttons) -->
+                <!-- Auth Links -->
                 {% if current_user.is_authenticated %}
                 <div class="relative group">
                     <button class="text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition text-sm">
@@ -67,13 +84,12 @@
         style="display: none;"
         @click.away="open = false" 
     >
-        <div class="container mx-auto h-full flex flex-col max-w-7xl">
+        <div class="container mx-auto h-full flex flex-col max-w-7xl px-4 sm:px-6 lg:px-8">
             <!-- Menu Header -->
-            <div class="flex items-center justify-between h-24 px-4 sm:px-6 lg:px-8 -m-6">
+            <div class="flex items-center justify-between h-24 -mt-2 sm:-mt-3 lg:-mt-4">
                 <div class="flex-shrink-0">
                     <a href="{{ url_for('comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text">
-                        <img src="{{ url_for('static', filename='/img/logo.png') }}" alt="EggVision" class="h-16 w-auto" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                        <span style="display: none;">🥚 EggVision</span>
+                        <span class="text-xl font-bold text-premium-gold">🥚 EggVision</span>
                     </a>
                 </div>
                 <button @click="open = false" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-premium-gold hover:text-pure-white focus:outline-none">
@@ -83,97 +99,122 @@
                     </svg>
                 </button>
             </div>
-
+            
             <!-- Menu Content -->
             <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-16 mt-16">
-                <!-- Main Navigation -->
-                <div class="flex flex-col justify-center">
-                    <ul class="space-y-6">
-                        <li>
-                            <a href="{{ url_for('comprof_beranda') }}" @mouseover="activeMenu = 'beranda'" 
-                               :class="activeMenu === 'beranda' ? 'text-pure-white border-b-2 border-premium-gold' : 'text-gray-400'"
-                               class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2">
-                                Beranda
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('comprof_berita') }}" @mouseover="activeMenu = 'berita'"
-                               :class="activeMenu === 'berita' ? 'text-pure-white border-b-2 border-premium-gold' : 'text-gray-400'"
-                               class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2">
-                                Berita
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('comprof_layanan') }}" @mouseover="activeMenu = 'layanan'"
-                               :class="activeMenu === 'layanan' ? 'text-pure-white border-b-2 border-premium-gold' : 'text-gray-400'"
-                               class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2">
-                                Layanan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('comprof_produk') }}" @mouseover="activeMenu = 'produk'"
-                               :class="activeMenu === 'produk' ? 'text-pure-white border-b-2 border-premium-gold' : 'text-gray-400'"
-                               class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2">
-                                Produk
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('comprof_tentang_kami') }}" @mouseover="activeMenu = 'tentang_kami'"
-                               :class="activeMenu === 'tentang_kami' ? 'text-pure-white border-b-2 border-premium-gold' : 'text-gray-400'"
-                               class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2">
-                                Tentang Kami
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+            <!-- Main Navigation -->
+            <div class="flex flex-col justify-center relative">
+                <ul class="space-y-6">
+                    <li>
+                        <button 
+                            @click="activeMenu = (activeMenu === 'beranda' ? '' : 'beranda')" 
+                            :class="activeMenu === 'beranda' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
+                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
+                        >
+                            Beranda
+                        </button>
+                    </li>
+                    <li>
+                        <button 
+                            @click="activeMenu = (activeMenu === 'berita' ? '' : 'berita')" 
+                            :class="activeMenu === 'berita' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
+                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
+                        >
+                            Berita
+                        </button>
+                    </li>
+                    <li>
+                        <button 
+                            @click="activeMenu = (activeMenu === 'layanan' ? '' : 'layanan')" 
+                            :class="activeMenu === 'layanan' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
+                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
+                        >
+                            Layanan
+                        </button>
+                    </li>
+                    <li>
+                        <button 
+                            @click="activeMenu = (activeMenu === 'produk' ? '' : 'produk')" 
+                            :class="activeMenu === 'produk' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
+                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
+                        >
+                            Produk
+                        </button>
+                    </li>
+                    <li>
+                        <button 
+                            @click="activeMenu = (activeMenu === 'tentang_kami' ? '' : 'tentang_kami')" 
+                            :class="activeMenu === 'tentang_kami' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
+                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
+                        >
+                            Tentang Kami
+                        </button>
+                    </li>
+                </ul>
+            </div>
 
                 <!-- Submenu Content -->
                 <div class="flex flex-col justify-center text-gray-300 font-sans">
                     <!-- Beranda Submenu -->
                     <div x-show="activeMenu === 'beranda'" class="space-y-8">
-                        <a href="{{ url_for('comprof_tentang_kami') }}" class="group flex items-center gap-3">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Tentang EggVision</h3>
-                                <p>Informasi terkini tentang pengembangan dan inovasi terbaru kami.</p>
-                            </div>
-                        </a>
-                        <a href="{{ url_for('comprof_layanan') }}" class="group flex items-center gap-3">
+                        <a href="{{ url_for('comprof_beranda') }}#layanan" class="group flex items-center gap-3">
                             <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
                             <div>
                                 <h3 class="text-xl text-pure-white font-semibold">Layanan dan Produk</h3>
                                 <p>Jelajahi solusi digital kami untuk industri peternakan modern.</p>
                             </div>
                         </a>
-                        <a href="{{ url_for('comprof_berita') }}" class="group flex items-center gap-3">
+                        <a href="{{ url_for('comprof_beranda') }}#berita" class="group flex items-center gap-3">
                             <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
                             <div>
                                 <h3 class="text-xl text-pure-white font-semibold">Berita Terkini</h3>
                                 <p>Dapatkan informasi terbaru seputar industri, teknologi, dan kegiatan kami.</p>
                             </div>
                         </a>
+                        <a href="{{ url_for('comprof_beranda') }}#testimoni" class="group flex items-center gap-3">
+                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                            <div>
+                                <h3 class="text-xl text-pure-white font-semibold">Ulasan Pembeli</h3>
+                                <p>Baca pengalaman dan testimoni dari para pengguna EggVision dari berbagai daerah di Indonesia.</p>
+                            </div>
+                        </a>
                     </div>
 
-                    <!-- Other submenus... -->
+                    <!-- Berita Submenu -->
                     <div x-show="activeMenu === 'berita'" class="space-y-8">
-                        <a href="{{ url_for('comprof_berita') }}" class="group flex items-center gap-3">
+                        <a href="{{ url_for('comprof_berita') }}#berita" class="group flex items-center gap-3">
                             <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
                             <div>
                                 <h3 class="text-xl text-pure-white font-semibold">Berita Lengkap</h3>
                                 <p>Arsip lengkap artikel, laporan, dan publikasi terkait EggVision.</p>
                             </div>
                         </a>
+                        <a href="{{ url_for('comprof_berita') }}#pencapaian" class="group flex items-center gap-3">
+                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                            <div>
+                                <h3 class="text-xl text-pure-white font-semibold">Pencapaian Kami</h3>
+                                <p>Prestasi dan sertifikasi resmi yang telah diraih EggVision.</p>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('comprof_berita') }}#event" class="group flex items-center gap-3">
+                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                            <div>
+                                <h3 class="text-xl text-pure-white font-semibold">Event dan Webinar</h3>
+                                <p>Ikuti acara atau webinar yang akan datang dan pelajari lebih lanjut.</p>
+                            </div>
+                        </a>
                     </div>
-                    
+
+                    <!-- Layanan Submenu -->
                     <div x-show="activeMenu === 'layanan'" class="space-y-8">
-                        <a href="{{ url_for('comprof_layanan') }}" class="group flex items-center gap-3">
+                        <a href="{{ url_for('comprof_layanan') }}#eggmart" class="group flex items-center gap-3">
                             <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
                             <div>
                                 <h3 class="text-xl text-pure-white font-semibold">EggMart</h3>
                                 <p>Platform jual beli telur bagi mitra resmi pengguna sistem grading EggVision.</p>
                             </div>
                         </a>
-                        <a href="{{ url_for('comprof_layanan') }}" class="group flex items-center gap-3">
+                        <a href="{{ url_for('comprof_layanan') }}#eggmonitor" class="group flex items-center gap-3">
                             <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
                             <div>
                                 <h3 class="text-xl text-pure-white font-semibold">EggMonitor</h3>
@@ -181,23 +222,39 @@
                             </div>
                         </a>
                     </div>
-                    
+
+                    <!-- Produk Submenu -->
                     <div x-show="activeMenu === 'produk'" class="space-y-8">
-                        <a href="{{ url_for('comprof_produk') }}" class="group flex items-center gap-3">
+                        <a href="{{ url_for('comprof_produk') }}#eggvision" class="group flex items-center gap-3">
                             <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
                             <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Mesin Grading AI</h3>
-                                <p>Lihat spesifikasi teknis dari mesin grading telur otomatis kami.</p>
+                                <h3 class="text-xl text-pure-white font-semibold">EggVision</h3>
+                                <p>Alat sortir telur otomatis berbasis IoT dan Machine Learning.</p>
                             </div>
                         </a>
                     </div>
-                    
+
+                    <!-- Tentang Kami Submenu -->
                     <div x-show="activeMenu === 'tentang_kami'" class="space-y-8">
-                        <a href="{{ url_for('comprof_tentang_kami') }}" class="group flex items-center gap-3">
+                        <a href="{{ url_for('comprof_tentang_kami') }}#profil" class="group flex items-center gap-3">
                             <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
                             <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Visi & Misi</h3>
-                                <p>Tujuan kami merevolusi industri peternakan telur Indonesia.</p>
+                                <h3 class="text-xl text-pure-white font-semibold">Profil Perusahaan</h3>
+                                <p>Kenali visi, misi, dan nilai-nilai yang mendasari setiap langkah kami.</p>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('comprof_tentang_kami') }}#tim" class="group flex items-center gap-3">
+                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                            <div>
+                                <h3 class="text-xl text-pure-white font-semibold">Tim Kami</h3>
+                                <p>Para profesional di balik EggVision yang berkomitmen pada inovasi dan kualitas.</p>
+                            </div>
+                        </a>
+                        <a href="{{ url_for('comprof_tentang_kami') }}#kontak" class="group flex items-center gap-3">
+                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                            <div>
+                                <h3 class="text-xl text-pure-white font-semibold">Hubungi Kami</h3>
+                                <p>Saluran resmi untuk pertanyaan, kerja sama, dan dukungan pelanggan.</p>
                             </div>
                         </a>
                     </div>
@@ -205,7 +262,7 @@
             </div>
 
             <!-- Quick Links Footer -->
-            <div class="border-t border-dark-gray mt-16 py-6 font-sans">
+            <div class="border-t border-dark-gray mt-16 py-6 font-sans px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-wrap items-center gap-x-8 gap-y-2 text-gray-400">
                     <span class="font-semibold text-pure-white">Quick Links</span>
                     <span class="text-premium-gold text-xl">→</span>
@@ -228,5 +285,5 @@
     </div>
 </nav>
 
-<!-- Alpine.js untuk menu functionality -->
+<!-- Alpine.js -->
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
