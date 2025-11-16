@@ -1,0 +1,224 @@
+{% extends "eggmin/base.html" %}
+{% block title %}Produk · EggMin{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+  <!-- Sidebar (sama seperti sebelumnya) -->
+  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <div class="text-primary font-bold text-xs">EM</div>
+        </div>
+        <span class="text-primary text-sm font-semibold">EGGMIN</span>
+      </div>
+    </div>
+
+    <nav class="flex-1 py-4">
+      {% set menu = [
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin')},
+        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_users')},
+        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_news')},
+        {"id":"products","icon":"package","label":"Produk","href":url_for('eggmin_products')},
+        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_chats')}
+      ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <div class="p-4 border-t border-sidebar-border">
+      <a href="{{ url_for('comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" 
+               alt="Profile" class="w-full h-full object-cover" />
+        </div>
+        <span class="text-xs">Kembali</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-4xl font-bold mb-1">Manajemen Produk</h1>
+        <p class="text-muted-foreground">Kelola semua produk di EggMart</p>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <!-- Stats -->
+        <div class="flex items-center gap-6 text-sm">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-primary">{{ products|length }}</div>
+            <div class="text-xs text-muted-foreground">Total Produk</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-green-500">
+              {{ products|selectattr('is_active')|list|length }}
+            </div>
+            <div class="text-xs text-muted-foreground">Aktif</div>
+          </div>
+        </div>
+        
+        <!-- Date & Time -->
+        <div class="flex items-center gap-4 text-sm">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-date">{{ now.strftime('%d/%b/%Y') }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-time">{{ now.strftime('%H:%M') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="bg-card rounded-lg border border-border overflow-hidden">
+      <div class="p-6 border-b border-border">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Semua Produk ({{ products|length }})</h3>
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+              <input type="text" placeholder="Cari produk..." class="pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <select class="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Semua Grade</option>
+              <option value="A">Grade A</option>
+              <option value="B">Grade B</option>
+              <option value="C">Grade C</option>
+            </select>
+            <select class="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Semua Status</option>
+              <option value="active">Aktif</option>
+              <option value="inactive">Nonaktif</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-secondary border-b border-border">
+            <th class="th">Produk</th>
+            <th class="th">Penjual</th>
+            <th class="th">Grade</th>
+            <th class="th">Harga</th>
+            <th class="th">Stok</th>
+            <th class="th">Status</th>
+            <th class="th">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in products %}
+          <tr class="border-b border-border hover:bg-secondary/50 transition-colors">
+            <td class="td">
+              <div class="flex items-center gap-3">
+                {% if product.image_url %}
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-10 h-10 rounded-lg object-cover">
+                {% else %}
+                <div class="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+                  <i data-lucide="package" class="w-5 h-5 text-muted-foreground"></i>
+                </div>
+                {% endif %}
+                <div>
+                  <p class="font-medium">{{ product.name }}</p>
+                  <p class="text-xs text-muted-foreground line-clamp-1">{{ product.description[:50] }}...</p>
+                </div>
+              </div>
+            </td>
+            <td class="td">
+              <div class="flex items-center gap-2">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ product.seller_name|lower|replace(' ', '') }}" 
+                     alt="{{ product.seller_name }}" class="w-6 h-6 rounded-full">
+                <span class="text-sm">{{ product.seller_name }}</span>
+              </div>
+            </td>
+            <td class="td">
+              <span class="badge {{ 'bg-green-500/20 text-green-500' if product.grade == 'A' else 'bg-yellow-500/20 text-yellow-500' if product.grade == 'B' else 'bg-orange-500/20 text-orange-500' }}">
+                Grade {{ product.grade }}
+              </span>
+            </td>
+            <td class="td">
+              <span class="font-medium">Rp {{ "{:,.0f}".format(product.price) }}</span>
+            </td>
+            <td class="td">
+              <span class="font-medium {{ 'text-green-500' if product.stock > 10 else 'text-yellow-500' if product.stock > 0 else 'text-red-500' }}">
+                {{ product.stock }}
+              </span>
+            </td>
+            <td class="td">
+              <span class="badge {{ 'bg-green-500/20 text-green-500' if product.is_active else 'bg-red-500/20 text-red-500' }}">
+                {{ 'Aktif' if product.is_active else 'Nonaktif' }}
+              </span>
+            </td>
+            <td class="td">
+              <div class="flex items-center gap-2">
+                <button onclick="editProduct('{{ product.id }}')" class="p-1 text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Edit">
+                  <i data-lucide="edit" class="w-4 h-4"></i>
+                </button>
+                <button onclick="toggleProductStatus('{{ product.id }}')" class="p-1 {{ 'text-yellow-500' if product.is_active else 'text-green-500' }} hover:bg-yellow-500/10 rounded transition-colors" title="{{ 'Nonaktifkan' if product.is_active else 'Aktifkan' }}">
+                  <i data-lucide="{{ 'pause' if product.is_active else 'play' }}" class="w-4 h-4"></i>
+                </button>
+                <button onclick="deleteProduct('{{ product.id }}')" class="p-1 text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Hapus">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    {% if not products %}
+    <div class="text-center py-12">
+      <i data-lucide="package" class="w-16 h-16 text-muted-foreground mx-auto mb-4"></i>
+      <h3 class="text-lg font-semibold mb-2">Belum ada produk</h3>
+      <p class="text-muted-foreground">Pengusaha belum menambahkan produk apapun</p>
+    </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editProduct(productId) {
+  alert('Edit product: ' + productId);
+  // Implement edit functionality
+}
+
+function toggleProductStatus(productId) {
+  alert('Toggle product status: ' + productId);
+  // Implement status toggle functionality
+}
+
+function deleteProduct(productId) {
+  if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+    alert('Delete product: ' + productId);
+    // Implement delete functionality
+  }
+}
+</script>
+
+<style>
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
+{% endblock %}

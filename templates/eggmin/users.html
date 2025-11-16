@@ -1,0 +1,217 @@
+{% extends "eggmin/base.html" %}
+{% block title %}Users · EggMin{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+  <!-- Sidebar -->
+  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <!-- Logo & Menu (sama seperti dashboard) -->
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <div class="text-primary font-bold text-xs">EM</div>
+        </div>
+        <span class="text-primary text-sm font-semibold">EGGMIN</span>
+      </div>
+    </div>
+
+    <nav class="flex-1 py-4">
+      {% set menu = [
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin')},
+        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_users')},
+        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_news')},
+        {"id":"products","icon":"package","label":"Produk","href":url_for('eggmin_products')},
+        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_chats')}
+      ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <div class="p-4 border-t border-sidebar-border">
+      <a href="{{ url_for('comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" 
+               alt="Profile" class="w-full h-full object-cover" />
+        </div>
+        <span class="text-xs">Kembali</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-4xl font-bold mb-1">User Management</h1>
+        <p class="text-muted-foreground">Kelola semua pengguna EggVision</p>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <!-- Add User Button -->
+        <button onclick="openAddUserModal()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          Tambah User
+        </button>
+        
+        <!-- Date & Time -->
+        <div class="flex items-center gap-4 text-sm">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-date">{{ now.strftime('%d/%b/%Y') }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-time">{{ now.strftime('%H:%M') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-card rounded-lg border border-border overflow-hidden">
+      <div class="p-6 border-b border-border">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Semua Pengguna ({{ users|length }})</h3>
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+              <input type="text" placeholder="Cari user..." class="pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <select class="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Semua Role</option>
+              <option value="pembeli">Pembeli</option>
+              <option value="pengusaha">Pengusaha</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-secondary border-b border-border">
+            <th class="th">User</th>
+            <th class="th">Email</th>
+            <th class="th">Role</th>
+            <th class="th">Bergabung</th>
+            <th class="th">Status</th>
+            <th class="th">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr class="border-b border-border hover:bg-secondary/50 transition-colors">
+            <td class="td">
+              <div class="flex items-center gap-3">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ user.name|lower|replace(' ', '') }}" 
+                     alt="{{ user.name }}" class="w-8 h-8 rounded-full">
+                <div>
+                  <p class="font-medium">{{ user.name }}</p>
+                  <p class="text-xs text-muted-foreground">ID: {{ user.id }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="td">{{ user.email }}</td>
+            <td class="td">
+              <span class="badge {{ 'bg-blue-500/20 text-blue-500' if user.role == 'pembeli' else 'bg-yellow-500/20 text-yellow-500' if user.role == 'pengusaha' else 'bg-green-500/20 text-green-500' }}">
+                {{ user.role }}
+              </span>
+            </td>
+            <td class="td">{{ user.created_at.strftime('%d %b %Y') }}</td>
+            <td class="td">
+              <span class="badge bg-green-500/20 text-green-500">Aktif</span>
+            </td>
+            <td class="td">
+              <div class="flex items-center gap-2">
+                <button onclick="editUser('{{ user.id }}')" class="p-1 text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Edit">
+                  <i data-lucide="edit" class="w-4 h-4"></i>
+                </button>
+                <button onclick="deleteUser('{{ user.id }}')" class="p-1 text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Hapus">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+  <div class="bg-card rounded-lg p-6 w-96 border border-border">
+    <h3 class="text-lg font-semibold mb-4">Tambah User Baru</h3>
+    <form id="addUserForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-2">Nama Lengkap</label>
+        <input type="text" name="name" required class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Email</label>
+        <input type="email" name="email" required class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Password</label>
+        <input type="password" name="password" required class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Role</label>
+        <select name="role" required class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="pembeli">Pembeli</option>
+          <option value="pengusaha">Pengusaha</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="submit" class="flex-1 bg-primary text-primary-foreground py-2 rounded-lg hover:bg-primary/90 transition-colors">
+          Simpan
+        </button>
+        <button type="button" onclick="closeAddUserModal()" class="flex-1 bg-secondary py-2 rounded-lg hover:bg-secondary/80 transition-colors">
+          Batal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAddUserModal() {
+  document.getElementById('addUserModal').classList.remove('hidden');
+}
+
+function closeAddUserModal() {
+  document.getElementById('addUserModal').classList.add('hidden');
+}
+
+function editUser(userId) {
+  alert('Edit user: ' + userId);
+  // Implement edit functionality
+}
+
+function deleteUser(userId) {
+  if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
+    alert('Delete user: ' + userId);
+    // Implement delete functionality
+  }
+}
+
+// Close modal when clicking outside
+document.getElementById('addUserModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeAddUserModal();
+  }
+});
+</script>
+{% endblock %}

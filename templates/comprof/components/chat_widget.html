@@ -1,0 +1,242 @@
+<!-- Floating Chat Widget -->
+<div id="chat-widget" class="fixed bottom-6 right-6 z-50">
+    <!-- Chat Button -->
+    <button id="chat-toggle" 
+            class="w-14 h-14 bg-premium-gold hover:bg-yellow-500 text-primary-black rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+    </button>
+
+    <!-- Chat Box -->
+    <div id="chat-box" 
+         class="absolute bottom-16 right-0 w-80 h-96 bg-white dark:bg-dark-gray border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl flex flex-col transition-all duration-300 transform scale-0 opacity-0 origin-bottom-right">
+        
+        <!-- Chat Header -->
+        <div class="bg-premium-gold text-primary-black px-4 py-3 rounded-t-lg flex justify-between items-center">
+            <div>
+                <h3 class="font-semibold">Chat dengan Admin</h3>
+                <p class="text-xs opacity-80" id="chat-status">Online</p>
+            </div>
+            <button id="chat-close" class="text-primary-black hover:text-gray-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Chat Messages -->
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50 dark:bg-gray-800">
+            <!-- Welcome Message -->
+            <div class="flex justify-start">
+                <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-3 py-2 max-w-xs">
+                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                        Halo! Ada yang bisa kami bantu? Silakan tanyakan tentang EggVision atau perangkat kami.
+                    </p>
+                    <span class="text-xs text-gray-500 dark:text-gray-400 block mt-1">Admin • Sekarang</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guest Info Form (untuk user belum login) -->
+        <div id="guest-info" class="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-gray {% if current_user.is_authenticated %}hidden{% endif %}">
+            <div class="space-y-2">
+                <input type="text" 
+                       id="guest-name" 
+                       placeholder="Nama Anda" 
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+                <input type="email" 
+                       id="guest-email" 
+                       placeholder="Email Anda" 
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-gray">
+            <div class="flex space-x-2">
+                <input type="text" 
+                       id="chat-input" 
+                       placeholder="Ketik pesan Anda..." 
+                       class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-premium-gold">
+                <button id="send-message" 
+                        class="px-4 py-2 bg-premium-gold text-primary-black rounded text-sm font-semibold hover:bg-yellow-500 transition-colors">
+                    Kirim
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #chat-messages {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e0 transparent;
+    }
+    
+    #chat-messages::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    #chat-messages::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    #chat-messages::-webkit-scrollbar-thumb {
+        background-color: #cbd5e0;
+        border-radius: 2px;
+    }
+    
+    .dark #chat-messages::-webkit-scrollbar-thumb {
+        background-color: #4b5563;
+    }
+    
+    .chat-message-user {
+        justify-content: flex-end;
+    }
+    
+    .chat-message-admin {
+        justify-content: flex-start;
+    }
+    
+    .message-bubble-user {
+        background-color: #FFD700;
+        color: #000000;
+    }
+    
+    .message-bubble-admin {
+        background-color: #e5e7eb;
+        color: #374151;
+    }
+    
+    .dark .message-bubble-admin {
+        background-color: #4b5563;
+        color: #e5e7eb;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatToggle = document.getElementById('chat-toggle');
+        const chatBox = document.getElementById('chat-box');
+        const chatClose = document.getElementById('chat-close');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-message');
+        const chatMessages = document.getElementById('chat-messages');
+        const guestInfo = document.getElementById('guest-info');
+        const guestName = document.getElementById('guest-name');
+        const guestEmail = document.getElementById('guest-email');
+
+        let isChatOpen = false;
+
+        // Toggle chat box
+        chatToggle.addEventListener('click', function() {
+            isChatOpen = !isChatOpen;
+            if (isChatOpen) {
+                chatBox.classList.remove('scale-0', 'opacity-0');
+                chatBox.classList.add('scale-100', 'opacity-100');
+                chatInput.focus();
+            } else {
+                chatBox.classList.remove('scale-100', 'opacity-100');
+                chatBox.classList.add('scale-0', 'opacity-0');
+            }
+        });
+
+        // Close chat box
+        chatClose.addEventListener('click', function() {
+            isChatOpen = false;
+            chatBox.classList.remove('scale-100', 'opacity-100');
+            chatBox.classList.add('scale-0', 'opacity-0');
+        });
+
+        // Send message function
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Validate guest info for non-logged in users
+            {% if not current_user.is_authenticated %}
+            if (!guestName.value.trim() || !guestEmail.value.trim()) {
+                alert('Silakan isi nama dan email Anda terlebih dahulu.');
+                return;
+            }
+            {% endif %}
+
+            // Add user message to chat
+            addMessageToChat(message, 'user');
+
+            // Send to server
+            fetch('{{ url_for("comprof_send_chat") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    {% if current_user.is_authenticated %}
+                    user_id: '{{ current_user.id }}',
+                    {% else %}
+                    guest_name: guestName.value.trim(),
+                    guest_email: guestEmail.value.trim(),
+                    {% endif %}
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    chatInput.value = '';
+                    // Simulate admin auto-reply (bisa dihapus nanti)
+                    setTimeout(() => {
+                        addMessageToChat('Terima kasih pesan Anda sudah kami terima. Admin akan membalas secepatnya melalui email.', 'admin');
+                    }, 1000);
+                } else {
+                    addMessageToChat('Maaf, terjadi error. Silakan coba lagi.', 'admin');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessageToChat('Maaf, terjadi error. Silakan coba lagi.', 'admin');
+            });
+        }
+
+        // Send message on button click
+        sendButton.addEventListener('click', sendMessage);
+
+        // Send message on Enter key
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Add message to chat UI
+        function addMessageToChat(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${sender === 'user' ? 'chat-message-user' : 'chat-message-admin'}`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = `rounded-lg px-3 py-2 max-w-xs ${sender === 'user' ? 'message-bubble-user' : 'message-bubble-admin'}`;
+            
+            const messageText = document.createElement('p');
+            messageText.className = 'text-sm';
+            messageText.textContent = message;
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'text-xs opacity-70 block mt-1';
+            timeSpan.textContent = sender === 'user' ? 'Anda • Sekarang' : 'Admin • Sekarang';
+            
+            bubbleDiv.appendChild(messageText);
+            bubbleDiv.appendChild(timeSpan);
+            messageDiv.appendChild(bubbleDiv);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Auto-hide guest info after first message for logged-in users
+        {% if current_user.is_authenticated %}
+        guestInfo.classList.add('hidden');
+        {% endif %}
+    });
+</script>

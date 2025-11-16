@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_sqlalchemy import SQLAlchemy
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 import math
@@ -268,6 +269,37 @@ def init_db():
                     news
                 )
             print("✅ Sample news created for Comprof")
+        
+                # Create chat_messages table
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                guest_name VARCHAR(100) NULL,
+                guest_email VARCHAR(100) NULL,
+                message TEXT NOT NULL,
+                message_type ENUM('guest_to_admin', 'admin_to_guest', 'admin_to_user', 'user_to_admin') DEFAULT 'guest_to_admin',
+                status ENUM('unread', 'read', 'replied') DEFAULT 'unread',
+                parent_message_id INT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+                FOREIGN KEY (parent_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL
+            )
+        ''')
+        
+        # Create chat_sessions table untuk tracking conversation
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS chat_sessions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                guest_email VARCHAR(100) NULL,
+                guest_name VARCHAR(100) NULL,
+                status ENUM('active', 'closed', 'pending') DEFAULT 'active',
+                last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            )
+        ''')
         
         conn.commit()
         cur.close()
@@ -706,6 +738,63 @@ def eggmonitor_settings():
     data = build_user_data()
     return render_template('eggmonitor/settings.html', **data, active_menu="settings")
 
+# ==================== CHAT ROUTES ====================
+@app.route('/api/chat/send', methods=['POST'])
+def comprof_send_chat():
+    """Handle chat messages from Comprof pages"""
+    try:
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        
+        if not message:
+            return jsonify({'success': False, 'error': 'Message is required'}), 400
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+
+        try:
+            cur = conn.cursor()
+            
+            if data.get('user_id'):
+                # User is logged in
+                user_id = data['user_id']
+                cur.execute(
+                    "INSERT INTO chat_messages (user_id, message, message_type) VALUES (%s, %s, 'user_to_admin')",
+                    (user_id, message)
+                )
+            else:
+                # Guest user
+                guest_name = data.get('guest_name', '').strip()
+                guest_email = data.get('guest_email', '').strip()
+                
+                if not guest_name or not guest_email:
+                    return jsonify({'success': False, 'error': 'Name and email are required for guests'}), 400
+                
+                cur.execute(
+                    "INSERT INTO chat_messages (guest_name, guest_email, message, message_type) VALUES (%s, %s, %s, 'guest_to_admin')",
+                    (guest_name, guest_email, message)
+                )
+            
+            conn.commit()
+            cur.close()
+            
+            # TODO: Send email notification to admin
+            print(f"📩 New chat message received: {message}")
+            
+            return jsonify({'success': True, 'message': 'Message sent successfully'})
+            
+        except mysql.connector.Error as e:
+            print(f"Database error in chat: {e}")
+            return jsonify({'success': False, 'error': 'Database error'}), 500
+        finally:
+            if conn:
+                conn.close()
+                
+    except Exception as e:
+        print(f"Error in chat endpoint: {e}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+
 # ==================== EGGMIN ROUTES (ADMIN ONLY) ====================
 @app.route('/eggmin')
 @login_required
@@ -718,31 +807,40 @@ def eggmin():
     # Get stats for admin dashboard
     conn = get_db_connection()
     stats = {}
+    recent_users = []
     
     if conn:
         try:
-            cur = conn.cursor()
+            cur = conn.cursor(dictionary=True)
             
             # Get user counts
             cur.execute("SELECT COUNT(*) as count FROM users")
-            stats['total_users'] = cur.fetchone()[0]
+            stats['total_users'] = cur.fetchone()['count']
             
             cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'pembeli'")
-            stats['pembeli_count'] = cur.fetchone()[0]
+            stats['pembeli_count'] = cur.fetchone()['count']
             
             cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'pengusaha'")
-            stats['pengusaha_count'] = cur.fetchone()[0]
+            stats['pengusaha_count'] = cur.fetchone()['count']
             
             cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'admin'")
-            stats['admin_count'] = cur.fetchone()[0]
+            stats['admin_count'] = cur.fetchone()['count']
             
             # Get product counts
             cur.execute("SELECT COUNT(*) as count FROM products")
-            stats['total_products'] = cur.fetchone()[0]
+            stats['total_products'] = cur.fetchone()['count']
             
             # Get news counts
             cur.execute("SELECT COUNT(*) as count FROM news")
-            stats['total_news'] = cur.fetchone()[0]
+            stats['total_news'] = cur.fetchone()['count']
+            
+            # Get unread chat count
+            cur.execute("SELECT COUNT(*) as count FROM chat_messages WHERE status = 'unread'")
+            stats['unread_chats'] = cur.fetchone()['count']
+            
+            # Get recent users
+            cur.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT 5")
+            recent_users = cur.fetchall()
             
             cur.close()
         except mysql.connector.Error as e:
@@ -751,7 +849,141 @@ def eggmin():
             if conn:
                 conn.close()
     
-    return render_template('eggmin/index.html', stats=stats)
+    return render_template('eggmin/index.html', 
+                         stats=stats, 
+                         recent_users=recent_users,
+                         active_menu='dashboard',
+                         now=datetime.now())
+
+@app.route('/eggmin/users')
+@login_required
+def eggmin_users():
+    """User management page - Admin only"""
+    if current_user.role != 'admin':
+        flash('Hanya Admin yang dapat mengakses halaman users.', 'error')
+        return redirect(url_for('comprof_beranda'))
+    
+    # Get all users from database
+    conn = get_db_connection()
+    users = []
+    
+    if conn:
+        try:
+            cur = conn.cursor(dictionary=True)
+            cur.execute("SELECT * FROM users ORDER BY created_at DESC")
+            users = cur.fetchall()
+            cur.close()
+        except mysql.connector.Error as e:
+            print(f"Error fetching users: {e}")
+        finally:
+            if conn:
+                conn.close()
+    
+    return render_template('eggmin/users.html', 
+                         users=users,
+                         active_menu='users',
+                         now=datetime.now())
+
+@app.route('/eggmin/news')
+@login_required
+def eggmin_news():
+    """News management page - Admin only"""
+    if current_user.role != 'admin':
+        flash('Hanya Admin yang dapat mengakses halaman berita.', 'error')
+        return redirect(url_for('comprof_beranda'))
+    
+    # Get all news from database
+    conn = get_db_connection()
+    news_list = []
+    
+    if conn:
+        try:
+            cur = conn.cursor(dictionary=True)
+            cur.execute("SELECT * FROM news ORDER BY created_at DESC")
+            news_list = cur.fetchall()
+            cur.close()
+        except mysql.connector.Error as e:
+            print(f"Error fetching news: {e}")
+        finally:
+            if conn:
+                conn.close()
+    
+    return render_template('eggmin/news.html', 
+                         news_list=news_list,
+                         active_menu='news',
+                         now=datetime.now())
+
+@app.route('/eggmin/products')
+@login_required
+def eggmin_products():
+    """Product management page - Admin only"""
+    if current_user.role != 'admin':
+        flash('Hanya Admin yang dapat mengakses halaman produk.', 'error')
+        return redirect(url_for('comprof_beranda'))
+    
+    # Get all products with user info
+    conn = get_db_connection()
+    products = []
+    
+    if conn:
+        try:
+            cur = conn.cursor(dictionary=True)
+            cur.execute('''
+                SELECT p.*, u.name as seller_name, u.email as seller_email
+                FROM products p 
+                LEFT JOIN users u ON p.user_id = u.id
+                ORDER BY p.created_at DESC
+            ''')
+            products = cur.fetchall()
+            cur.close()
+        except mysql.connector.Error as e:
+            print(f"Error fetching products: {e}")
+        finally:
+            if conn:
+                conn.close()
+    
+    return render_template('eggmin/products.html', 
+                         products=products,
+                         active_menu='products',
+                         now=datetime.now())
+
+@app.route('/eggmin/chats')
+@login_required
+def eggmin_chats():
+    """Chat management page - Admin only"""
+    if current_user.role != 'admin':
+        flash('Hanya Admin yang dapat mengakses halaman chat.', 'error')
+        return redirect(url_for('comprof_beranda'))
+    
+    # Get all chat messages with user info
+    conn = get_db_connection()
+    chat_messages = []
+    
+    if conn:
+        try:
+            cur = conn.cursor(dictionary=True)
+            cur.execute('''
+                SELECT cm.*, 
+                       COALESCE(u.name, cm.guest_name) as sender_name,
+                       COALESCE(u.email, cm.guest_email) as sender_email,
+                       COALESCE(u.role, 'guest') as sender_role
+                FROM chat_messages cm
+                LEFT JOIN users u ON cm.user_id = u.id
+                ORDER BY cm.created_at DESC
+                LIMIT 100
+            ''')
+            chat_messages = cur.fetchall()
+            cur.close()
+        except mysql.connector.Error as e:
+            print(f"Error fetching chat messages: {e}")
+        finally:
+            if conn:
+                conn.close()
+    
+    return render_template('eggmin/chats.html', 
+                         chat_messages=chat_messages,
+                         active_menu='chats',
+                         now=datetime.now())
 
 # Initialize database when app starts
 with app.app_context():
