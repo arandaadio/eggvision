@@ -17,10 +17,6 @@
         position: relative;
     }
     
-    /* .hero-overlay {
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.671) 60%, rgba(0,0,0,1) 100%);
-    } */
-
     /* Default (Light Mode) Overlay */
     .hero-overlay {
         background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 10%, rgba(255, 255, 255, 1) 100%);
@@ -68,6 +64,31 @@
     body {
         scroll-padding-top: 96px;
     }
+
+    /* Consistent accent color for both modes */
+    .accent-color {
+        color: #FFD700; /* premium-gold */
+    }
+    
+    .accent-bg {
+        background-color: #FFD700; /* premium-gold */
+    }
+    
+    .accent-border {
+        border-color: #FFD700; /* premium-gold */
+    }
+    
+    .accent-hover:hover {
+        background-color: #E6C200; /* slightly darker gold */
+    }
+    
+    .text-accent {
+        color: #FFD700;
+    }
+    
+    .border-accent {
+        border-color: #FFD700;
+    }
 </style>
 {% endblock %}
 
@@ -99,7 +120,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             <!-- EggMart Card -->
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggMart Platform" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
@@ -108,7 +129,7 @@
                     Marketplace eksklusif untuk jual beli telur berkualitas yang telah terverifikasi oleh sistem grading EggVision. Hubungkan peternak langsung ke konsumen.
                 </p>
                 <a href="{{ url_for('comprof_layanan') }}" 
-                   class="mt-auto text-center bg-amber-600 hover:bg-amber-700 dark:bg-premium-gold dark:hover:bg-yellow-300 text-white dark:text-primary-black font-bold py-3 px-6 rounded-full transition duration-300 mb-6">
+                   class="mt-auto text-center bg-premium-gold hover:bg-yellow-300 text-primary-black font-bold py-3 px-6 rounded-full transition duration-300 mb-6">
                    Pelajari EggMart Lebih Lanjut
                 </a>
                 <a href="{{ url_for('eggmart') }}"
@@ -118,7 +139,7 @@
             </div>
             
             <!-- EggVision Machine Card -->
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggVision Grading Machine" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
@@ -127,13 +148,13 @@
                     Mesin grading telur otomatis kami menggunakan AI canggih untuk menyortir, mendeteksi retak, dan mengukur kualitas telur dengan akurasi dan kecepatan tinggi.
                 </p>
                 <a href="{{ url_for('comprof_produk') }}" 
-                   class="mt-auto text-center bg-amber-600 hover:bg-amber-700 dark:bg-premium-gold dark:hover:bg-yellow-300 text-white dark:text-primary-black font-bold py-3 px-6 rounded-full transition duration-300">
+                   class="mt-auto text-center bg-premium-gold hover:bg-yellow-300 text-primary-black font-bold py-3 px-6 rounded-full transition duration-300">
                    Pelajari Lebih Lanjut
                 </a>
             </div>
             
             <!-- EggMonitor Card -->
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-amber-600 dark:hover:border-premium-gold transition-all duration-300">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggMonitor Dashboard" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
@@ -142,7 +163,7 @@
                     Dashboard pemantauan real-time untuk pemilik bisnis. Lacak produktivitas mesin, kualitas hasil panen, dan inventaris dari mana saja, kapan saja.
                 </p>
                 <a href="{{ url_for('comprof_layanan') }}" 
-                   class="mt-auto text-center bg-amber-600 hover:bg-amber-700 dark:bg-premium-gold dark:hover:bg-yellow-300 text-white dark:text-primary-black font-bold py-3 px-6 rounded-full transition duration-300 mb-6">
+                   class="mt-auto text-center bg-premium-gold hover:bg-yellow-300 text-primary-black font-bold py-3 px-6 rounded-full transition duration-300 mb-6">
                    Pelajari Lebih Lanjut
                 </a>
                 <a href="{{ url_for('eggmonitor') }}"
@@ -167,7 +188,7 @@
             <a href="{{ url_for('comprof_berita') }}" class="group block border-b border-gray-300 dark:border-gray-800 pb-8 transition-all duration-300 hover:opacity-80">
                 <div class="flex flex-col md:flex-row items-start gap-6">
                     <div class="flex-grow">
-                        <h3 class="text-2xl font-semibold mb-2 text-gray-800 dark:text-pure-white group-hover:text-amber-600 dark:group-hover:text-premium-gold transition-colors">{{ news_item.title }}</h3>
+                        <h3 class="text-2xl font-semibold mb-2 text-gray-800 dark:text-pure-white group-hover:text-premium-gold transition-colors">{{ news_item.title }}</h3>
                         <p class="text-gray-600 dark:text-gray-400 mb-4 text-sm">{{ news_item.published_at.strftime('%d %b %Y') if news_item.published_at else 'Coming Soon' }} | Berita</p>
                         <p class="text-gray-700 dark:text-gray-300">
                             {{ news_item.content[:150] }}...
@@ -196,7 +217,7 @@
         </div>
         <div class="text-center mt-12">
             <a href="{{ url_for('comprof_berita') }}" 
-               class="font-sans inline-block border border-amber-600 dark:border-premium-gold text-amber-600 dark:text-premium-gold font-bold py-3 px-10 rounded-full text-lg hover:bg-amber-600 hover:text-white dark:hover:bg-premium-gold dark:hover:text-primary-black transition duration-300">
+               class="font-sans inline-block bg-premium-gold text-primary-black font-bold py-3 px-10 rounded-full text-lg hover:bg-transparent hover:text-premium-gold border border-transparent hover:border-premium-gold transition duration-300">
                 Lihat Semua Berita
             </a>
         </div>
@@ -217,22 +238,22 @@
                     <img src="{{ url_for('static', filename='img/fulan.jpg') }}" alt="Budi Santoso - Peternakan Maju Jaya" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
                 <div class="text-left">
-                    <blockquote class="text-xl italic text-gray-700 dark:text-gray-300 border-l-4 border-amber-600 dark:border-premium-gold pl-6 mb-6">
+                    <blockquote class="text-xl italic text-gray-700 dark:text-gray-300 border-l-4 border-premium-gold pl-6 mb-6">
                         "Sejak pakai EggMonitor, saya bisa pantau peternakan saya dari rumah. Efisiensi operasional naik pesat dan kebocoran produksi bisa ditekan."
                     </blockquote>
                     <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Pak Fulan</p>
-                    <p class="text-amber-600 dark:text-premium-gold">Pemilik, Peternakan Maju Jaya</p>
+                    <p class="text-premium-gold">Pemilik, Peternakan Maju Jaya</p>
                 </div>
             </div>
             
             <!-- Testimonial 2 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div class="text-left">
-                    <blockquote class="text-xl italic text-gray-700 dark:text-gray-300 border-l-4 border-amber-600 dark:border-premium-gold pl-6 mb-6">
+                    <blockquote class="text-xl italic text-gray-700 dark:text-gray-300 border-l-4 border-premium-gold pl-6 mb-6">
                         "Sebagai pembeli di EggMart, saya selalu dapat telur dengan kualitas terjamin. Sistem grading-nya benar-benar transparan dan terpercaya."
                     </blockquote>
                     <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Bu Fulana</p>
-                    <p class="text-amber-600 dark:text-premium-gold">Pemilik, Katering Sehat</p>
+                    <p class="text-premium-gold">Pemilik, Katering Sehat</p>
                 </div>
                 <div class="w-full h-80 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/fulana.jpg') }}" alt="Sari Farm - Katering Sehat" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
@@ -253,7 +274,7 @@
             Hubungi tim kami untuk mendapatkan demo gratis dan konsultasi tentang bagaimana EggVision dapat membantu meningkatkan efisiensi dan profitabilitas peternakan Anda.
         </p>
         <a href="{{ url_for('comprof_tentang_kami') }}#kontak" 
-           class="font-sans inline-block bg-amber-600 hover:bg-amber-700 dark:bg-premium-gold dark:hover:bg-yellow-300 text-white dark:text-primary-black font-bold py-4 px-12 rounded-full text-lg transition duration-300 hover-grow">
+           class="font-sans inline-block bg-premium-gold hover:bg-yellow-300 text-primary-black font-bold py-4 px-12 rounded-full text-lg transition duration-300 hover-grow">
             Hubungi Kami Sekarang
         </a>
     </div>
