@@ -2,12 +2,12 @@
 /* Palet utama */
 :root {
   /* Latar & tipografi */
-  --background: #0a0a0a;     /* hitam */
-  --card: #1a1a1a;           /* abu gelap untuk card */
-  --secondary: #131313;      /* abu sangat gelap (header tabel / surface sekunder) */
-  --border: #2a2a2a;         /* garis pembatas */
+  --background: #000000;
+  --card: linear-gradient(90deg, rgba(47,47,47,0.74) 0%, rgba(47,47,47,0.71) 100%);
+  --secondary: linear-gradient(90deg, rgba(47,47,47,0.74) 0%, rgba(47,47,47,0.71) 100%);
+  --border: #2f2f2f;         /* garis pembatas */
   --foreground: #ffffff;     /* teks utama putih */
-  --muted: #a3a3a3;          /* teks sekunder/teredam */
+  --muted: #ffffff;          /* teks sekunder/teredam */
 
   /* Aksen */
   --primary: #60a5fa;        /* biru cerah (boleh ganti sesuai brand) */
@@ -16,7 +16,7 @@
   --destructive: #ef4444;    /* merah */
 
   /* Sidebar */
-  --sidebar-bg: #000000;
+  --sidebar-bg: #1A1A1A;
   --sidebar-foreground: #9ca3af;          /* abu terang untuk teks menu */
   --sidebar-accent: #1f1f1f;              /* bg aktif/hover */
   --sidebar-accent-foreground: #ffffff;   /* teks menu aktif */
@@ -25,8 +25,8 @@
 
 /* Mapping utilitas “custom class” */
 .bg-background { background-color: var(--background); }
-.bg-card { background-color: var(--card); }
-.bg-secondary { background-color: var(--secondary); }
+.bg-card { background: var(--card); }
+.bg-secondary { background: var(--secondary); }
 .bg-muted { background-color: #27272a; } /* untuk avatar placeholder dsb */
 
 .text-foreground { color: var(--foreground); }
