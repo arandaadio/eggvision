@@ -308,16 +308,14 @@
 
                 <!-- Mobile Layout -->
                 <div class="lg:hidden space-y-8">
-                    <!-- Mobile Main Navigation with inline submenus -->
                     <div class="space-y-2">
-                        <!-- Beranda Mobile -->
                         <div>
                             <button 
                                 @click="activeMenu = (activeMenu === 'beranda' ? '' : 'beranda')" 
                                 :class="activeMenu === 'beranda' ? 'text-pure-white relative' : 'text-gray-400'"
-                                class="font-title text-3xl sm:text-4xl hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
                             >
-                                <span>Beranda</span>
+                                <span class="font-canela text-3xl sm:text-4xl">Beranda</span>
                                 <svg :class="activeMenu === 'beranda' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
@@ -349,14 +347,13 @@
                             </div>
                         </div>
 
-                        <!-- Berita Mobile -->
                         <div>
                             <button 
                                 @click="activeMenu = (activeMenu === 'berita' ? '' : 'berita')" 
                                 :class="activeMenu === 'berita' ? 'text-pure-white relative' : 'text-gray-400'"
-                                class="font-title text-3xl sm:text-4xl hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
                             >
-                                <span>Berita</span>
+                                <span class="font-canela text-3xl sm:text-4xl">Berita</span>
                                 <svg :class="activeMenu === 'berita' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
@@ -388,15 +385,13 @@
                             </div>
                         </div>
 
-                        <!-- Other mobile menu items with same structure... -->
-                        <!-- Layanan Mobile -->
                         <div>
                             <button 
                                 @click="activeMenu = (activeMenu === 'layanan' ? '' : 'layanan')" 
                                 :class="activeMenu === 'layanan' ? 'text-pure-white relative' : 'text-gray-400'"
-                                class="font-title text-3xl sm:text-4xl hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
                             >
-                                <span>Layanan</span>
+                                <span class="font-canela text-3xl sm:text-4xl">Layanan</span>
                                 <svg :class="activeMenu === 'layanan' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
@@ -421,14 +416,13 @@
                             </div>
                         </div>
 
-                        <!-- Produk Mobile -->
                         <div>
                             <button 
                                 @click="activeMenu = (activeMenu === 'produk' ? '' : 'produk')" 
                                 :class="activeMenu === 'produk' ? 'text-pure-white relative' : 'text-gray-400'"
-                                class="font-title text-3xl sm:text-4xl hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
                             >
-                                <span>Produk</span>
+                                <span class="font-canela text-3xl sm:text-4xl">Produk</span>
                                 <svg :class="activeMenu === 'produk' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
@@ -446,14 +440,13 @@
                             </div>
                         </div>
 
-                        <!-- Tentang Kami Mobile -->
                         <div>
                             <button 
                                 @click="activeMenu = (activeMenu === 'tentang_kami' ? '' : 'tentang_kami')" 
                                 :class="activeMenu === 'tentang_kami' ? 'text-pure-white relative' : 'text-gray-400'"
-                                class="font-title text-3xl sm:text-4xl hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
                             >
-                                <span>Tentang Kami</span>
+                                <span class="font-canela text-3xl sm:text-4xl">Tentang Kami</span>
                                 <svg :class="activeMenu === 'tentang_kami' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
@@ -486,7 +479,6 @@
                         </div>
                     </div>
 
-                    <!-- Mobile Auth Links -->
                     {% if current_user.is_authenticated %}
                     <div class="pt-6 border-t border-gray-700">
                         <div class="space-y-3">
@@ -503,7 +495,6 @@
                     </div>
                     {% endif %}
                 </div>
-            </div>
 
             <!-- Quick Links Footer -->
             <div class="border-t border-dark-gray mt-8 sm:mt-12 lg:mt-16 py-4 sm:py-6 font-sans px-2 sm:px-4 lg:px-8">
