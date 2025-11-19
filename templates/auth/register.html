@@ -44,7 +44,7 @@
             <!-- Register Form -->
             <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div class="bg-dark-gray py-8 px-6 shadow border border-gray-800 rounded-lg sm:px-10">
-                    <form class="space-y-6" action="{{ url_for('auth_register') }}" method="POST">
+                    <form class="space-y-6" action="{{ url_for('auth_controller.auth_register') }}" method="POST">
                         <!-- Name -->
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-300 mb-2">
@@ -135,7 +135,7 @@
                         </div>
 
                         <div class="mt-4 text-center">
-                            <a href="{{ url_for('auth_login') }}" class="text-premium-gold hover:text-yellow-500 transition duration-200 font-medium">
+                            <a href="{{ url_for('auth_controller.auth_login') }}" class="text-premium-gold hover:text-yellow-500 transition duration-200 font-medium">
                                 Masuk ke akun Anda
                             </a>
                         </div>
@@ -143,7 +143,7 @@
 
                     <!-- Back to Home -->
                     <div class="mt-6 text-center">
-                        <a href="{{ url_for('comprof_beranda') }}" class="text-gray-400 hover:text-white transition duration-200 text-sm">
+                        <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="text-gray-400 hover:text-white transition duration-200 text-sm">
                             ← Kembali ke beranda
                         </a>
                     </div>

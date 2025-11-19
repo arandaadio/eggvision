@@ -1,0 +1,383 @@
+{% extends "comprof/base.html" %}
+
+{% block title %}Tentang Kami - EggVision{% endblock %}
+
+{% block head %}
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .hero-bg {
+        background-image: url("{{ url_for('static', filename='img/about-hero.jpg') }}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: relative;
+    }
+    
+    .hero-overlay {
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 1) 100%);
+    }
+
+    .dark .hero-overlay {
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 40%, rgba(0, 0, 0, 1) 100%);
+    }
+    
+    .hero-section {
+        margin-top: 0 !important;
+        min-height: 90vh;
+    }
+
+    .transparent-nav {
+        background: transparent !important;
+        border-bottom-color: transparent !important;
+        backdrop-filter: none;
+    }
+
+    .solid-nav {
+        background: #000000 !important;
+        border-bottom-color: #1a1a1a !important;
+        backdrop-filter: blur(10px);
+    }
+
+    .section-anchor {
+        scroll-margin-top: 120px;
+    }
+
+    .team-card {
+        transition: transform 0.3s ease;
+    }
+
+    .team-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .value-item {
+        transition: all 0.3s ease;
+    }
+
+    .value-item:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section relative flex items-center justify-center text-center text-pure-white overflow-hidden hero-bg">
+    <div class="hero-overlay absolute inset-0 z-0"></div>
+
+    <div class="relative z-10 p-6 max-w-6xl mx-auto">
+        <h1 class="font-title text-6xl md:text-8xl font-bold mb-6 text-gray-900 dark:text-pure-white">
+            Tentang Kami
+        </h1>
+        <p class="font-sans text-xl md:text-2xl max-w-2xl mx-auto mb-8 text-gray-700 dark:text-gray-300">
+            Mengenal lebih dekat visi, misi, dan tim di balik revolusi industri peternakan telur Indonesia.
+        </p>
+    </div>
+</section>
+
+<!-- Profil Perusahaan Section -->
+<section id="profil" class="section-anchor py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
+    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div>
+                <h2 class="font-title text-5xl font-bold mb-6 text-gray-800 dark:text-pure-white">
+                    Profil Perusahaan
+                </h2>
+                <p class="font-sans text-lg text-gray-700 dark:text-gray-300 mb-8">
+                    EggVision didirikan dengan misi tunggal: merevolusi industri peternakan telur Indonesia 
+                    melalui teknologi otomatisasi dan kecerdasan buatan. Kami percaya bahwa inovasi teknologi 
+                    dapat membawa transformasi signifikan dalam efisiensi, kualitas, dan keberlanjutan.
+                </p>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="font-sans text-2xl font-semibold mb-3 text-premium-gold">Visi Kami</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Menjadi platform terdepan dalam transformasi digital industri peternakan telur Indonesia, 
+                            meningkatkan efisiensi, kualitas, dan profitabilitas bagi seluruh pelaku industri.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-sans text-2xl font-semibold mb-3 text-premium-gold">Misi Kami</h3>
+                        <ul class="text-gray-600 dark:text-gray-400 space-y-2">
+                            <li>• Menyediakan solusi grading telur otomatis yang akurat dan terjangkau</li>
+                            <li>• Membangun ekosistem yang menghubungkan peternak langsung dengan konsumen</li>
+                            <li>• Meningkatkan standar kualitas telur sesuai SNI 3926:2023</li>
+                            <li>• Memberdayakan peternak dengan teknologi dan akses pasar yang lebih baik</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="relative">
+                <div class="w-full h-96 rounded-2xl overflow-hidden bg-gray-100 dark:bg-dark-gray">
+                    <img src="{{ url_for('static', filename='img/company-office.jpg') }}" alt="EggVision Office" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Nilai-nilai Perusahaan -->
+<section class="py-24 bg-gray-100 dark:bg-dark-gray text-gray-900 dark:text-pure-white">
+    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+        <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
+            Nilai-nilai Kami
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="value-item bg-white dark:bg-primary-black p-8 rounded-lg text-center border border-gray-200 dark:border-gray-800">
+                <div class="w-16 h-16 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-2xl">💡</span>
+                </div>
+                <h3 class="font-sans text-xl font-semibold mb-4 text-gray-800 dark:text-pure-white">Inovasi</h3>
+                <p class="text-gray-600 dark:text-gray-400">Terus mendorong batas teknologi untuk solusi yang lebih baik</p>
+            </div>
+            
+            <div class="value-item bg-white dark:bg-primary-black p-8 rounded-lg text-center border border-gray-200 dark:border-gray-800">
+                <div class="w-16 h-16 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-2xl">🤝</span>
+                </div>
+                <h3 class="font-sans text-xl font-semibold mb-4 text-gray-800 dark:text-pure-white">Kolaborasi</h3>
+                <p class="text-gray-600 dark:text-gray-400">Bekerja sama dengan seluruh stakeholder untuk kesuksesan bersama</p>
+            </div>
+            
+            <div class="value-item bg-white dark:bg-primary-black p-8 rounded-lg text-center border border-gray-200 dark:border-gray-800">
+                <div class="w-16 h-16 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-2xl">🎯</span>
+                </div>
+                <h3 class="font-sans text-xl font-semibold mb-4 text-gray-800 dark:text-pure-white">Kualitas</h3>
+                <p class="text-gray-600 dark:text-gray-400">Tidak pernah berkompromi dengan standar kualitas tertinggi</p>
+            </div>
+            
+            <div class="value-item bg-white dark:bg-primary-black p-8 rounded-lg text-center border border-gray-200 dark:border-gray-800">
+                <div class="w-16 h-16 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-2xl">🌱</span>
+                </div>
+                <h3 class="font-sans text-xl font-semibold mb-4 text-gray-800 dark:text-pure-white">Keberlanjutan</h3>
+                <p class="text-gray-600 dark:text-gray-400">Berkomitmen pada praktik bisnis yang berkelanjutan dan bertanggung jawab</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tim Kami Section -->
+<section id="tim" class="section-anchor py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
+    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+        <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
+            Tim Kami
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:grid-cols-4">
+
+            <!-- Team Member 1 -->
+            <div class="team-card bg-gray-50 dark:bg-dark-gray rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
+                <div class="h-64 overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/team-ceo.jpg') }}" 
+                         alt="CEO" 
+                         class="w-full h-full object-cover"
+                         onerror="this.src='https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=1000&q=80'">
+                </div>
+                <div class="p-6">
+                    <h3 class="font-sans text-xl font-semibold mb-1">Dio Aranda</h3>
+                    <p class="text-premium-gold font-semibold mb-3">Project Manager</p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                        Mengelola alur kerja tim, mengatur timeline proyek, serta berfokus pada pengembangan dan pengawasan bagian Machine Learning untuk memastikan model berjalan optimal.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Team Member 2 -->
+            <div class="team-card bg-gray-50 dark:bg-dark-gray rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
+                <div class="h-64 overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/team-cto.jpg') }}" 
+                         alt="CTO" 
+                         class="w-full h-full object-cover"
+                         onerror="this.src='https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=1000&q=80'">
+                </div>
+                <div class="p-6">
+                    <h3 class="font-sans text-xl font-semibold mb-1">Sarah Aninditya </h3>
+                    <p class="text-premium-gold font-semibold mb-3">Fullstack Developer</p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                        Bertanggung jawab pada pengembangan backend dan frontend sistem, serta menyusun dokumentasi proyek agar proses pengembangan berjalan terstruktur dan mudah dipahami.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Team Member 3 -->
+            <div class="team-card bg-gray-50 dark:bg-dark-gray rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
+                <div class="h-64 overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/team-cmo.jpg') }}" 
+                         alt="CMO" 
+                         class="w-full h-full object-cover"
+                         onerror="this.src='https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1000&q=80'">
+                </div>
+                <div class="p-6">
+                    <h3 class="font-sans text-xl font-semibold mb-1">Fauzi Luqman Noor I.</h3>
+                    <p class="text-premium-gold font-semibold mb-3">Machine Learning Engineer</p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                        Spesialis branding dan market expansion dengan rekam jejak global.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Team Member 4 -->
+            <div class="team-card bg-gray-50 dark:bg-dark-gray rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
+                <div class="h-64 overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/team-coo.jpg') }}" 
+                         alt="COO" 
+                         class="w-full h-full object-cover"
+                         onerror="this.src='https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=1000&q=80'">
+                </div>
+                <div class="p-6">
+                    <h3 class="font-sans text-xl font-semibold mb-1">M. Dzaky Az-Zshahir</h3>
+                    <p class="text-premium-gold font-semibold mb-3">Prototype Designer</p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                        Merancang dan mengembangkan desain prototipe EggVision, memastikan rancangan alat sesuai kebutuhan teknis serta siap untuk proses implementasi.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- Hubungi Kami Section -->
+<section id="kontak" class="section-anchor py-24 bg-gray-100 dark:bg-dark-gray text-gray-900 dark:text-pure-white">
+    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+        <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
+            Hubungi Kami
+        </h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <div>
+                <h3 class="font-sans text-2xl font-semibold mb-6 text-gray-800 dark:text-pure-white">
+                    Informasi Kontak
+                </h3>
+                
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black">📍</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Alamat Kantor</h4>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Gedung Inovasi Teknologi<br>
+                                Jl. Sudirman Kav. 52-53<br>
+                                Jakarta Selatan 12190
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black">📞</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Telepon</h4>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                +62 21 2555 1234<br>
+                                +62 811 1234 567 (WhatsApp)
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black">✉️</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Email</h4>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                info@eggvision.com<br>
+                                sales@eggvision.com<br>
+                                support@eggvision.com
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black">🕒</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Jam Operasional</h4>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                Senin - Jumat: 08:00 - 17:00 WIB<br>
+                                Sabtu: 08:00 - 12:00 WIB
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="font-sans text-2xl font-semibold mb-6 text-gray-800 dark:text-pure-white">
+                    Kirim Pesan
+                </h3>
+                
+                <form class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Nama Lengkap</label>
+                            <input type="text" class="w-full px-4 py-3 bg-white dark:bg-dark-gray border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-premium-gold text-gray-900 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Email</label>
+                            <input type="email" class="w-full px-4 py-3 bg-white dark:bg-dark-gray border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-premium-gold text-gray-900 dark:text-white">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Subjek</label>
+                        <input type="text" class="w-full px-4 py-3 bg-white dark:bg-dark-gray border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-premium-gold text-gray-900 dark:text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Pesan</label>
+                        <textarea rows="5" class="w-full px-4 py-3 bg-white dark:bg-dark-gray border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-premium-gold text-gray-900 dark:text-white"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-premium-gold text-primary-black font-bold py-4 px-8 rounded-lg hover:bg-yellow-300 transition duration-300">
+                        Kirim Pesan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbar = document.getElementById('mainNav');
+        const heroSection = document.querySelector('.hero-section');
+        
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) {
+                        navbar.classList.remove('transparent-nav');
+                        navbar.classList.add('solid-nav', 'bg-primary-black', 'border-dark-gray');
+                    } else {
+                        navbar.classList.add('transparent-nav');
+                        navbar.classList.remove('solid-nav', 'bg-primary-black', 'border-dark-gray');
+                    }
+                });
+            },
+            {
+                rootMargin: '-100px 0px 0px 0px',
+                threshold: 0
+            }
+        );
+    
+        if (heroSection) {
+            observer.observe(heroSection);
+        }
+    });
+</script>
+{% endblock %}

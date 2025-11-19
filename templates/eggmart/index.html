@@ -1,111 +1,880 @@
-{% extends "eggmart/base.html" %}
+{% extends "eggmin/base.html" %}
+{% block title %}Dashboard · EggMin{% endblock %}
 
-{% block title %}EggMart - Marketplace Telur{% endblock %}
-
-{% block content %}
-<div class="max-w-7xl mx-auto px-4 py-8">
-  <!-- Header -->
-  <div class="mb-8">
-    <h1 class="text-4xl font-bold text-premium-gold font-canela mb-4">Selamat Datang di EggMart</h1>
-    <p class="text-gray-600 dark:text-gray-400 text-lg">Temukan telur berkualitas langsung dari peternak terpercaya</p>
-  </div>
-
-  <!-- Filter Section -->
-  <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-    <div class="flex flex-wrap gap-4 items-center">
-      <span class="text-gray-700 dark:text-gray-300 font-medium">Filter:</span>
-      
-      <select class="px-4 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-premium-gold">
-        <option value="">Semua Grade</option>
-        <option value="A">Grade A</option>
-        <option value="B">Grade B</option>
-        <option value="C">Grade C</option>
-      </select>
-      
-      <select class="px-4 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-premium-gold">
-        <option value="">Semua Harga</option>
-        <option value="low">Termurah</option>
-        <option value="high">Termahal</option>
-      </select>
-      
-      <button class="px-4 py-2 bg-premium-gold text-primary-black rounded-lg hover:bg-yellow-500 font-medium">
-        Terapkan Filter
-      </button>
-    </div>
-  </div>
-
-  <!-- Products Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-    {% for product in products %}
-    <div class="bg-white dark:bg-dark-gray rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
-      <!-- Product Image -->
-      <div class="h-48 bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-        {% if product.image_url %}
-        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="h-full w-full object-cover">
-        {% else %}
-        <div class="text-6xl">🥚</div>
-        {% endif %}
+{% block body %}
+<div class="min-h-screen bg-background">
+  <!-- Sidebar -->
+  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <!-- Logo -->
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-premium-gold flex items-center justify-center">
+          <div class="text-primary-black font-bold text-xs">EM</div>
+        </div>
+        <span class="text-premium-gold text-sm font-semibold">EGGMIN</span>
       </div>
-      
-      <!-- Product Info -->
-      <div class="p-4">
-        <!-- Grade Badge -->
-        <div class="flex justify-between items-start mb-2">
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-            {% if product.grade == 'A' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
-            {% elif product.grade == 'B' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
-            {% else %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300{% endif %}">
-            Grade {{ product.grade }}
-          </span>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Stok: {{ product.stock }}</span>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 py-4">
+      {% set menu = [
+         {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
+        {"id":"catalog","icon":"egg","label":"Catalog","href":url_for('eggmart_controller.eggmart')},
+        ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <!-- Profile -->
+    <div class="p-4 border-t border-sidebar-border">
+      <div class="w-full flex flex-col items-center gap-2 text-sidebar-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+            alt="Profile"
+            class="w-full h-full object-cover" />
         </div>
-        
-        <h3 class="font-semibold text-gray-900 dark:text-white mb-2 font-canela">{{ product.name }}</h3>
-        <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">{{ product.description }}</p>
-        
-        <!-- Seller Info -->
-        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
-          <i data-lucide="store" class="w-4 h-4 mr-1"></i>
-          {{ product.seller_name }}
-        </div>
-        
-        <!-- Price & Action -->
-        <div class="flex items-center justify-between">
-          <div>
-            <span class="text-2xl font-bold text-premium-gold font-canela">Rp{{ "{:,.0f}".format(product.price) }}</span>
-            <span class="text-sm text-gray-500 dark:text-gray-400 block">/kg</span>
+        <span class="text-xs">Admin</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-4xl font-bold mb-1">Admin Dashboard</h1>
+        <p class="text-muted-foreground">Overview Sistem EggVision</p>
+      </div>
+
+      <div class="flex items-center gap-8">
+        <!-- User Info -->
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
+            <img
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+              alt="Admin"
+              class="w-full h-full object-cover" />
           </div>
-          <button class="bg-premium-gold text-primary-black px-4 py-2 rounded-lg hover:bg-yellow-500 font-medium text-sm transition-colors">
-            + Keranjang
-          </button>
+          <div>
+            <div class="text-sm font-semibold">{{ current_user.name }}</div>
+            <div class="text-xs text-muted-foreground">Administrator</div>
+          </div>
+        </div>
+
+        <!-- Date & Time -->
+        <div class="flex items-center gap-4 text-sm">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-date">{{ now.strftime('%d/%b/%Y') if now else '' }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-time">{{ now.strftime('%H:%M:%S') if now else '' }}</span>
+          </div>
         </div>
       </div>
     </div>
-    {% else %}
-    <div class="col-span-full text-center py-12">
-      <div class="text-6xl mb-4">🥚</div>
-      <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2 font-canela">Belum ada produk</h3>
-      <p class="text-gray-500 dark:text-gray-500">Produk akan segera tersedia</p>
-    </div>
-    {% endfor %}
-  </div>
 
-  <!-- Stats Section -->
-  <div class="bg-gradient-to-r from-premium-gold to-yellow-500 rounded-lg p-8 text-primary-black">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-      <div>
-        <div class="text-3xl font-bold font-canela">{{ products|length }}+</div>
-        <div class="text-sm opacity-90">Produk Tersedia</div>
-      </div>
-      <div>
-        <div class="text-3xl font-bold font-canela">100%</div>
-        <div class="text-sm opacity-90">Kualitas Terjamin</div>
-      </div>
-      <div>
-        <div class="text-3xl font-bold font-canela">24/7</div>
-        <div class="text-sm opacity-90">Layanan Customer</div>
+    <!-- ====================== SELLER DASHBOARD CONTENT ====================== -->
+    <div class="mt-8">
+      <div class="flex flex-col xl:flex-row gap-8">
+        <!-- Kiri: Dashboard Utama -->
+        <section class="flex-1 space-y-8">
+          <!-- Welcome Section -->
+          <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10 border-primary/30">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-xl font-semibold text-foreground mb-2">
+                  Selamat Datang, {{ current_user.name or 'OptikDio' }}
+                </h2>
+                <p class="text-muted-foreground">
+                  Anda baru saja login 5 menit yang lalu.
+                </p>
+              </div>
+              <div class="bg-card px-4 py-2 rounded-lg border border-border">
+                <span class="text-sm font-semibold text-primary">EggMart</span>
+              </div>
+            </div>
+
+            <!-- Weekly Activity -->
+            <div class="flex gap-2">
+              <!-- M -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-success text-success-foreground">
+                  <i data-lucide="check" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs text-muted-foreground">M</span>
+              </div>
+              <!-- T -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-muted text-muted-foreground">
+                </div>
+                <span class="text-xs text-muted-foreground">T</span>
+              </div>
+              <!-- W -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-muted text-muted-foreground">
+                </div>
+                <span class="text-xs text-muted-foreground">W</span>
+              </div>
+              <!-- T -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-success text-success-foreground">
+                  <i data-lucide="check" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs text-muted-foreground">T</span>
+              </div>
+              <!-- F -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-muted text-muted-foreground">
+                </div>
+                <span class="text-xs text-muted-foreground">F</span>
+              </div>
+              <!-- S -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-success text-success-foreground">
+                  <i data-lucide="check" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs text-muted-foreground">S</span>
+              </div>
+              <!-- S -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-success text-success-foreground">
+                  <i data-lucide="check" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs text-muted-foreground">S</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Waktu + Konten -->
+
+          <section>
+                      <!-- Kelola Listing EggMart (PENGUSAHA) -->
+          <div class="p-6 rounded-xl border bg-card">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-lg font-semibold text-foreground">Kelola Listing EggMart</h2>
+                <p class="text-xs text-muted-foreground">
+                  Stok per butir, diambil dari hasil scan dengan status <code>available</code>.
+                </p>
+              </div>
+            </div>
+
+            {# ==== FLASH MESSAGE DI SINI ==== #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-4 space-y-2">
+          {% for category, message in messages %}
+            {% set base = 'flex items-center gap-2 px-3 py-2 rounded-md border text-xs' %}
+            {% if category == 'success' %}
+              {% set cls = base + ' border-success/40 bg-success/10 text-success' %}
+            {% elif category == 'error' %}
+              {% set cls = base + ' border-destructive/40 bg-destructive/10 text-destructive' %}
+            {% else %}
+              {% set cls = base + ' border-info/40 bg-info/10 text-info' %}
+            {% endif %}
+            <div class="{{ cls }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+            {% if available_by_grade %}
+              <div class="mb-4 text-xs text-muted-foreground">
+                Telur siap dijual (belum di-list):
+                {% for g, qty in available_by_grade.items() %}
+                  <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 border mr-2">
+                    Grade {{ g }}: {{ qty }} butir
+                  </span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="mb-4 text-xs text-muted-foreground">
+                Belum ada telur dengan status <code>available</code> dari hasil scan.
+              </p>
+            {% endif %}
+
+            <!-- FORM SET HARGA & STOK -->
+            <form action="{{ url_for('eggmart_controller.save_listing') }}" method="POST"
+                  class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
+              <div>
+                <label class="block text-xs mb-1">Grade</label>
+                <select name="grade"
+                        class="w-full text-sm px-3 py-2 rounded-md border bg-background">
+                  {% for g in ['A','B','C'] %}
+                    <option value="{{ g }}">Grade {{ g }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs mb-1">Harga per butir (Rp)</label>
+                <input type="number" name="price" required
+                       class="w-full text-sm px-3 py-2 rounded-md border bg-background"
+                       placeholder="cth: 1500">
+              </div>
+
+              <div>
+                <label class="block text-xs mb-1">Stok (butir)</label>
+                <input type="number" name="stock" min="1" required
+                       class="w-full text-sm px-3 py-2 rounded-md border bg-background"
+                       placeholder="cth: 30">
+              </div>
+
+              <div class="flex gap-2">
+                <button type="submit"
+                        class="flex-1 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-3 py-2 text-sm font-medium hover:bg-primary/90">
+                  Simpan Listing
+                </button>
+              </div>
+            </form>
+
+            <!-- TABEL LISTING AKTIF -->
+            <h3 class="text-sm font-semibold mb-2">Listing Aktif</h3>
+            <div class="border border-border rounded-lg overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-muted">
+                  <tr>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Grade</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Harga/Butir</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Stok (butir)</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if listings %}
+                    {% for l in listings %}
+                    <tr class="border-t border-border">
+                      <td class="px-3 py-2">Grade {{ l.grade }}</td>
+                      <td class="px-3 py-2">
+                        Rp {{ "{:,.0f}".format(l.price) }}
+                      </td>
+                      <td class="px-3 py-2">{{ l.stock }}</td>
+                      <td class="px-3 py-2">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs border
+                          {{ 'bg-success/10 text-success border-success/40' if l.status == 'active' else 'bg-muted text-muted-foreground border-border' }}">
+                          {{ l.status }}
+                        </span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="4" class="px-3 py-3 text-xs text-muted-foreground">
+                        Belum ada listing aktif. Tambahkan harga & stok di form di atas.
+                      </td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          </section>
+
+          <section>
+            <!-- Tabs -->
+            <div class="inline-flex rounded-lg bg-card border border-border overflow-hidden">
+              <button
+                type="button"
+                class="egg-tab-trigger px-4 py-2 text-sm font-medium border-r border-border bg-primary text-primary-foreground"
+                data-tab-target="today">
+                Today
+              </button>
+              <button
+                type="button"
+                class="egg-tab-trigger px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+                data-tab-target="7days">
+                7 Days
+              </button>
+              <button
+                type="button"
+                class="egg-tab-trigger px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+                data-tab-target="30days">
+                30 Days
+              </button>
+              <button
+                type="button"
+                class="egg-tab-trigger px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+                data-tab-target="90days">
+                90 Days
+              </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="mt-6 space-y-6">
+              <!-- TODAY -->
+              <div class="egg-tab-content space-y-6" data-tab-content="today">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                  <!-- Card 1 -->
+                  <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20">
+                    <div class="flex items-start justify-between mb-4">
+                      <p class="text-sm text-muted-foreground font-medium">Produk Terjual</p>
+                      <i data-lucide="shopping-cart" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-end justify-between">
+                      <h3 class="text-3xl font-bold text-foreground">1.2rb</h3>
+                      <span class="text-xs font-semibold text-success">↑ 8%</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 2 -->
+                  <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20">
+                    <div class="flex items-start justify-between mb-4">
+                      <p class="text-sm text-muted-foreground font-medium">Produk Dilihat</p>
+                      <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-end justify-between">
+                      <h3 class="text-3xl font-bold text-foreground">512</h3>
+                      <span class="text-xs font-semibold text-success">↑ 6%</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 3 -->
+                  <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20">
+                    <div class="flex items-start justify-between mb-4">
+                      <p class="text-sm text-muted-foreground font-medium">Performa Chat</p>
+                      <i data-lucide="package" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-end justify-between">
+                      <h3 class="text-3xl font-bold text-foreground">94%</h3>
+                      <span class="text-xs font-semibold text-success">↑ 5%</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 4 -->
+                  <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20">
+                    <div class="flex items-start justify-between mb-4">
+                      <p class="text-sm text-muted-foreground font-medium">Penilaian Toko</p>
+                      <i data-lucide="star" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-end justify-between">
+                      <h3 class="text-3xl font-bold text-foreground">4.9</h3>
+                      <span class="text-xs font-semibold text-muted-foreground">2788 penilaian</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <!-- Sales Chart -->
+                  <div class="p-6 rounded-xl border bg-card">
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Penjualan 7 Hari</h3>
+                    <div class="h-52">
+                      <canvas id="salesChart"></canvas>
+                    </div>
+                  </div>
+
+                  <!-- Kategori Terlaris -->
+                  <div class="p-6 rounded-xl border bg-card">
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Kategori Terlaris</h3>
+                    <div class="space-y-4">
+                      <!-- Item 1 -->
+                      <div>
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="text-sm text-foreground">Telur Ayam Kampung</span>
+                          <span class="text-sm font-semibold text-foreground">45%</span>
+                        </div>
+                        <div class="h-2 bg-muted rounded-full overflow-hidden">
+                          <div class="h-full bg-chart-1 rounded-full" style="width: 45%;"></div>
+                        </div>
+                      </div>
+                      <!-- Item 2 -->
+                      <div>
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="text-sm text-foreground">Telur Ayam Negeri</span>
+                          <span class="text-sm font-semibold text-foreground">30%</span>
+                        </div>
+                        <div class="h-2 bg-muted rounded-full overflow-hidden">
+                          <div class="h-full bg-chart-2 rounded-full" style="width: 30%;"></div>
+                        </div>
+                      </div>
+                      <!-- Item 3 -->
+                      <div>
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="text-sm text-foreground">Telur Bebek</span>
+                          <span class="text-sm font-semibold text-foreground">15%</span>
+                        </div>
+                        <div class="h-2 bg-muted rounded-full overflow-hidden">
+                          <div class="h-full bg-chart-3 rounded-full" style="width: 15%;"></div>
+                        </div>
+                      </div>
+                      <!-- Item 4 -->
+                      <div>
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="text-sm text-foreground">Telur Puyuh</span>
+                          <span class="text-sm font-semibold text-foreground">10%</span>
+                        </div>
+                        <div class="h-2 bg-muted rounded-full overflow-hidden">
+                          <div class="h-full bg-chart-4 rounded-full" style="width: 10%;"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Transaksi Terbaru -->
+                <div class="p-6 rounded-xl border bg-card">
+                  <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-foreground">Transaksi Terbaru</h3>
+                    <button type="button" class="text-sm text-primary hover:underline">
+                      Lihat Semua
+                    </button>
+                  </div>
+
+                  <div class="space-y-4">
+                    <!-- TRX 1 -->
+                    <div class="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border hover:border-primary/50 transition-colors">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                          <p class="font-semibold text-foreground">Ahmad Wijaya</p>
+                          <span class="inline-flex items-center rounded-full border bg-success/20 text-success border-success/40 px-2 py-0.5 text-xs font-medium">
+                            success
+                          </span>
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-1">
+                          TRX001 • 50 butir telur
+                        </p>
+                      </div>
+                      <div class="text-right">
+                        <p class="font-bold text-foreground">Rp 125.000</p>
+                        <p class="text-xs text-muted-foreground">2024-01-15</p>
+                      </div>
+                    </div>
+
+                    <!-- TRX 2 -->
+                    <div class="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border hover:border-primary/50 transition-colors">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                          <p class="font-semibold text-foreground">Siti Nurhaliza</p>
+                          <span class="inline-flex items-center rounded-full border bg-chart-2/20 text-chart-2 border-chart-2/40 px-2 py-0.5 text-xs font-medium">
+                            pending
+                          </span>
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-1">
+                          TRX002 • 100 butir telur
+                        </p>
+                      </div>
+                      <div class="text-right">
+                        <p class="font-bold text-foreground">Rp 250.000</p>
+                        <p class="text-xs text-muted-foreground">2024-01-15</p>
+                      </div>
+                    </div>
+
+                    <!-- TRX 3 -->
+                    <div class="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border hover:border-primary/50 transition-colors">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                          <p class="font-semibold text-foreground">Budi Santoso</p>
+                          <span class="inline-flex items-center rounded-full border bg-success/20 text-success border-success/40 px-2 py-0.5 text-xs font-medium">
+                            success
+                          </span>
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-1">
+                          TRX003 • 30 butir telur
+                        </p>
+                      </div>
+                      <div class="text-right">
+                        <p class="font-bold text-foreground">Rp 75.000</p>
+                        <p class="text-xs text-muted-foreground">2024-01-14</p>
+                      </div>
+                    </div>
+
+                    <!-- TRX 4 -->
+                    <div class="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border hover:border-primary/50 transition-colors">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                          <p class="font-semibold text-foreground">Dewi Lestari</p>
+                          <span class="inline-flex items-center rounded-full border bg-destructive/20 text-destructive border-destructive/40 px-2 py-0.5 text-xs font-medium">
+                            failed
+                          </span>
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-1">
+                          TRX004 • 72 butir telur
+                        </p>
+                      </div>
+                      <div class="text-right">
+                        <p class="font-bold text-foreground">Rp 180.000</p>
+                        <p class="text-xs text-muted-foreground">2024-01-14</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 7 DAYS -->
+              <div class="egg-tab-content hidden rounded-xl border bg-card p-6 text-sm text-muted-foreground" data-tab-content="7days">
+                Ringkasan data 7 hari akan ditambahkan di sini.
+              </div>
+
+              <!-- 30 DAYS -->
+              <div class="egg-tab-content hidden rounded-xl border bg-card p-6 text-sm text-muted-foreground" data-tab-content="30days">
+                Ringkasan data 30 hari akan ditambahkan di sini.
+              </div>
+
+              <!-- 90 DAYS -->
+              <div class="egg-tab-content hidden rounded-xl border bg-card p-6 text-sm text-muted-foreground" data-tab-content="90days">
+                Ringkasan data 90 hari akan ditambahkan di sini.
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- Kanan: Chat Section -->
+        <aside class="w-full xl:w-96">
+          <div class="h-full max-h-[600px] xl:max-h-none rounded-xl border bg-card flex flex-col">
+            <!-- LIST VIEW -->
+            <div id="chatListView" class="flex-1 flex flex-col">
+              <div class="p-4 border-b border-border">
+                <div class="flex items-center gap-2 mb-2">
+                  <i data-lucide="message-circle" class="w-5 h-5 text-primary"></i>
+                  <h3 class="font-semibold text-foreground">Chat</h3>
+                </div>
+                <p class="text-sm text-muted-foreground">
+                  3 pesan belum dibaca
+                </p>
+              </div>
+
+              <div class="flex-1 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                  <!-- Chat 1 -->
+                  <button type="button"
+                          class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                          data-chat-id="1">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-semibold">
+                      AW
+                    </div>
+                    <div class="flex-1 min-w-0 text-left">
+                      <div class="flex items-center justify-between mb-1">
+                        <p class="font-medium text-sm text-foreground truncate">
+                          Ahmad Wijaya
+                        </p>
+                        <span class="text-xs text-muted-foreground">2m</span>
+                      </div>
+                      <p class="text-xs text-muted-foreground truncate">
+                        Apakah telur masih ready?
+                      </p>
+                    </div>
+                    <span class="inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5 font-medium">
+                      2
+                    </span>
+                  </button>
+
+                  <!-- Chat 2 -->
+                  <button type="button"
+                          class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                          data-chat-id="2">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-semibold">
+                      SN
+                    </div>
+                    <div class="flex-1 min-w-0 text-left">
+                      <div class="flex items-center justify-between mb-1">
+                        <p class="font-medium text-sm text-foreground truncate">
+                          Siti Nurhaliza
+                        </p>
+                        <span class="text-xs text-muted-foreground">15m</span>
+                      </div>
+                      <p class="text-xs text-muted-foreground truncate">
+                        Terima kasih, pesanan sudah sampai
+                      </p>
+                    </div>
+                  </button>
+
+                  <!-- Chat 3 -->
+                  <button type="button"
+                          class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                          data-chat-id="3">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-semibold">
+                      BS
+                    </div>
+                    <div class="flex-1 min-w-0 text-left">
+                      <div class="flex items-center justify-between mb-1">
+                        <p class="font-medium text-sm text-foreground truncate">
+                          Budi Santoso
+                        </p>
+                        <span class="text-xs text-muted-foreground">1h</span>
+                      </div>
+                      <p class="text-xs text-muted-foreground truncate">
+                        Minimal order berapa butir?
+                      </p>
+                    </div>
+                    <span class="inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5 font-medium">
+                      1
+                    </span>
+                  </button>
+
+                  <!-- Chat 4 -->
+                  <button type="button"
+                          class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                          data-chat-id="4">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-semibold">
+                      DL
+                    </div>
+                    <div class="flex-1 min-w-0 text-left">
+                      <div class="flex items-center justify-between mb-1">
+                        <p class="font-medium text-sm text-foreground truncate">
+                          Dewi Lestari
+                        </p>
+                        <span class="text-xs text-muted-foreground">2h</span>
+                      </div>
+                      <p class="text-xs text-muted-foreground truncate">
+                        Ok siap, saya transfer sekarang
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- DETAIL VIEW -->
+            <div id="chatDetailView" class="hidden flex-1 flex-col">
+              <!-- Header -->
+              <div class="p-4 border-b border-border flex items-center gap-3">
+                <button
+                  type="button"
+                  id="backToListBtn"
+                  class="mr-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted">
+                  ←
+                </button>
+                <div
+                  id="chatDetailAvatar"
+                  class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-semibold">
+                  AW
+                </div>
+                <div>
+                  <p id="chatDetailName" class="font-semibold text-foreground">Nama Pembeli</p>
+                  <p id="chatDetailStatus" class="text-xs text-muted-foreground">Online</p>
+                </div>
+              </div>
+
+              <!-- Messages -->
+              <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- akan diisi via JS -->
+              </div>
+
+              <!-- Input -->
+              <div class="p-4 border-t border-border">
+                <form id="chatForm" class="flex gap-2">
+                  <input
+                    id="chatInput"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Ketik pesan..."
+                    class="flex-1 text-sm px-3 py-2 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary" />
+                  <button
+                    type="submit"
+                    class="inline-flex items-center justify-center rounded-md px-3 py-2 bg-primary text-primary-foreground text-sm hover:bg-primary/90">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
-  </div>
+    <!-- ====================== END SELLER DASHBOARD CONTENT ====================== -->
+
+  </main>
 </div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // ================== TAB LOGIC ==================
+    const tabTriggers = document.querySelectorAll('.egg-tab-trigger');
+    const tabContents = document.querySelectorAll('.egg-tab-content');
+
+    tabTriggers.forEach(function (trigger) {
+      trigger.addEventListener('click', function () {
+        const target = this.dataset.tabTarget;
+
+        tabTriggers.forEach(function (btn) {
+          btn.classList.remove('bg-primary', 'text-primary-foreground');
+          btn.classList.add('text-muted-foreground');
+        });
+
+        this.classList.add('bg-primary', 'text-primary-foreground');
+        this.classList.remove('text-muted-foreground');
+
+        tabContents.forEach(function (content) {
+          if (content.dataset.tabContent === target) {
+            content.classList.remove('hidden');
+          } else {
+            content.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    // ================== SALES CHART ==================
+    const salesCanvas = document.getElementById('salesChart');
+    if (salesCanvas && window.Chart) {
+      const ctx = salesCanvas.getContext('2d');
+      let primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+      if (!primary) {
+        primary = 'rgb(59,130,246)'; // fallback
+      }
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            data: [1200, 980, 1450, 1800, 1600, 2100, 1900],
+            borderColor: primary,
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0.4,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              displayColors: false,
+              padding: 8
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 12 } }
+            },
+            y: {
+              grid: { color: 'rgba(148,163,184,0.2)' },
+              ticks: { font: { size: 12 } }
+            }
+          }
+        }
+      });
+    }
+
+    // ================== CHAT LOGIC ==================
+    const chatData = {
+      '1': { name: 'Ahmad Wijaya', initials: 'AW' },
+      '2': { name: 'Siti Nurhaliza', initials: 'SN' },
+      '3': { name: 'Budi Santoso', initials: 'BS' },
+      '4': { name: 'Dewi Lestari', initials: 'DL' }
+    };
+
+    const listView = document.getElementById('chatListView');
+    const detailView = document.getElementById('chatDetailView');
+    const chatItems = document.querySelectorAll('[data-chat-id]');
+    const detailName = document.getElementById('chatDetailName');
+    const detailAvatar = document.getElementById('chatDetailAvatar');
+    const messagesContainer = document.getElementById('chatMessages');
+    const backBtn = document.getElementById('backToListBtn');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+
+    const baseMessages = [
+      { sender: 'buyer', text: 'Halo, saya mau pesan telur', time: '10:30' },
+      { sender: 'self', text: 'Halo, silakan. Mau pesan berapa?', time: '10:31' },
+      { sender: 'buyer', text: '50 butir telur kampung', time: '10:32' },
+      { sender: 'buyer', text: 'Apakah telur masih ready?', time: '10:33' }
+    ];
+
+    function renderMessages() {
+      messagesContainer.innerHTML = '';
+      baseMessages.forEach(function (msg) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex ' + (msg.sender === 'self' ? 'justify-end' : 'justify-start');
+
+        const bubble = document.createElement('div');
+        bubble.className =
+          'max-w-[70%] rounded-lg p-3 text-sm ' +
+          (msg.sender === 'self' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground');
+
+        const textEl = document.createElement('p');
+        textEl.textContent = msg.text;
+
+        const timeEl = document.createElement('p');
+        timeEl.className =
+          'text-xs mt-1 ' +
+          (msg.sender === 'self' ? 'text-primary-foreground/70' : 'text-muted-foreground');
+        timeEl.textContent = msg.time;
+
+        bubble.appendChild(textEl);
+        bubble.appendChild(timeEl);
+        wrapper.appendChild(bubble);
+        messagesContainer.appendChild(wrapper);
+      });
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    chatItems.forEach(function (item) {
+      item.addEventListener('click', function () {
+        const chatId = this.dataset.chatId;
+        const chat = chatData[chatId];
+        if (!chat) return;
+
+        detailName.textContent = chat.name;
+        detailAvatar.textContent = chat.initials;
+        renderMessages();
+
+        listView.classList.add('hidden');
+        detailView.classList.remove('hidden');
+      });
+    });
+
+    if (backBtn) {
+      backBtn.addEventListener('click', function () {
+        detailView.classList.add('hidden');
+        listView.classList.remove('hidden');
+      });
+    }
+
+    if (chatForm && chatInput && messagesContainer) {
+      chatForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const value = chatInput.value.trim();
+        if (!value) return;
+
+        const now = new Date();
+        const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex justify-end';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'max-w-[70%] rounded-lg p-3 text-sm bg-primary text-primary-foreground';
+
+        const textEl = document.createElement('p');
+        textEl.textContent = value;
+
+        const timeEl = document.createElement('p');
+        timeEl.className = 'text-xs mt-1 text-primary-foreground/70';
+        timeEl.textContent = time;
+
+        bubble.appendChild(textEl);
+        bubble.appendChild(timeEl);
+        wrapper.appendChild(bubble);
+        messagesContainer.appendChild(wrapper);
+
+        chatInput.value = '';
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      });
+    }
+  });
+</script>
 {% endblock %}

@@ -18,11 +18,11 @@
     <!-- Menu -->
     <nav class="flex-1 py-4">
       {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/"},
-        {"id":"laporan","icon":"database","label":"Laporan","href":"/laporan"},
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/eggmonitor/index"},
+        {"id":"laporan","icon":"database","label":"Laporan","href":"/eggmonitor/laporan"},
         {"id":"detail","icon":"grid-3x3","label":"Detail Alat","href":"#"},
-        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"#"},
-        {"id":"settings","icon":"settings","label":"Pengaturan","href":"/settings"}
+        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"/eggmart/dashboard"},
+        {"id":"settings","icon":"settings","label":"Pengaturan","href":"#"}
       ] %}
       {% for item in menu %}
         {% set is_active = (item.id == active_menu) %}
@@ -37,7 +37,7 @@
 
     <!-- Profile -->
     <div class="p-4 border-t border-sidebar-border">
-      <a href="{{ url_for('eggmonitor_profile') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+      <a href="{{ url_for('eggmonitor_controller.eggmonitor_profile') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
         <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
           <img
             src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
@@ -159,11 +159,12 @@
 <div class="bg-card rounded-lg p-6 border border-border" style="height: 435px;">
   <h3 class="text-lg font-semibold mb-4">Upload Gambar Telur</h3>
 
-  <form action="/upload" method="POST" enctype="multipart/form-data" class="mb-4">
+ <form action="{{ url_for('eggmonitor_controller.upload') }}" method="POST" enctype="multipart/form-data" class="mb-4">
     <input type="file" name="file" accept="image/*" required class="text-sm">
-    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md text-sm">
-      Prediksi Warna Telur
-    </button>
+   <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md text-sm">
+  Prediksi Grade Telur
+</button>
+
   </form>
 
   {% if uploaded_image %}

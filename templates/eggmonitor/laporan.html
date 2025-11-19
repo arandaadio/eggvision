@@ -18,11 +18,11 @@
     <!-- Menu -->
     <nav class="flex-1 py-4">
       {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/"},
-        {"id":"laporan","icon":"database","label":"Laporan","href":"/laporan"},
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/eggmonitor/index"},
+        {"id":"laporan","icon":"database","label":"Laporan","href":"/eggmonitor/laporan"},
         {"id":"detail","icon":"grid-3x3","label":"Detail Alat","href":"#"},
-        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"#"},
-        {"id":"settings","icon":"settings","label":"Pengaturan","href":"/settings"}
+        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"/eggmart/dashboard"},
+        {"id":"settings","icon":"settings","label":"Pengaturan","href":"#"}
       ] %}
       {% for item in menu %}
         {% set is_active = (item.id == active_menu) %}

@@ -1,0 +1,163 @@
+{% extends "eggmin/base.html" %}
+{% block title %}Marketplace Telur · EggMin{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+  <!-- Sidebar -->
+ <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <!-- Logo -->
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-premium-gold flex items-center justify-center">
+          <div class="text-primary-black font-bold text-xs">EM</div>
+        </div>
+        <span class="text-premium-gold text-sm font-semibold">EGGMIN</span>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 py-4">
+      {% set menu = [
+         {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
+        {"id":"catalog","icon":"egg","label":"Catalog","href":url_for('eggmart_controller.eggmart')},
+      ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <!-- Profile -->
+    <div class="p-4 border-t border-sidebar-border">
+      <div class="w-full flex flex-col items-center gap-2 text-sidebar-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+            alt="Profile"
+            class="w-full h-full object-cover" />
+        </div>
+        <span class="text-xs">Admin</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-4xl font-bold mb-1">Marketplace Telur</h1>
+        <p class="text-muted-foreground">Temukan penjual telur terpercaya</p>
+      </div>
+
+      <div class="flex items-center gap-8">
+        <!-- User Info -->
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
+            <img
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+              alt="Admin"
+              class="w-full h-full object-cover" />
+          </div>
+          <div>
+            <div class="text-sm font-semibold">{{ current_user.name if current_user else 'Admin' }}</div>
+            <div class="text-xs text-muted-foreground">Administrator</div>
+          </div>
+        </div>
+
+        <!-- Date & Time -->
+        <div class="flex items-center gap-4 text-sm">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-date">{{ now.strftime('%d/%b/%Y') if now else '' }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-time">{{ now.strftime('%H:%M:%S') if now else '' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================== BUYER MARKETPLACE LIST ================== -->
+    <div id="buyer-marketplace">
+      <div class="flex min-h-[600px] rounded-xl border border-border overflow-hidden bg-background">
+        <!-- Main Marketplace -->
+        <section class="flex-1 flex flex-col">
+          <!-- Header -->
+          <header class="border-b border-border bg-card/50 backdrop-blur-sm">
+            <div class="p-6">
+              <h2 class="text-2xl font-bold text-foreground">Daftar Penjual</h2>
+              <p class="text-muted-foreground">Pilih penjual untuk melihat detail dan melakukan pemesanan</p>
+            </div>
+          </header>
+
+          <div class="p-6 flex-1 overflow-auto">
+            <!-- Seller List -->
+            <div id="sellerListSection">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for seller in sellers %}
+                <div class="p-6 rounded-xl border bg-card hover:border-primary/50 transition-all">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                        <span class="text-lg font-medium text-primary">
+                          {{ seller.code }}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 class="text-lg font-semibold text-foreground flex items-center gap-2">
+                          {{ seller.name }}
+                          <i data-lucide="shield" class="w-4 h-4 text-success"></i>
+                        </h3>
+                        <div class="flex items-center gap-1 text-sm text-muted-foreground">
+                          <i data-lucide="map-pin" class="w-3 h-3"></i>
+                          <span>{{ seller.location }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 mb-4">
+                    <div class="flex items-center gap-1">
+                      <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
+                      <span class="text-sm font-medium text-foreground">{{ seller.rating }}</span>
+                    </div>
+                    <span class="text-sm text-muted-foreground">({{ seller.review_count }} ulasan)</span>
+                  </div>
+
+                  <div class="space-y-2 mb-4">
+                    <p class="text-sm font-medium text-foreground">Produk Tersedia:</p>
+                    {% for product in seller.products %}
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-muted-foreground">Grade {{ product.grade }}</span>
+                      <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs">
+                        {{ product.stock }} kg
+                      </span>
+                    </div>
+                    {% endfor %}
+                  </div>
+
+                  <a
+                    href="{{ url_for('eggmart_controller.eggmartDetail', seller_id=seller.id) }}"
+                    class="w-full inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-3 py-2 text-sm font-medium hover:bg-primary/90">
+                    Lihat Detail
+                  </a>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <!-- ================== END BUYER MARKETPLACE LIST ================== -->
+
+  </main>
+</div>
+{% endblock %}

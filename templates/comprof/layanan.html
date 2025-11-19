@@ -1,0 +1,258 @@
+{% extends "comprof/base.html" %}
+
+{% block title %}Layanan - EggVision{% endblock %}
+
+{% block head %}
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .hero-bg {
+        background-image: url("{{ url_for('static', filename='img/services-hero.jpg') }}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: relative;
+    }
+    
+    .hero-overlay {
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 1) 100%);
+    }
+
+    .dark .hero-overlay {
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 40%, rgba(0, 0, 0, 1) 100%);
+    }
+    
+    .hero-section {
+        margin-top: 0 !important;
+        min-height: 90vh;
+    }
+
+    .transparent-nav {
+        background: transparent !important;
+        border-bottom-color: transparent !important;
+        backdrop-filter: none;
+    }
+
+    .solid-nav {
+        background: #000000 !important;
+        border-bottom-color: #1a1a1a !important;
+        backdrop-filter: blur(10px);
+    }
+
+    .section-anchor {
+        scroll-margin-top: 120px;
+    }
+
+    .service-feature {
+        transition: transform 0.3s ease;
+    }
+
+    .service-feature:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section relative flex items-center justify-center text-center text-pure-white overflow-hidden hero-bg">
+    <div class="hero-overlay absolute inset-0 z-0"></div>
+
+    <div class="relative z-10 p-6 max-w-6xl mx-auto">
+        <h1 class="font-title text-6xl md:text-8xl font-bold mb-6 text-gray-900 dark:text-pure-white">
+            Layanan Kami
+        </h1>
+        <p class="font-sans text-xl md:text-2xl max-w-2xl mx-auto mb-8 text-gray-700 dark:text-gray-300">
+            Solusi lengkap untuk transformasi digital industri peternakan telur Indonesia.
+        </p>
+    </div>
+</section>
+
+<!-- EggMart Section -->
+<section id="eggmart" class="section-anchor py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
+    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div>
+                <h2 class="font-title text-5xl font-bold mb-6 text-gray-800 dark:text-pure-white">
+                    EggMart
+                </h2>
+                <p class="font-sans text-xl text-gray-700 dark:text-gray-300 mb-8">
+                    Platform jual beli telur eksklusif bagi mitra resmi pengguna sistem grading EggVision. 
+                    Hubungkan peternak langsung ke konsumen dengan kualitas terjamin.
+                </p>
+                
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black font-bold">✓</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Kualitas Terverifikasi</h4>
+                            <p class="text-gray-600 dark:text-gray-400">Setiap telur melalui proses grading otomatis dengan standar SNI</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black font-bold">✓</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Harga Transparan</h4>
+                            <p class="text-gray-600 dark:text-gray-400">Sistem harga yang fair berdasarkan grade dan kualitas</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black font-bold">✓</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Logistik Terintegrasi</h4>
+                            <p class="text-gray-600 dark:text-gray-400">Dukungan logistik untuk pengiriman yang cepat dan aman</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8">
+                    <a href="{{ url_for('eggmart_controller.eggmart') }}" class="bg-premium-gold text-primary-black font-bold py-4 px-8 rounded-full hover:bg-yellow-300 transition duration-300 inline-block">
+                        Jelajahi EggMart
+                    </a>
+                </div>
+            </div>
+            
+            <div class="relative">
+                <div class="w-full h-96 rounded-2xl overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/eggmart-demo.jpg') }}" alt="EggMart Platform" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- EggMonitor Section -->
+<section id="eggmonitor" class="section-anchor py-24 bg-gray-100 dark:bg-dark-gray text-gray-900 dark:text-pure-white">
+    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="order-2 lg:order-1">
+                <div class="w-full h-96 rounded-2xl overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/eggmonitor-demo.jpg') }}" alt="EggMonitor Dashboard" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
+                </div>
+            </div>
+            
+            <div class="order-1 lg:order-2">
+                <h2 class="font-title text-5xl font-bold mb-6 text-gray-800 dark:text-pure-white">
+                    EggMonitor
+                </h2>
+                <p class="font-sans text-xl text-gray-700 dark:text-gray-300 mb-8">
+                    Pusat kontrol dan pemantauan sistem untuk grading telur EggVision. 
+                    Pantau operasional Anda secara real-time dari mana saja.
+                </p>
+                
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black font-bold">📊</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Analitik Real-time</h4>
+                            <p class="text-gray-600 dark:text-gray-400">Dashboard lengkap dengan data produksi dan performa mesin</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black font-bold">🔔</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Notifikasi Cerdas</h4>
+                            <p class="text-gray-600 dark:text-gray-400">Alert otomatis untuk maintenance dan issue detection</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 bg-premium-gold rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-primary-black font-bold">📈</span>
+                        </div>
+                        <div>
+                            <h4 class="font-sans text-lg font-semibold text-gray-800 dark:text-pure-white">Laporan Otomatis</h4>
+                            <p class="text-gray-600 dark:text-gray-400">Generate laporan produksi dan penjualan dengan satu klik</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8">
+                    <a href="" class="bg-premium-gold text-primary-black font-bold py-4 px-8 rounded-full hover:bg-yellow-300 transition duration-300 inline-block">
+                        Akses EggMonitor
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Grid -->
+<section class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
+    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+        <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
+            Keunggulan Layanan Kami
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="service-feature bg-gray-50 dark:bg-dark-gray p-8 rounded-lg text-center border border-gray-200 dark:border-gray-800">
+                <div class="w-16 h-16 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-2xl">🤝</span>
+                </div>
+                <h3 class="font-sans text-xl font-semibold mb-4 text-gray-800 dark:text-pure-white">Kemitraan Strategis</h3>
+                <p class="text-gray-600 dark:text-gray-400">Bangun hubungan jangka panjang dengan peternak dan distributor terpercaya</p>
+            </div>
+            
+            <div class="service-feature bg-gray-50 dark:bg-dark-gray p-8 rounded-lg text-center border border-gray-200 dark:border-gray-800">
+                <div class="w-16 h-16 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-2xl">⚡</span>
+                </div>
+                <h3 class="font-sans text-xl font-semibold mb-4 text-gray-800 dark:text-pure-white">Teknologi Terdepan</h3>
+                <p class="text-gray-600 dark:text-gray-400">Memanfaatkan AI dan IoT untuk solusi yang efisien dan akurat</p>
+            </div>
+            
+            <div class="service-feature bg-gray-50 dark:bg-dark-gray p-8 rounded-lg text-center border border-gray-200 dark:border-gray-800">
+                <div class="w-16 h-16 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span class="text-2xl">🛡️</span>
+                </div>
+                <h3 class="font-sans text-xl font-semibold mb-4 text-gray-800 dark:text-pure-white">Dukungan 24/7</h3>
+                <p class="text-gray-600 dark:text-gray-400">Tim support siap membantu kapan saja Anda membutuhkan</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbar = document.getElementById('mainNav');
+        const heroSection = document.querySelector('.hero-section');
+        
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) {
+                        navbar.classList.remove('transparent-nav');
+                        navbar.classList.add('solid-nav', 'bg-primary-black', 'border-dark-gray');
+                    } else {
+                        navbar.classList.add('transparent-nav');
+                        navbar.classList.remove('solid-nav', 'bg-primary-black', 'border-dark-gray');
+                    }
+                });
+            },
+            {
+                rootMargin: '-100px 0px 0px 0px',
+                threshold: 0
+            }
+        );
+    
+        if (heroSection) {
+            observer.observe(heroSection);
+        }
+    });
+</script>
+{% endblock %}

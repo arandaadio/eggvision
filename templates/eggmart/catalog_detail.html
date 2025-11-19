@@ -1,0 +1,644 @@
+{% extends "eggmin/base.html" %}
+{% block title %}Detail Penjual · EggMin{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+  <!-- Sidebar -->
+  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <!-- Logo -->
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-premium-gold flex items-center justify-center">
+          <div class="text-primary-black font-bold text-xs">EM</div>
+        </div>
+        <span class="text-premium-gold text-sm font-semibold">EGGMIN</span>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 py-4">
+      {% set menu = [
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
+        {"id":"catalog","icon":"egg","label":"Catalog","href":url_for('eggmart_controller.eggmart')}
+      ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <!-- Profile -->
+    <div class="p-4 border-t border-sidebar-border">
+      <div class="w-full flex flex-col items-center gap-2 text-sidebar-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+            alt="Profile"
+            class="w-full h-full object-cover" />
+        </div>
+        <span class="text-xs">Admin</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-4xl font-bold mb-1">Detail Penjual</h1>
+        <p class="text-muted-foreground">Informasi lengkap penjual & produk</p>
+      </div>
+
+      <div class="flex items-center gap-8">
+        <!-- User Info -->
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
+            <img
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+              alt="Admin"
+              class="w-full h-full object-cover" />
+          </div>
+          <div>
+            <div class="text-sm font-semibold">{{ current_user.name if current_user else 'Admin' }}</div>
+            <div class="text-xs text-muted-foreground">Administrator</div>
+          </div>
+        </div>
+
+        <!-- Date & Time -->
+        <div class="flex items-center gap-4 text-sm">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-date">{{ now.strftime('%d/%b/%Y') if now else '' }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-time">{{ now.strftime('%H:%M:%S') if now else '' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================== BUYER MARKETPLACE DETAIL ================== -->
+    <div id="buyer-marketplace">
+      <div class="flex min-h-[600px] rounded-xl border border-border overflow-hidden bg-background">
+        <section class="flex-1 flex flex-col">
+          <header class="border-b border-border bg-card/50 backdrop-blur-sm">
+            <div class="p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-2xl font-bold text-foreground">{{ seller.name }}</h2>
+                  <p class="text-muted-foreground">Detail penjual dan produk yang tersedia</p>
+                </div>
+                <a
+                  href="{{ url_for('eggmart_controller.eggmart') }}"
+                  class="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
+                  ← Kembali ke Daftar Penjual
+                </a>
+              </div>
+            </div>
+          </header>
+
+          <div class="p-6 flex-1 overflow-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <!-- Info + Produk -->
+              <div class="lg:col-span-2 space-y-6">
+                <!-- Info Penjual -->
+                <div class="p-6 rounded-xl border bg-card">
+                  <div class="flex items-start justify-between mb-6">
+                    <div class="flex items-center gap-4">
+                      <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                        <span class="text-2xl font-medium text-primary">{{ seller.code }}</span>
+                      </div>
+                      <div>
+                        <h2 class="text-2xl font-bold text-foreground flex items-center gap-2">
+                          {{ seller.name }}
+                          <i data-lucide="shield" class="w-5 h-5 text-success"></i>
+                        </h2>
+                        <div class="flex items-center gap-2 text-muted-foreground mt-1">
+                          <i data-lucide="map-pin" class="w-4 h-4"></i>
+                          <span>{{ seller.location }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 mt-2">
+                          <i data-lucide="star" class="w-5 h-5 fill-yellow-400 text-yellow-400"></i>
+                          <span class="font-medium text-foreground">{{ seller.rating }}</span>
+                          <span class="text-muted-foreground">({{ seller.review_count }} ulasan)</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="open-chat-btn inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                      data-seller-name="{{ seller.name }}">
+                      <i data-lucide="message-square" class="w-4 h-4 mr-2"></i>
+                      Chat
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Produk -->
+                <div class="space-y-4">
+                  <h3 class="text-xl font-semibold text-foreground">Produk Tersedia</h3>
+
+                  {% for product in seller.products %}
+                  <div class="p-6 rounded-xl border bg-card">
+                    <div class="flex items-start justify-between gap-4">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-3">
+                          <span class="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-1 text-lg font-semibold">
+                            Grade {{ product.grade }}
+                          </span>
+                          <span class="inline-flex items-center rounded-full border border-success text-success px-3 py-1 text-xs font-medium">
+                            Stok: {{ product.stock }} butir
+                          </span>
+                        </div>
+                        <p class="text-muted-foreground mb-4">
+                          {{ product.description }}
+                        </p>
+                        <div class="flex items-center gap-2">
+                          <span class="text-3xl font-bold text-primary">Rp {{ product.price }}</span>
+                          <span class="text-muted-foreground">/ butir</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="buy-btn inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
+                        data-listing-id="{{ product.id }}"
+                        data-seller-id="{{ seller.id }}"
+                        data-seller-name="{{ seller.name }}"
+                        data-grade="{{ product.grade }}"
+                        data-price="{{ product.price }}"
+                        data-stock="{{ product.stock }}">
+                        Beli Sekarang
+                      </button>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- Reviews -->
+              <div class="p-6 rounded-xl border bg-card h-fit">
+                <h3 class="text-lg font-semibold text-foreground mb-4">Ulasan Pembeli</h3>
+                <div class="h-[500px] overflow-y-auto pr-2">
+                  <div class="space-y-4">
+                    {% for i in range(1) %}
+                    <div class="border-b border-border pb-4 last:border-0">
+                      <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <span class="text-xs font-medium text-primary">BP</span>
+                        </div>
+                        <div>
+                          <p class="text-sm font-medium text-foreground">Budi Prasetyo</p>
+                          <div class="flex items-center gap-1">
+                            {% for s in range(5) %}
+                            <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
+                            {% endfor %}
+                          </div>
+                        </div>
+                      </div>
+                      <p class="text-sm text-muted-foreground">
+                        Telur berkualitas bagus, pengiriman cepat. Recommended!
+                      </p>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+      </div>
+    </div>
+    <!-- ================== END BUYER MARKETPLACE DETAIL ================== -->
+
+  </main>
+</div>
+
+<!-- Chat Modal -->
+<div
+  id="chatModal"
+  class="fixed inset-0 z-50 hidden items-center justify-center">
+  <div
+    id="chatModalOverlay"
+    class="absolute inset-0 bg-black/40"></div>
+  <div
+    class="relative bg-card border border-border rounded-xl shadow-lg max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-border">
+      <h2 class="font-semibold text-lg text-foreground">
+        Chat dengan <span id="chatModalSellerName"></span>
+      </h2>
+      <button
+        type="button"
+        id="chatModalClose"
+        class="p-1 rounded-md hover:bg-muted">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+      <!-- pesan akan dirender via JS -->
+    </div>
+
+    <div class="p-4 border-t border-border">
+      <form id="chatForm" class="flex gap-2">
+        <input
+          id="chatInput"
+          type="text"
+          autocomplete="off"
+          placeholder="Ketik pesan..."
+          class="flex-1 px-3 py-2 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary" />
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center rounded-md px-3 py-2 bg-primary text-primary-foreground text-sm hover:bg-primary/90">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Checkout Modal -->
+<div
+  id="checkoutModal"
+  class="fixed inset-0 z-50 hidden items-center justify-center">
+  <div
+    id="checkoutModalOverlay"
+    class="absolute inset-0 bg-black/40"></div>
+  <div
+    class="relative bg-card border border-border rounded-xl shadow-lg w-full max-w-lg mx-4 max-h-[80vh] overflow-auto">
+    <div class="flex items-center justify-between p-4 border-b border-border">
+      <h2 class="font-semibold text-lg text-foreground">
+        Checkout - <span id="checkoutGrade"></span>
+      </h2>
+      <button
+        type="button"
+        id="checkoutModalClose"
+        class="p-1 rounded-md hover:bg-muted">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <form id="checkoutForm"
+            action="{{ url_for('eggmart_controller.create_transaction') }}"
+            method="POST"
+            class="space-y-4">
+
+        <!-- Hidden field untuk backend (fallback form) -->
+        <input type="hidden" name="listing_id" id="checkoutListingId">
+        <input type="hidden" name="grade" id="checkoutGradeInput">
+
+        <div>
+          <p class="text-xs text-muted-foreground">Penjual</p>
+          <p id="checkoutSellerName" class="text-foreground font-medium"></p>
+        </div>
+
+        <div>
+          <label for="checkoutQuantity" class="block text-sm font-medium mb-1">
+            Jumlah (butir)
+          </label>
+          <input
+            id="checkoutQuantity"
+            name="quantity"
+            type="number"
+            min="1"
+            required
+            class="w-full px-3 py-2 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Masukkan jumlah butir" />
+        </div>
+
+        <div class="bg-muted p-4 rounded-lg space-y-2">
+          <div class="flex justify-between">
+            <span class="text-muted-foreground text-sm">Harga per butir</span>
+            <span id="checkoutPriceDisplay" class="font-medium text-sm">Rp 0</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-muted-foreground text-sm">Jumlah</span>
+            <span id="checkoutQtyDisplay" class="font-medium text-sm">0 butir</span>
+          </div>
+          <div class="h-px bg-border my-2"></div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold">Total</span>
+            <span id="checkoutTotalDisplay" class="font-bold text-primary text-lg">Rp 0</span>
+          </div>
+        </div>
+
+        <div
+          id="checkoutToast"
+          class="hidden text-sm rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2">
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button
+            type="button"
+            id="checkoutCancelBtn"
+            class="flex-1 inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-muted">
+            Batal
+          </button>
+          <button
+            type="button"
+            id="checkoutSubmitBtn"
+            class="flex-1 inline-flex items-center justify-center rounded-md px-3 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90">
+            Bayar Sekarang
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Midtrans Snap JS -->
+<script
+  type="text/javascript"
+  src="https://app.sandbox.midtrans.com/snap/snap.js"
+  data-client-key="{{ midtrans_client_key }}">
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // ================== CHAT MODAL ==================
+    const chatModal = document.getElementById('chatModal');
+    const chatOverlay = document.getElementById('chatModalOverlay');
+    const chatClose = document.getElementById('chatModalClose');
+    const chatSellerNameSpan = document.getElementById('chatModalSellerName');
+    const chatMessagesContainer = document.getElementById('chatMessages');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+
+    const baseChatMessages = [
+      { sender: 'buyer', message: 'Halo, apakah telur grade A masih tersedia?', time: '11:30' },
+      { sender: 'seller', message: 'Halo! Ya masih banyak tersedia. Butuh berapa kg?', time: '11:32' }
+    ];
+
+    function appendChatMessage(sender, message, time) {
+      if (!chatMessagesContainer) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex ' + (sender === 'buyer' ? 'justify-end' : 'justify-start');
+
+      const bubble = document.createElement('div');
+      bubble.className =
+        'max-w-[70%] p-3 rounded-lg text-sm ' +
+        (sender === 'buyer' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground');
+
+      const textEl = document.createElement('p');
+      textEl.textContent = message;
+
+      const timeEl = document.createElement('span');
+      timeEl.className = 'text-xs opacity-70 mt-1 block';
+      timeEl.textContent = time;
+
+      bubble.appendChild(textEl);
+      bubble.appendChild(timeEl);
+      wrapper.appendChild(bubble);
+      chatMessagesContainer.appendChild(wrapper);
+      chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+    }
+
+    function renderChatMessages() {
+      if (!chatMessagesContainer) return;
+      chatMessagesContainer.innerHTML = '';
+      baseChatMessages.forEach(function (msg) {
+        appendChatMessage(msg.sender, msg.message, msg.time);
+      });
+    }
+
+    function openChatModal(sellerName) {
+      if (!chatModal) return;
+      if (chatSellerNameSpan) chatSellerNameSpan.textContent = sellerName || '';
+      renderChatMessages();
+      chatModal.classList.remove('hidden');
+      chatModal.classList.add('flex');
+      if (chatInput) {
+        chatInput.value = '';
+        chatInput.focus();
+      }
+    }
+
+    function closeChatModal() {
+      if (!chatModal) return;
+      chatModal.classList.add('hidden');
+      chatModal.classList.remove('flex');
+    }
+
+    document.querySelectorAll('.open-chat-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const sellerName = this.dataset.sellerName || '';
+        openChatModal(sellerName);
+      });
+    });
+
+    if (chatOverlay) {
+      chatOverlay.addEventListener('click', closeChatModal);
+    }
+    if (chatClose) {
+      chatClose.addEventListener('click', closeChatModal);
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closeChatModal();
+      }
+    });
+
+    if (chatForm && chatInput) {
+      chatForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const text = chatInput.value.trim();
+        if (!text) return;
+        const nowTime = new Date().toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        appendChatMessage('buyer', text, nowTime);
+        chatInput.value = '';
+      });
+    }
+
+    // ================== CHECKOUT MODAL ==================
+    const checkoutModal = document.getElementById('checkoutModal');
+    const checkoutOverlay = document.getElementById('checkoutModalOverlay');
+    const checkoutClose = document.getElementById('checkoutModalClose');
+    const checkoutGradeSpan = document.getElementById('checkoutGrade');
+    const checkoutSellerNameSpan = document.getElementById('checkoutSellerName');
+    const checkoutQtyInput = document.getElementById('checkoutQuantity');
+    const checkoutPriceDisplay = document.getElementById('checkoutPriceDisplay');
+    const checkoutQtyDisplay = document.getElementById('checkoutQtyDisplay');
+    const checkoutTotalDisplay = document.getElementById('checkoutTotalDisplay');
+    const checkoutToast = document.getElementById('checkoutToast');
+    const checkoutCancelBtn = document.getElementById('checkoutCancelBtn');
+    const checkoutSubmitBtn = document.getElementById('checkoutSubmitBtn');
+    const checkoutListingIdInput = document.getElementById('checkoutListingId');
+    const checkoutGradeInput = document.getElementById('checkoutGradeInput');
+
+    let currentUnitPrice = 0;
+    let currentListingId = null;
+    let currentMaxStock = 0;
+
+    function formatRupiah(number) {
+      return 'Rp ' + (number || 0).toLocaleString('id-ID');
+    }
+
+    function updateCheckoutSummary() {
+      if (!checkoutQtyInput) return;
+      const qty = parseInt(checkoutQtyInput.value || '0', 10) || 0;
+      const total = qty * currentUnitPrice;
+      if (checkoutPriceDisplay) checkoutPriceDisplay.textContent = formatRupiah(currentUnitPrice);
+      if (checkoutQtyDisplay) checkoutQtyDisplay.textContent = qty + ' butir';
+      if (checkoutTotalDisplay) checkoutTotalDisplay.textContent = formatRupiah(total);
+    }
+
+    function openCheckoutModal(sellerName, grade, price, listingId, maxStock) {
+      if (!checkoutModal) return;
+      currentUnitPrice = parseInt(price || '0', 10) || 0;
+      currentListingId = listingId;
+      currentMaxStock = parseInt(maxStock || '0', 10) || 0;
+
+      if (checkoutGradeSpan) checkoutGradeSpan.textContent = 'Grade ' + (grade || '');
+      if (checkoutSellerNameSpan) checkoutSellerNameSpan.textContent = sellerName || '';
+
+      // sinkron ke hidden input (fallback form)
+      if (checkoutListingIdInput) checkoutListingIdInput.value = listingId || '';
+      if (checkoutGradeInput) checkoutGradeInput.value = grade || '';
+
+      if (checkoutQtyInput) {
+        checkoutQtyInput.value = '';
+      }
+      if (checkoutToast) {
+        checkoutToast.classList.add('hidden');
+        checkoutToast.textContent = '';
+      }
+      updateCheckoutSummary();
+      checkoutModal.classList.remove('hidden');
+      checkoutModal.classList.add('flex');
+      if (checkoutQtyInput) {
+        checkoutQtyInput.focus();
+      }
+    }
+
+    function closeCheckoutModal() {
+      if (!checkoutModal) return;
+      checkoutModal.classList.add('hidden');
+      checkoutModal.classList.remove('flex');
+    }
+
+    // attach ke semua buy-btn
+    document.querySelectorAll('.buy-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const sellerName = this.dataset.sellerName || '';
+        const grade = this.dataset.grade || '';
+        const price = this.dataset.price || '0';
+        const listingId = this.dataset.listingId || null;
+        const maxStock = this.dataset.stock || '0';
+        openCheckoutModal(sellerName, grade, price, listingId, maxStock);
+      });
+    });
+
+    if (checkoutOverlay) {
+      checkoutOverlay.addEventListener('click', closeCheckoutModal);
+    }
+    if (checkoutClose) {
+      checkoutClose.addEventListener('click', closeCheckoutModal);
+    }
+    if (checkoutCancelBtn) {
+      checkoutCancelBtn.addEventListener('click', closeCheckoutModal);
+    }
+
+    if (checkoutQtyInput) {
+      checkoutQtyInput.addEventListener('input', updateCheckoutSummary);
+    }
+
+    // SUBMIT → panggil backend + Snap
+    if (checkoutSubmitBtn) {
+      checkoutSubmitBtn.addEventListener('click', function () {
+        if (!checkoutQtyInput) return;
+        const qty = parseInt(checkoutQtyInput.value || '0', 10) || 0;
+
+        if (!currentListingId) {
+          if (checkoutToast) {
+            checkoutToast.textContent = 'Listing tidak valid.';
+            checkoutToast.classList.remove('hidden');
+          }
+          return;
+        }
+
+        if (qty <= 0) {
+          if (checkoutToast) {
+            checkoutToast.textContent = 'Masukkan jumlah yang valid.';
+            checkoutToast.classList.remove('hidden');
+          }
+          return;
+        }
+
+        if (qty > currentMaxStock) {
+          if (checkoutToast) {
+            checkoutToast.textContent = 'Jumlah melebihi stok tersedia (' + currentMaxStock + ' butir).';
+            checkoutToast.classList.remove('hidden');
+          }
+          return;
+        }
+
+        fetch("{{ url_for('eggmart_controller.create_transaction') }}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({
+            listing_id: currentListingId,
+            quantity: qty
+          })
+        })
+          .then(res => res.json())
+          .then(res => {
+            if (!res.success) {
+              if (checkoutToast) {
+                checkoutToast.textContent = res.message || 'Checkout gagal.';
+                checkoutToast.classList.remove('hidden');
+              }
+              return;
+            }
+
+            const snapToken = res.snap_token;
+            if (!window.snap || !snapToken) {
+              if (checkoutToast) {
+                checkoutToast.textContent = 'Snap tidak tersedia atau token kosong.';
+                checkoutToast.classList.remove('hidden');
+              }
+              return;
+            }
+
+            window.snap.pay(snapToken, {
+              onSuccess: function () {
+                window.location.href = "{{ url_for('eggmart_controller.eggmart') }}";
+              },
+              onPending: function (result) {
+                console.log('Pending:', result);
+              },
+              onError: function (result) {
+                console.error('Error:', result);
+              },
+              onClose: function () {
+                console.log('Popup ditutup.');
+              }
+            });
+          })
+          .catch(err => {
+            console.error(err);
+            if (checkoutToast) {
+              checkoutToast.textContent = 'Terjadi kesalahan saat memproses checkout.';
+              checkoutToast.classList.remove('hidden');
+            }
+          });
+      });
+    }
+  });
+</script>
+{% endblock %}
