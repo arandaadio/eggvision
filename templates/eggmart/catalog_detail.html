@@ -1,5 +1,5 @@
-{% extends "eggmin/base.html" %}
-{% block title %}Detail Penjual · EggMin{% endblock %}
+{% extends "eggmart/base.html" %}
+{% block title %}Detail Penjual · EggMart{% endblock %}
 
 {% block body %}
 <div class="min-h-screen bg-background">
@@ -11,16 +11,35 @@
         <div class="w-12 h-12 rounded-full bg-premium-gold flex items-center justify-center">
           <div class="text-primary-black font-bold text-xs">EM</div>
         </div>
-        <span class="text-premium-gold text-sm font-semibold">EGGMIN</span>
+        <span class="text-premium-gold text-sm font-semibold">EGGMART</span>
       </div>
     </div>
 
     <!-- Menu -->
     <nav class="flex-1 py-4">
+    {% if current_user.role == 'pengusaha' %}
+      {% set menu = [
+        {"id":"dashboard", "icon":"layout-dashboard", "label":"Dashboard", "href":url_for('eggmart_controller.eggmartDashboard')},
+        {"id":"history",   "icon":"history",          "label":"History", "href":url_for('eggmart_controller.eggmartHistory')},
+        {"id":"eggmonitor","icon":"scan",             "label":"EggMonitor", "href":"/eggmonitor/index"}
+      ] %}
+
+    {# PEMBELI: Catalog + History #}
+    {% elif current_user.role == 'pembeli' %}
+      {% set menu = [
+        {"id":"catalog", "icon":"egg",     "label":"Catalog", "href":url_for('eggmart_controller.eggmart')},
+        {"id":"history", "icon":"history", "label":"History", "href":url_for('eggmart_controller.eggmartHistory')}
+      ] %}
+
+    {# ROLE LAIN (admin, dll) -> fallback bebas #}
+    {% else %}
       {% set menu = [
         {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
-        {"id":"catalog","icon":"egg","label":"Catalog","href":url_for('eggmart_controller.eggmart')}
+        {"id":"catalog", "icon":"egg",            "label":"Catalog",   "href":url_for('eggmart_controller.eggmart')},
+        {"id":"history", "icon":"history",        "label":"History","href":url_for('eggmart_controller.eggmartHistory')}
       ] %}
+    {% endif %}
+
       {% for item in menu %}
         {% set is_active = (item.id == active_menu) %}
         <a href="{{ item.href }}"
@@ -41,7 +60,7 @@
             alt="Profile"
             class="w-full h-full object-cover" />
         </div>
-        <span class="text-xs">Admin</span>
+        <span class="text-xs">{{current_user.role}}</span>
       </div>
     </div>
   </aside>
@@ -131,13 +150,20 @@
                         </div>
                       </div>
                     </div>
+                   
+
+
+
                     <button
-                      type="button"
-                      class="open-chat-btn inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                      data-seller-name="{{ seller.name }}">
-                      <i data-lucide="message-square" class="w-4 h-4 mr-2"></i>
-                      Chat
-                    </button>
+  type="button"
+  class="open-chat-btn inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+  data-seller-name="{{ seller.name }}"
+  data-chat-url="{{ url_for('eggmart_controller.get_chat_for_seller', seller_id=seller.id) }}">
+  <i data-lucide="message-square" class="w-4 h-4 mr-2"></i>
+  Chat
+</button>
+
+
                   </div>
                 </div>
 
@@ -161,7 +187,9 @@
                           {{ product.description }}
                         </p>
                         <div class="flex items-center gap-2">
-                          <span class="text-3xl font-bold text-primary">Rp {{ product.price }}</span>
+                         <span class="text-3xl font-bold text-primary">
+  Rp {{ '{:,.0f}'.format(product.price) }}
+</span>
                           <span class="text-muted-foreground">/ butir</span>
                         </div>
                       </div>
@@ -169,12 +197,13 @@
                       <button
                         type="button"
                         class="buy-btn inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
-                        data-listing-id="{{ product.id }}"
-                        data-seller-id="{{ seller.id }}"
-                        data-seller-name="{{ seller.name }}"
-                        data-grade="{{ product.grade }}"
-                        data-price="{{ product.price }}"
-                        data-stock="{{ product.stock }}">
+                      data-listing-id="{{ product.id }}"
+  data-seller-id="{{ seller.id }}"
+  data-seller-name="{{ seller.name }}"
+  data-grade="{{ product.grade }}"
+  data-price="{{ product.price }}"
+  data-stock="{{ product.stock }}"
+                        >
                         Beli Sekarang
                       </button>
                     </div>
@@ -365,6 +394,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     // ================== CHAT MODAL ==================
+        // ================== CHAT MODAL (REAL DATA) ==================
     const chatModal = document.getElementById('chatModal');
     const chatOverlay = document.getElementById('chatModalOverlay');
     const chatClose = document.getElementById('chatModalClose');
@@ -373,27 +403,27 @@
     const chatForm = document.getElementById('chatForm');
     const chatInput = document.getElementById('chatInput');
 
-    const baseChatMessages = [
-      { sender: 'buyer', message: 'Halo, apakah telur grade A masih tersedia?', time: '11:30' },
-      { sender: 'seller', message: 'Halo! Ya masih banyak tersedia. Butuh berapa kg?', time: '11:32' }
-    ];
+    let currentChatUrl = null; // URL endpoint GET/POST chat untuk seller ini
 
     function appendChatMessage(sender, message, time) {
       if (!chatMessagesContainer) return;
       const wrapper = document.createElement('div');
+      // Dari perspektif BUYER: pesan kita di kanan
       wrapper.className = 'flex ' + (sender === 'buyer' ? 'justify-end' : 'justify-start');
 
       const bubble = document.createElement('div');
       bubble.className =
         'max-w-[70%] p-3 rounded-lg text-sm ' +
-        (sender === 'buyer' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground');
+        (sender === 'buyer'
+          ? 'bg-primary text-primary-foreground'
+          : 'bg-muted text-foreground');
 
       const textEl = document.createElement('p');
       textEl.textContent = message;
 
       const timeEl = document.createElement('span');
       timeEl.className = 'text-xs opacity-70 mt-1 block';
-      timeEl.textContent = time;
+      timeEl.textContent = time || '';
 
       bubble.appendChild(textEl);
       bubble.appendChild(timeEl);
@@ -402,20 +432,53 @@
       chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
     }
 
-    function renderChatMessages() {
-      if (!chatMessagesContainer) return;
-      chatMessagesContainer.innerHTML = '';
-      baseChatMessages.forEach(function (msg) {
-        appendChatMessage(msg.sender, msg.message, msg.time);
-      });
-    }
-
-    function openChatModal(sellerName) {
+    function openChatModal(sellerName, chatUrl) {
       if (!chatModal) return;
+      currentChatUrl = chatUrl;
+
       if (chatSellerNameSpan) chatSellerNameSpan.textContent = sellerName || '';
-      renderChatMessages();
+
+      // reset isi
+      if (chatMessagesContainer) {
+        chatMessagesContainer.innerHTML =
+          '<p class="text-xs text-muted-foreground">Memuat pesan...</p>';
+      }
+
       chatModal.classList.remove('hidden');
       chatModal.classList.add('flex');
+
+      // Ambil riwayat chat dari backend
+      fetch(chatUrl, {
+        method: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+        .then(res => res.json())
+        .then(res => {
+          if (!chatMessagesContainer) return;
+
+          if (!res.success) {
+            chatMessagesContainer.innerHTML =
+              '<p class="text-xs text-destructive">' +
+              (res.message || 'Gagal memuat chat.') +
+              '</p>';
+            return;
+          }
+
+          chatMessagesContainer.innerHTML = '';
+          (res.messages || []).forEach(msg => {
+            // server kirim sender 'self' / 'seller'
+            const sender = msg.sender === 'self' ? 'buyer' : 'seller';
+            appendChatMessage(sender, msg.text, msg.time);
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          if (chatMessagesContainer) {
+            chatMessagesContainer.innerHTML =
+              '<p class="text-xs text-destructive">Terjadi kesalahan saat memuat chat.</p>';
+          }
+        });
+
       if (chatInput) {
         chatInput.value = '';
         chatInput.focus();
@@ -426,12 +489,16 @@
       if (!chatModal) return;
       chatModal.classList.add('hidden');
       chatModal.classList.remove('flex');
+      currentChatUrl = null;
     }
 
+    // Buka modal saat tombol "Chat" di-klik
     document.querySelectorAll('.open-chat-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         const sellerName = this.dataset.sellerName || '';
-        openChatModal(sellerName);
+        const chatUrl = this.dataset.chatUrl || '';
+        if (!chatUrl) return;
+        openChatModal(sellerName, chatUrl);
       });
     });
 
@@ -441,26 +508,50 @@
     if (chatClose) {
       chatClose.addEventListener('click', closeChatModal);
     }
-
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         closeChatModal();
       }
     });
 
+    // Kirim pesan baru
     if (chatForm && chatInput) {
       chatForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const text = chatInput.value.trim();
-        if (!text) return;
-        const nowTime = new Date().toLocaleTimeString('id-ID', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        appendChatMessage('buyer', text, nowTime);
-        chatInput.value = '';
+        if (!text || !currentChatUrl) return;
+
+        fetch(currentChatUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ message: text })
+        })
+          .then(res => res.json())
+          .then(res => {
+            if (!res.success) {
+              console.error('Gagal kirim chat:', res.message);
+              return;
+            }
+            const msg = res.message || {
+              sender: 'self',
+              text,
+              time: new Date().toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            };
+            appendChatMessage('buyer', msg.text, msg.time);
+            chatInput.value = '';
+          })
+          .catch(err => {
+            console.error(err);
+          });
       });
     }
+
 
     // ================== CHECKOUT MODAL ==================
     const checkoutModal = document.getElementById('checkoutModal');
@@ -596,40 +687,58 @@
             quantity: qty
           })
         })
-          .then(res => res.json())
-          .then(res => {
-            if (!res.success) {
-              if (checkoutToast) {
-                checkoutToast.textContent = res.message || 'Checkout gagal.';
-                checkoutToast.classList.remove('hidden');
-              }
-              return;
+                 .then(res => res.json())
+        .then(res => {
+          if (!res.success) {
+            if (checkoutToast) {
+              checkoutToast.textContent = res.message || 'Checkout gagal.';
+              checkoutToast.classList.remove('hidden');
+            }
+            return;
+          }
+
+          const snapToken = res.snap_token;
+
+          // Kalau Snap token TIDAK ada (misal Midtrans error / mode lokal):
+          if (!snapToken) {
+            if (checkoutToast) {
+              checkoutToast.textContent =
+                res.message ||
+                'Order berhasil dibuat tanpa Snap. Silakan cek riwayat transaksi.';
+              checkoutToast.classList.remove('hidden');
             }
 
-            const snapToken = res.snap_token;
-            if (!window.snap || !snapToken) {
-              if (checkoutToast) {
-                checkoutToast.textContent = 'Snap tidak tersedia atau token kosong.';
-                checkoutToast.classList.remove('hidden');
-              }
-              return;
-            }
+            // Redirect pelan-pelan biar user sempat baca pesan
+            setTimeout(function () {
+              window.location.href = "{{ url_for('eggmart_controller.eggmart') }}";
+            }, 1500);
+            return;
+          }
 
-            window.snap.pay(snapToken, {
-              onSuccess: function () {
-                window.location.href = "{{ url_for('eggmart_controller.eggmart') }}";
-              },
-              onPending: function (result) {
-                console.log('Pending:', result);
-              },
-              onError: function (result) {
-                console.error('Error:', result);
-              },
-              onClose: function () {
-                console.log('Popup ditutup.');
-              }
-            });
-          })
+          if (!window.snap) {
+            if (checkoutToast) {
+              checkoutToast.textContent = 'Snap JS tidak tersedia di halaman ini.';
+              checkoutToast.classList.remove('hidden');
+            }
+            return;
+          }
+
+          window.snap.pay(snapToken, {
+            onSuccess: function () {
+              window.location.href = "{{ url_for('eggmart_controller.eggmart') }}";
+            },
+            onPending: function (result) {
+              console.log('Pending:', result);
+            },
+            onError: function (result) {
+              console.error('Error:', result);
+            },
+            onClose: function () {
+              console.log('Popup Snap ditutup.');
+            }
+          });
+        })
+
           .catch(err => {
             console.error(err);
             if (checkoutToast) {

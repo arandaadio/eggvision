@@ -1,5 +1,5 @@
-{% extends "eggmin/base.html" %}
-{% block title %}Marketplace Telur · EggMin{% endblock %}
+{% extends "eggmart/base.html" %}
+{% block title %}Marketplace Telur · EggMart{% endblock %}
 
 {% block body %}
 <div class="min-h-screen bg-background">
@@ -11,16 +11,36 @@
         <div class="w-12 h-12 rounded-full bg-premium-gold flex items-center justify-center">
           <div class="text-primary-black font-bold text-xs">EM</div>
         </div>
-        <span class="text-premium-gold text-sm font-semibold">EGGMIN</span>
+        <span class="text-premium-gold text-sm font-semibold">EGGMART</span>
       </div>
     </div>
 
     <!-- Menu -->
     <nav class="flex-1 py-4">
-      {% set menu = [
-         {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
-        {"id":"catalog","icon":"egg","label":"Catalog","href":url_for('eggmart_controller.eggmart')},
-      ] %}
+  {% if current_user.role == 'pengusaha' %}
+    {% set menu = [
+      {"id":"dashboard", "icon":"layout-dashboard", "label":"Dashboard", "href":url_for('eggmart_controller.eggmartDashboard')},
+      {"id":"history",   "icon":"history",          "label":"History", "href":url_for('eggmart_controller.eggmartHistory')},
+      {"id":"eggmonitor","icon":"scan",             "label":"EggMonitor", "href":"/eggmonitor/index"}
+    ] %}
+
+  {# PEMBELI: Catalog + History #}
+  {% elif current_user.role == 'pembeli' %}
+    {% set menu = [
+      {"id":"catalog", "icon":"egg",     "label":"Catalog", "href":url_for('eggmart_controller.eggmart')},
+      {"id":"history", "icon":"history", "label":"History", "href":url_for('eggmart_controller.eggmartHistory')}
+    ] %}
+
+  {# ROLE LAIN (admin, dll) -> fallback bebas #}
+  {% else %}
+    {% set menu = [
+      {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
+      {"id":"catalog", "icon":"egg",            "label":"Catalog",   "href":url_for('eggmart_controller.eggmart')},
+      {"id":"history", "icon":"history",        "label":"History","href":url_for('eggmart_controller.eggmartHistory')}
+    ] %}
+  {% endif %}
+
+
       {% for item in menu %}
         {% set is_active = (item.id == active_menu) %}
         <a href="{{ item.href }}"
@@ -41,7 +61,7 @@
             alt="Profile"
             class="w-full h-full object-cover" />
         </div>
-        <span class="text-xs">Admin</span>
+        <span class="text-xs">{{current_user.role}}</span>
       </div>
     </div>
   </aside>
@@ -66,7 +86,7 @@
           </div>
           <div>
             <div class="text-sm font-semibold">{{ current_user.name if current_user else 'Admin' }}</div>
-            <div class="text-xs text-muted-foreground">Administrator</div>
+            <div class="text-xs text-muted-foreground">{{ current_user.role if current_user else '' }}</div>
           </div>
         </div>
 
@@ -137,7 +157,7 @@
                     <div class="flex items-center justify-between text-sm">
                       <span class="text-muted-foreground">Grade {{ product.grade }}</span>
                       <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs">
-                        {{ product.stock }} kg
+                        {{ product.stock }} butir
                       </span>
                     </div>
                     {% endfor %}

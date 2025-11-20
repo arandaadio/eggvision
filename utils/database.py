@@ -80,6 +80,25 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
+        
+                # =====================================
+        # 2b. EGG_LISTINGS (stok siap jual per grade per seller)
+        # =====================================
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS egg_listings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                seller_id INT NOT NULL,
+                grade ENUM('A','B','C') NOT NULL,
+                stock_eggs INT NOT NULL DEFAULT 0,
+                price_per_egg DECIMAL(10,2) NOT NULL,
+                status ENUM('active','inactive') DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NULL,
+                UNIQUE KEY uniq_seller_grade (seller_id, grade),
+                FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ''')
+
 
         # =====================================
         # 3. ORDERS (Transaksi, sinkron Midtrans)
@@ -183,12 +202,13 @@ def init_db():
             )
         ''')
 
-        # ==========================
+               # ==========================
         # 8. CHAT_MESSAGES
         # ==========================
         cur.execute('''
             CREATE TABLE IF NOT EXISTS chat_messages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
+                session_id INT NOT NULL,
                 user_id INT NULL,
                 guest_name VARCHAR(100) NULL,
                 guest_email VARCHAR(100) NULL,
@@ -202,10 +222,12 @@ def init_db():
                 status ENUM('unread', 'read', 'replied') DEFAULT 'unread',
                 parent_message_id INT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
                 FOREIGN KEY (parent_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL
             )
         ''')
+
 
         # ===========================================
         # 9. SEED DATA AWAL (admin, 1 pengusaha, 1 pembeli)

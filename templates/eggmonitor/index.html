@@ -40,11 +40,11 @@
       <a href="{{ url_for('eggmonitor_controller.eggmonitor_profile') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
         <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
           <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
             alt="Profile"
             class="w-full h-full object-cover" />
         </div>
-        <span class="text-xs">Profil</span>
+        <span class="text-xs">{{ current_user.role if current_user else 'Role' }}</span>
     </a>
     </div>
   </aside>
@@ -63,13 +63,13 @@
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
             <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ header.avatar_seed }}"
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
               alt="{{ header.user_name }}"
               class="w-full h-full object-cover" />
           </div>
           <div>
             <div class="text-sm font-semibold">{{ header.user_name }}</div>
-            <div class="text-xs text-muted-foreground">{{ header.egg_vision_count }} EggVision</div>
+            <div class="text-xs text-muted-foreground">{{ current_user.role if current_user else 'Role' }}</div>
           </div>
         </div>
 
