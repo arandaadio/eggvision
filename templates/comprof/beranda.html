@@ -83,7 +83,7 @@
         <p class="font-sans text-xl md:text-2xl max-w-2xl mx-auto mb-16 text-gray-700 dark:text-gray-300">
             Revolusi industri peternakan dengan otomatisasi bertenaga AI dan akses pasar langsung.
         </p>
-        <a href="{{ url_for('comprof_kontak') }}" 
+        <a href="{{ url_for('comprof_controller.comprof_kontak') }}" 
            class="font-sans inline-block bg-premium-gold text-primary-black font-bold py-4 px-12 rounded-full text-lg hover:bg-yellow-300 transition duration-300 hover-grow">
             Hubungi Kami
         </a>
@@ -107,11 +107,11 @@
                 <p class="text-gray-700 dark:text-gray-400 mb-6 flex-grow">
                     Marketplace eksklusif untuk jual beli telur berkualitas yang telah terverifikasi oleh sistem grading EggVision. Hubungkan peternak langsung ke konsumen.
                 </p>
-                <a href="{{ url_for('comprof_layanan') }}" 
+                <a href="{{ url_for('comprof_controller.comprof_layanan') }}" 
                    class="mt-auto text-center bg-amber-600 hover:bg-amber-700 dark:bg-premium-gold dark:hover:bg-yellow-300 text-white dark:text-primary-black font-bold py-3 px-6 rounded-full transition duration-300 mb-6">
                    Pelajari EggMart Lebih Lanjut
                 </a>
-                <a href="{{ url_for('eggmart') }}"
+                <a href="{{ url_for('eggmart_controller.eggmart') }}"
                     class="block text-center bg-premium-gold text-primary-black font-bold py-4 px-8 rounded-full hover:bg-yellow-300 transition duration-300">
                     Login EggMart
                 </a>
@@ -126,7 +126,7 @@
                 <p class="text-gray-700 dark:text-gray-400 mb-6 flex-grow">
                     Mesin grading telur otomatis kami menggunakan AI canggih untuk menyortir, mendeteksi retak, dan mengukur kualitas telur dengan akurasi dan kecepatan tinggi.
                 </p>
-                <a href="{{ url_for('comprof_produk') }}" 
+                <a href="{{ url_for('comprof_controller.comprof_produk') }}" 
                    class="mt-auto text-center bg-amber-600 hover:bg-amber-700 dark:bg-premium-gold dark:hover:bg-yellow-300 text-white dark:text-primary-black font-bold py-3 px-6 rounded-full transition duration-300">
                    Pelajari Lebih Lanjut
                 </a>
@@ -141,11 +141,11 @@
                 <p class="text-gray-700 dark:text-gray-400 mb-6 flex-grow">
                     Dashboard pemantauan real-time untuk pemilik bisnis. Lacak produktivitas mesin, kualitas hasil panen, dan inventaris dari mana saja, kapan saja.
                 </p>
-                <a href="{{ url_for('comprof_layanan') }}" 
+                <a href="{{ url_for('comprof_controller.comprof_layanan') }}" 
                    class="mt-auto text-center bg-amber-600 hover:bg-amber-700 dark:bg-premium-gold dark:hover:bg-yellow-300 text-white dark:text-primary-black font-bold py-3 px-6 rounded-full transition duration-300 mb-6">
                    Pelajari Lebih Lanjut
                 </a>
-                <a href="{{ url_for('eggmonitor') }}"
+                <a href=""
                     class="block text-center bg-premium-gold text-primary-black font-bold py-4 px-8 rounded-full hover:bg-yellow-300 transition duration-300">
                     Login EggMonitor
                 </a>
@@ -164,7 +164,7 @@
         <div class="space-y-8 max-w-4xl mx-auto font-sans">
             
             {% for news_item in news_list[:3] %}
-            <a href="{{ url_for('comprof_berita') }}" class="group block border-b border-gray-300 dark:border-gray-800 pb-8 transition-all duration-300 hover:opacity-80">
+            <a href="{{ url_for('comprof_controller.comprof_berita') }}" class="group block border-b border-gray-300 dark:border-gray-800 pb-8 transition-all duration-300 hover:opacity-80">
                 <div class="flex flex-col md:flex-row items-start gap-6">
                     <div class="flex-grow">
                         <h3 class="text-2xl font-semibold mb-2 text-gray-800 dark:text-pure-white group-hover:text-amber-600 dark:group-hover:text-premium-gold transition-colors">{{ news_item.title }}</h3>
@@ -195,7 +195,7 @@
             
         </div>
         <div class="text-center mt-12">
-            <a href="{{ url_for('comprof_berita') }}" 
+            <a href="{{ url_for('comprof_controller.comprof_berita') }}" 
                class="font-sans inline-block border border-amber-600 dark:border-premium-gold text-amber-600 dark:text-premium-gold font-bold py-3 px-10 rounded-full text-lg hover:bg-amber-600 hover:text-white dark:hover:bg-premium-gold dark:hover:text-primary-black transition duration-300">
                 Lihat Semua Berita
             </a>
@@ -252,7 +252,7 @@
         <p class="font-sans text-xl max-w-2xl mx-auto mb-10 text-gray-700 dark:text-gray-300">
             Hubungi tim kami untuk mendapatkan demo gratis dan konsultasi tentang bagaimana EggVision dapat membantu meningkatkan efisiensi dan profitabilitas peternakan Anda.
         </p>
-        <a href="{{ url_for('comprof_tentang_kami') }}#kontak" 
+        <a href="{{ url_for('comprof_controller.comprof_tentang_kami') }}#kontak" 
            class="font-sans inline-block bg-amber-600 hover:bg-amber-700 dark:bg-premium-gold dark:hover:bg-yellow-300 text-white dark:text-primary-black font-bold py-4 px-12 rounded-full text-lg transition duration-300 hover-grow">
             Hubungi Kami Sekarang
         </a>

@@ -3,162 +3,91 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}EggMart - Marketplace Telur{% endblock %}</title>
+  <title>{% block title %}EggMart · Admin Dashboard{% endblock %}</title>
 
-  <!-- Tailwind CDN -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Custom Colors & Fonts -->
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            'primary-black': '#000000',
-            'pure-white': '#FFFFFF',
-            'premium-gold': '#FFD700',
-            'dark-gray': '#1a1a1a',
-            'light-gray': '#f8f9fa'
-          },
-          fontFamily: {
-            'canela': ['Canela Bold', 'serif'],
-            'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+            primary: '#FFD700',
+            'primary-foreground': '#000000',
+            background: '#000000',
+            foreground: '#FFFFFF',
+            card: '#1a1a1a',
+            'card-foreground': '#FFFFFF',
+            secondary: '#333333',
+            'secondary-foreground': '#FFFFFF',
+            muted: '#666666',
+            'muted-foreground': '#CCCCCC',
+            accent: '#FFD720',
+            'accent-foreground': '#000000',
+            destructive: '#EF4444',
+            'destructive-foreground': '#FFFFFF',
+            border: '#404040',
+            sidebar: '#000000',
+            'sidebar-foreground': '#FFFFFF',
+            'sidebar-accent': '#FFD700',
+            'sidebar-accent-foreground': '#000000',
+            'sidebar-border': '#404040',
           }
         }
       }
     }
   </script>
 
-  <!-- Custom Fonts CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
-
-  <!-- Plus Jakarta Sans Google Fonts CDN -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
   <style>
-    .theme-transition {
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
+    .th { @apply px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider; }
+    .td { @apply px-4 py-3 text-sm; }
+    .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; }
+    .switch { @apply relative inline-flex h-6 w-11 items-center rounded-full; }
+    .switch input { @apply sr-only; }
+    .slider { @apply inline-block h-4 w-4 transform rounded-full bg-white transition; }
+    .switch input:checked + .slider { @apply translate-x-6; }
+    .switch.sm { @apply h-4 w-7; }
+    .switch.sm .slider { @apply h-3 w-3; }
+    .switch.sm input:checked + .slider { @apply translate-x-3; }
+    .ctrl-btn { @apply flex items-center gap-2 px-4 py-2 bg-black/50 backdrop-blur-sm border border-white/20 rounded-lg text-white hover:bg-white/10 transition-colors; }
+    .ctrl-btn-sm { @apply p-2 bg-black/50 backdrop-blur-sm border border-white/20 rounded-lg text-white hover:bg-white/10 transition-colors; }
+    .dropdown { @apply relative; }
+    .dropdown-menu { @apply absolute top-full right-0 mt-1 w-56 rounded-md bg-card border border-border shadow-lg z-10 py-1 opacity-0 invisible transition-all duration-200; }
+    .dropdown.open .dropdown-menu { @apply opacity-100 visible; }
+    .dropdown-item { @apply flex items-center gap-3 w-full px-3 py-2 text-sm hover:bg-secondary cursor-pointer; }
+    .dropdown-divider { @apply my-1 border-t border-border; }
+    .rec-dot { @apply w-2 h-2 bg-red-500 rounded-full animate-pulse; }
   </style>
-  
-  {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-white dark:bg-primary-black theme-transition font-jakarta">
-  <!-- Navigation -->
-  <nav class="bg-white dark:bg-primary-black border-b border-gray-200 dark:border-gray-800 shadow-lg theme-transition">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="flex justify-between items-center h-16">
-        <!-- Logo & Navigation -->
-        <div class="flex items-center space-x-8">
-          <a href="{{ url_for('eggmart') }}" class="text-xl font-bold text-premium-gold font-canela">🛒 EggMart</a>
-          <div class="flex space-x-4">
-            <a href="{{ url_for('eggmart') }}" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition font-medium">Beranda</a>
-            <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Produk</a>
-            <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Keranjang</a>
-            <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">Pesanan</a>
-          </div>
-        </div>
-
-        <!-- Right Section -->
-        <div class="flex space-x-4 items-center">
-          <!-- Search Bar -->
-          <div class="relative">
-            <input type="text" placeholder="Cari produk telur..." 
-                   class="pl-10 pr-4 py-2 bg-gray-100 dark:bg-dark-gray border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-premium-gold focus:border-premium-gold text-sm w-64">
-            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-              <i data-lucide="search" class="w-4 h-4"></i>
-            </div>
-          </div>
-
-          <!-- Dark/Light Mode Toggle -->
-          <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 theme-transition">
-            <span class="dark:hidden">🌙</span>
-            <span class="hidden dark:inline">☀️</span>
-          </button>
-
-          <!-- User Menu -->
-          <div class="relative group">
-            <button class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition">
-              <div class="w-8 h-8 bg-premium-gold rounded-full flex items-center justify-center">
-                <span class="text-primary-black text-sm font-bold">{{ current_user.name[0] }}</span>
-              </div>
-              <span>{{ current_user.name }}</span>
-            </button>
-            <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-gray border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible theme-transition z-50">
-              <a href="{{ url_for('dashboard') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">Dashboard</a>
-              <a href="{{ url_for('comprof_beranda') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">Kembali ke Comprof</a>
-              <a href="{{ url_for('auth_logout') }}" class="block px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 theme-transition">Logout</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Flash Messages -->
-  <div class="max-w-7xl mx-auto px-4 mt-4">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="p-4 mb-4 rounded-lg theme-transition {% if category == 'error' %}bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-600 dark:text-red-300{% elif category == 'success' %}bg-green-100 border border-green-400 text-green-700 dark:bg-green-900 dark:border-green-600 dark:text-green-300{% else %}bg-blue-100 border border-blue-400 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300{% endif %}">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-  </div>
-
-  <!-- Main Content -->
-  <main class="theme-transition">
-    {% block content %}{% endblock %}
-  </main>
-
-  <!-- Footer -->
-  <footer class="bg-gray-800 dark:bg-dark-gray text-white mt-16 theme-transition">
-    <div class="max-w-7xl mx-auto px-4 py-8">
-      <div class="text-center">
-        <p class="font-canela text-premium-gold text-lg">EggMart</p>
-        <p class="text-gray-400 text-sm mt-2">Marketplace Telur Berkualitas</p>
-        <p class="text-gray-500 text-xs mt-1">Part of EggVision Ecosystem</p>
-      </div>
-    </div>
-  </footer>
+<body class="min-h-screen bg-background text-foreground">
+  {% block body %}{% endblock %}
 
   <script>
-    // Dark/Light Mode Toggle
-    function toggleDarkMode() {
-      const html = document.documentElement;
-      if (html.classList.contains('dark')) {
-        html.classList.remove('dark');
-        localStorage.theme = 'light';
-      } else {
-        html.classList.add('dark');
-        localStorage.theme = 'dark';
-      }
-    }
+    // Render lucide icons
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.lucide) lucide.createIcons();
 
-    // Initialize theme and icons
-    document.addEventListener('DOMContentLoaded', () => {
-      // Set initial theme
-      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      // Real-time clock
+      const timeEl = document.getElementById("live-time");
+      const dateEl = document.getElementById("live-date");
+      function pad(n){ return n.toString().padStart(2,"0"); }
+      function tick() {
+        const now = new Date();
+        const d = pad(now.getDate());
+        const mIdx = now.getMonth();
+        const y = now.getFullYear();
+        const months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+        if (dateEl) dateEl.textContent = `${d}/${months[mIdx]}/${y}`;
+        if (timeEl) timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
       }
-
-      // Render lucide icons
-      if (window.lucide) {
-        lucide.createIcons();
-      }
+      tick();
+      setInterval(tick, 1000);
     });
   </script>
-  
   {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,277 @@
+{% extends "eggmin/base.html" %}
+{% block title %}Riwayat Transaksi · EggMin{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+  <!-- Sidebar -->
+  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <!-- Logo -->
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-premium-gold flex items-center justify-center">
+          <div class="text-primary-black font-bold text-xs">EM</div>
+        </div>
+        <span class="text-premium-gold text-sm font-semibold">EGGMIN</span>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 py-4">
+     {% if current_user.role == 'pengusaha' %}
+    {% set menu = [
+      {"id":"dashboard", "icon":"layout-dashboard", "label":"Dashboard", "href":url_for('eggmart_controller.eggmartDashboard')},
+      {"id":"history",   "icon":"history",          "label":"History", "href":url_for('eggmart_controller.eggmartHistory')},
+      {"id":"eggmonitor","icon":"scan",             "label":"EggMonitor", "href":"/eggmonitor/index"}
+    ] %}
+
+  {# PEMBELI: Catalog + History #}
+  {% elif current_user.role == 'pembeli' %}
+    {% set menu = [
+      {"id":"catalog", "icon":"egg",     "label":"Catalog", "href":url_for('eggmart_controller.eggmart')},
+      {"id":"history", "icon":"history", "label":"History", "href":url_for('eggmart_controller.eggmartHistory')}
+    ] %}
+
+  {# ROLE LAIN (admin, dll) -> fallback bebas #}
+  {% else %}
+    {% set menu = [
+      {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
+      {"id":"catalog", "icon":"egg",            "label":"Catalog",   "href":url_for('eggmart_controller.eggmart')},
+      {"id":"history", "icon":"history",        "label":"History","href":url_for('eggmart_controller.eggmartHistory')}
+    ] %}
+  {% endif %}
+
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <!-- Profile -->
+    <div class="p-4 border-t border-sidebar-border">
+      <div class="w-full flex flex-col items-center gap-2 text-sidebar-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+            alt="Profile"
+            class="w-full h-full object-cover" />
+        </div>
+        <span class="text-xs">{{current_user.role}}</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-4xl font-bold mb-1">Riwayat Transaksi</h1>
+        <p class="text-muted-foreground">
+          Ringkasan transaksi Anda sebagai pembeli maupun penjual.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-8">
+        <!-- User Info -->
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
+            <img
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
+              alt="Admin"
+              class="w-full h-full object-cover" />
+          </div>
+          <div>
+            <div class="text-sm font-semibold">{{ current_user.name if current_user else 'User' }}</div>
+            <div class="text-xs text-muted-foreground">
+              {{ current_user.role if current_user else 'Role' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Date & Time -->
+        <div class="flex items-center gap-4 text-sm">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-date">{{ now.strftime('%d/%b/%Y') if now else '' }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
+            <span id="live-time">{{ now.strftime('%H:%M:%S') if now else '' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="space-y-8">
+      <!-- Sebagai Pembeli -->
+        
+        {% if current_user.role == 'pembeli' %}
+          <section class="p-6 rounded-xl border bg-card">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-foreground">Sebagai Pembeli</h2>
+            <p class="text-xs text-muted-foreground">
+              Transaksi di mana Anda bertindak sebagai pembeli (checkout dari penjual EggMart).
+            </p>
+          </div>
+        </div>
+
+        <div class="border border-border rounded-lg overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-muted">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Tanggal</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Kode Order</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Penjual</th>
+                <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Jumlah (butir)</th>
+                <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Total</th>
+                <th class="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if buyer_orders %}
+                {% for o in buyer_orders %}
+                <tr class="border-t border-border">
+                  <td class="px-3 py-2 text-xs">
+                    {{ o.created_at.strftime('%d/%b/%Y %H:%M') if o.created_at else '-' }}
+                  </td>
+                  <td class="px-3 py-2">
+                    <span class="text-xs font-mono text-foreground">{{ o.order_code }}</span>
+                  </td>
+                  <td class="px-3 py-2 text-xs">
+                    {{ o.other_name }}
+                  </td>
+                  <td class="px-3 py-2 text-right text-xs">
+                    {{ o.total_eggs }}
+                  </td>
+                  <td class="px-3 py-2 text-right text-xs">
+                    Rp {{ '{:,.0f}'.format(o.total) }}
+                  </td>
+                  <td class="px-3 py-2 text-center text-xs">
+                    {% set base = 'inline-flex items-center justify-center rounded-full px-2 py-0.5 border text-[10px] font-medium ' %}
+                    {% if o.status in ['paid', 'settlement'] %}
+                      {% set cls = base + 'bg-success/10 text-success border-success/40' %}
+                    {% elif o.status in ['pending'] %}
+                      {% set cls = base + 'bg-chart-2/10 text-chart-2 border-chart-2/40' %}
+                    {% else %}
+                      {% set cls = base + 'bg-destructive/10 text-destructive border-destructive/40' %}
+                    {% endif %}
+                    <span class="{{ cls }}">
+                      {{ o.status }}
+                    </span>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="6" class="px-3 py-4 text-center text-xs text-muted-foreground">
+                    Belum ada transaksi sebagai pembeli.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+        {% endif %}
+
+      <!-- Sebagai Penjual -->
+      
+      {% if current_user.role == 'pengusaha' %}
+         <section class="p-6 rounded-xl border bg-card">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-foreground">Sebagai Penjual</h2>
+            <p class="text-xs text-muted-foreground">
+              Transaksi di mana Anda bertindak sebagai penjual (order masuk dari pembeli).
+            </p>
+          </div>
+        </div>
+
+        <div class="border border-border rounded-lg overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-muted">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Tanggal</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Kode Order</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Pembeli</th>
+                <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Jumlah (butir)</th>
+                <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Total</th>
+                <th class="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if seller_orders %}
+                {% for o in seller_orders %}
+                <tr class="border-t border-border">
+                  <td class="px-3 py-2 text-xs">
+                    {{ o.created_at.strftime('%d/%b/%Y %H:%M') if o.created_at else '-' }}
+                  </td>
+                  <td class="px-3 py-2">
+                    <span class="text-xs font-mono text-foreground">{{ o.order_code }}</span>
+                  </td>
+                  <td class="px-3 py-2 text-xs">
+                    {{ o.other_name }}
+                  </td>
+                  <td class="px-3 py-2 text-right text-xs">
+                    {{ o.total_eggs }}
+                  </td>
+                  <td class="px-3 py-2 text-right text-xs">
+                    Rp {{ '{:,.0f}'.format(o.total) }}
+                  </td>
+                  <td class="px-3 py-2 text-center text-xs">
+                    {% set base = 'inline-flex items-center justify-center rounded-full px-2 py-0.5 border text-[10px] font-medium ' %}
+                    {% if o.status in ['paid', 'settlement'] %}
+                      {% set cls = base + 'bg-success/10 text-success border-success/40' %}
+                    {% elif o.status in ['pending'] %}
+                      {% set cls = base + 'bg-chart-2/10 text-chart-2 border-chart-2/40' %}
+                    {% else %}
+                      {% set cls = base + 'bg-destructive/10 text-destructive border-destructive/40' %}
+                    {% endif %}
+                    <span class="{{ cls }}">
+                      {{ o.status }}
+                    </span>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="6" class="px-3 py-4 text-center text-xs text-muted-foreground">
+                    Belum ada transaksi sebagai penjual.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
+        
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // Optional: update jam live biar konsisten dengan halaman lain
+  document.addEventListener('DOMContentLoaded', function () {
+    const timeEl = document.getElementById('live-time');
+    if (!timeEl) return;
+    setInterval(function () {
+      const now = new Date();
+      timeEl.textContent = now.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }, 1000);
+  });
+</script>
+{% endblock %}

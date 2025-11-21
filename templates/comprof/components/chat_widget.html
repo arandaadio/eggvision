@@ -167,7 +167,7 @@
             addMessageToChat(message, 'user');
 
             // Send to server
-            fetch('{{ url_for("comprof_send_chat") }}', {
+            fetch('{{ url_for("chat_controller.comprof_send_chat") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

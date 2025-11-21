@@ -18,11 +18,11 @@
     <!-- Menu -->
     <nav class="flex-1 py-4">
       {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/"},
-        {"id":"laporan","icon":"database","label":"Laporan","href":"/laporan"},
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/eggmonitor/index"},
+        {"id":"laporan","icon":"database","label":"Laporan","href":"/eggmonitor/laporan"},
         {"id":"detail","icon":"grid-3x3","label":"Detail Alat","href":"#"},
-        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"#"},
-        {"id":"settings","icon":"settings","label":"Pengaturan","href":"/settings"}
+        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"/eggmart/dashboard"},
+        {"id":"settings","icon":"settings","label":"Pengaturan","href":"#"}
       ] %}
       {% for item in menu %}
         {% set is_active = (item.id == active_menu) %}
@@ -37,14 +37,14 @@
 
     <!-- Profile -->
     <div class="p-4 border-t border-sidebar-border">
-      <a href="{{ url_for('eggmonitor_profile') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+      <a href="{{ url_for('eggmonitor_controller.eggmonitor_profile') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
         <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
           <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
             alt="Profile"
             class="w-full h-full object-cover" />
         </div>
-        <span class="text-xs">Profil</span>
+        <span class="text-xs">{{ current_user.role if current_user else 'Role' }}</span>
     </a>
     </div>
   </aside>
@@ -63,13 +63,13 @@
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
             <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ header.avatar_seed }}"
+              src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
               alt="{{ header.user_name }}"
               class="w-full h-full object-cover" />
           </div>
           <div>
             <div class="text-sm font-semibold">{{ header.user_name }}</div>
-            <div class="text-xs text-muted-foreground">{{ header.egg_vision_count }} EggVision</div>
+            <div class="text-xs text-muted-foreground">{{ current_user.role if current_user else 'Role' }}</div>
           </div>
         </div>
 
@@ -155,28 +155,32 @@
 
       <!-- Right Column -->
       <div>
-        <!-- EggDisplay -->
-        <div class="bg-card rounded-lg p-6 border border-border">
-          <div class="relative aspect-video bg-gradient-to-b from-background to-secondary rounded-lg overflow-hidden">
-            <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="Egg Display" class="w-full h-full object-cover" />
-            <!-- Controls bottom -->
-            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
-              <button class="ctrl-btn">
-                <div class="flex items-center gap-1">
-                  <span class="rec-dot"></span>
-                  <span class="text-xs font-semibold">REC</span>
-                </div>
-              </button>
-              <button class="ctrl-btn"><i data-lucide="camera" class="h-6 w-6"></i></button>
-              <button class="ctrl-btn"><i data-lucide="chevron-left" class="h-6 w-6"></i></button>
-            </div>
-            <!-- Controls top-right -->
-            <div class="absolute top-6 right-6 flex items-center gap-2">
-              <button class="ctrl-btn-sm"><i data-lucide="focus" class="h-5 w-5"></i></button>
-              <button class="ctrl-btn-sm"><i data-lucide="maximize-2" class="h-5 w-5"></i></button>
-            </div>
-          </div>
-        </div>
+       
+<div class="bg-card rounded-lg p-6 border border-border" style="height: 435px;">
+  <h3 class="text-lg font-semibold mb-4">Upload Gambar Telur</h3>
+
+ <form action="{{ url_for('eggmonitor_controller.upload') }}" method="POST" enctype="multipart/form-data" class="mb-4">
+    <input type="file" name="file" accept="image/*" required class="text-sm">
+   <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md text-sm">
+  Prediksi Grade Telur
+</button>
+
+  </form>
+
+  {% if uploaded_image %}
+  <div class="mt-4 relative w-full h-[250px] flex justify-center overflow-hidden rounded-lg">
+    <img src="{{ uploaded_image }}" class="h-full object-cover rounded-lg" alt="Uploaded image" />
+
+  </div>
+
+  <p class="mt-3 text-center text-sm font-semibold">
+    Prediksi: <span class="text-primary">{{ prediction }}</span><br>
+    Akurasi: {{ confidence }}
+  </p>
+  {% endif %}
+</div>
+
+
       </div>
     </div>
 

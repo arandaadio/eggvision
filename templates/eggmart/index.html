@@ -1,4 +1,4 @@
-{% extends "eggmin/base.html" %}
+{% extends "eggmart/base.html" %}
 {% block title %}Dashboard · EggMin{% endblock %}
 
 {% block body %}
@@ -17,13 +17,30 @@
 
     <!-- Menu -->
     <nav class="flex-1 py-4">
-      {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin')},
-        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_users')},
-        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_news')},
-        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_chats')},
-        {"id":"marketplace","icon":"shopping-cart","label":"Marketplace","href":url_for('eggmin_marketplace')}
-      ] %}
+  {% if current_user.role == 'pengusaha' %}
+    {% set menu = [
+      {"id":"dashboard", "icon":"layout-dashboard", "label":"Dashboard", "href":url_for('eggmart_controller.eggmartDashboard')},
+      {"id":"history",   "icon":"history",          "label":"History", "href":url_for('eggmart_controller.eggmartHistory')},
+      {"id":"eggmonitor","icon":"scan",             "label":"EggMonitor", "href":"/eggmonitor/index"}
+    ] %}
+
+  {# PEMBELI: Catalog + History #}
+  {% elif current_user.role == 'pembeli' %}
+    {% set menu = [
+      {"id":"catalog", "icon":"egg",     "label":"Catalog", "href":url_for('eggmart_controller.eggmart')},
+      {"id":"history", "icon":"history", "label":"History", "href":url_for('eggmart_controller.eggmartHistory')}
+    ] %}
+
+  {# ROLE LAIN (admin, dll) -> fallback bebas #}
+  {% else %}
+    {% set menu = [
+      {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
+      {"id":"catalog", "icon":"egg",            "label":"Catalog",   "href":url_for('eggmart_controller.eggmart')},
+      {"id":"history", "icon":"history",        "label":"History","href":url_for('eggmart_controller.eggmartHistory')}
+    ] %}
+  {% endif %}
+
+
       {% for item in menu %}
         {% set is_active = (item.id == active_menu) %}
         <a href="{{ item.href }}"
@@ -44,7 +61,7 @@
             alt="Profile"
             class="w-full h-full object-cover" />
         </div>
-        <span class="text-xs">Admin</span>
+        <span class="text-xs">{{current_user.role}}</span>
       </div>
     </div>
   </aside>
@@ -69,7 +86,7 @@
           </div>
           <div>
             <div class="text-sm font-semibold">{{ current_user.name }}</div>
-            <div class="text-xs text-muted-foreground">Administrator</div>
+            <div class="text-xs text-muted-foreground">{{ current_user.role }}</div>
           </div>
         </div>
 
@@ -87,188 +104,633 @@
       </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-4 gap-6 mb-8">
-      <!-- Total Users -->
-      <div class="bg-card rounded-lg p-6 border border-border">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-muted-foreground">Total Users</p>
-            <p class="text-3xl font-bold mt-2">{{ stats.total_users }}</p>
-          </div>
-          <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-            <i data-lucide="users" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
-          <i data-lucide="trending-up" class="w-4 h-4 text-green-500"></i>
-          <span>{{ stats.pembeli_count }} Pembeli, {{ stats.pengusaha_count }} Pengusaha</span>
-        </div>
-      </div>
-
-      <!-- Active Products -->
-      <div class="bg-card rounded-lg p-6 border border-border">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-muted-foreground">Active Products</p>
-            <p class="text-3xl font-bold mt-2">{{ stats.total_products }}</p>
-          </div>
-          <div class="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
-            <i data-lucide="package" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
-          <i data-lucide="shopping-cart" class="w-4 h-4 text-premium-gold"></i>
-          <span>Available in EggMart</span>
-        </div>
-      </div>
-
-      <!-- Unread Messages -->
-      <div class="bg-card rounded-lg p-6 border border-border">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-muted-foreground">Unread Messages</p>
-            <p class="text-3xl font-bold mt-2">{{ stats.unread_messages }}</p>
-          </div>
-          <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-            <i data-lucide="message-circle" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
-          <i data-lucide="clock" class="w-4 h-4 text-orange-500"></i>
-          <span>Need attention</span>
-        </div>
-      </div>
-
-      <!-- Published News -->
-      <div class="bg-card rounded-lg p-6 border border-border">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-muted-foreground">Published News</p>
-            <p class="text-3xl font-bold mt-2">{{ stats.total_news }}</p>
-          </div>
-          <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-            <i data-lucide="newspaper" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
-          <i data-lucide="eye" class="w-4 h-4 text-purple-500"></i>
-          <span>Live on Comprof</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Activity & Quick Actions -->
-    <div class="grid grid-cols-2 gap-6">
-      <!-- Recent Messages -->
-      <div class="bg-card rounded-lg p-6 border border-border">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold">Recent Messages</h3>
-          <a href="{{ url_for('eggmin_chats') }}" class="text-sm text-premium-gold hover:text-yellow-500">View All</a>
-        </div>
-        <div class="space-y-3">
-          {% for message in recent_messages %}
-          <div class="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50">
-            <div class="w-8 h-8 rounded-full bg-premium-gold flex items-center justify-center flex-shrink-0">
-              <span class="text-primary-black text-xs font-semibold">
-                {{ (message.sender_name or 'G')[0] }}
-              </span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium">{{ message.sender_name or 'Guest' }}</span>
-                <span class="text-xs text-muted-foreground">{{ message.created_at|time_ago }}</span>
+    <!-- ====================== SELLER DASHBOARD CONTENT ====================== -->
+    <div class="mt-8">
+      <div class="flex flex-col xl:flex-row gap-8">
+        <!-- Kiri: Dashboard Utama -->
+        <section class="flex-1 space-y-8">
+          <!-- Welcome Section -->
+          <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10 border-primary/30">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-xl font-semibold text-foreground mb-2">
+                  Selamat Datang, {{ current_user.name or 'OptikDio' }}
+                </h2>
+                <p class="text-muted-foreground">
+                </p>
               </div>
-              <p class="text-sm text-muted-foreground truncate">{{ message.message }}</p>
+              <div class="bg-card px-4 py-2 rounded-lg border border-border">
+                <span class="text-sm font-semibold text-primary">EggMart</span>
+              </div>
             </div>
-            <span class="badge {{ 'bg-yellow-100 text-yellow-800' if message.status == 'unread' else 'bg-green-100 text-green-800' }}">
-              {{ message.status }}
-            </span>
+
+          
           </div>
-          {% else %}
-          <p class="text-sm text-muted-foreground text-center py-4">No recent messages</p>
+
+          <!-- Filter Waktu + Konten -->
+
+          <section>
+                      <!-- Kelola Listing EggMart (PENGUSAHA) -->
+          <div class="p-6 rounded-xl border bg-card">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-lg font-semibold text-foreground">Kelola Listing EggMart</h2>
+                <p class="text-xs text-muted-foreground">
+                  Stok per butir, diambil dari hasil scan dengan status <code>available</code>.
+                </p>
+              </div>
+            </div>
+
+            {# ==== FLASH MESSAGE DI SINI ==== #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-4 space-y-2">
+          {% for category, message in messages %}
+            {% set base = 'flex items-center gap-2 px-3 py-2 rounded-md border text-xs' %}
+            {% if category == 'success' %}
+              {% set cls = base + ' border-success/40 bg-success/10 text-success' %}
+            {% elif category == 'error' %}
+              {% set cls = base + ' border-destructive/40 bg-destructive/10 text-destructive' %}
+            {% else %}
+              {% set cls = base + ' border-info/40 bg-info/10 text-info' %}
+            {% endif %}
+            <div class="{{ cls }}">
+              <span>{{ message }}</span>
+            </div>
           {% endfor %}
         </div>
-      </div>
+      {% endif %}
+    {% endwith %}
 
-      <!-- Quick Actions -->
-      <div class="bg-card rounded-lg p-6 border border-border">
-        <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div class="grid grid-cols-2 gap-4">
-          <a href="{{ url_for('eggmin_users') }}" class="p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <i data-lucide="user-plus" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+            {% if available_by_grade %}
+              <div class="mb-4 text-xs text-muted-foreground">
+                Telur siap dijual (belum di-list):
+                {% for g, qty in available_by_grade.items() %}
+                  <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 border mr-2">
+                    Grade {{ g }}: {{ qty }} butir
+                  </span>
+                {% endfor %}
               </div>
-              <span class="text-sm font-medium">Add User</span>
-            </div>
-          </a>
-          
-          <a href="{{ url_for('eggmin_news') }}" class="p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                <i data-lucide="edit" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+            {% else %}
+              <p class="mb-4 text-xs text-muted-foreground">
+                Belum ada telur dengan status <code>available</code> dari hasil scan.
+              </p>
+            {% endif %}
+
+            <!-- FORM SET HARGA & STOK -->
+            <form action="{{ url_for('eggmart_controller.save_listing') }}" method="POST"
+                  class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
+              <div>
+                <label class="block text-xs mb-1">Grade</label>
+                <select name="grade"
+                        class="w-full text-sm px-3 py-2 rounded-md border bg-background">
+                  {% for g in ['A','B','C'] %}
+                    <option value="{{ g }}">Grade {{ g }}</option>
+                  {% endfor %}
+                </select>
               </div>
-              <span class="text-sm font-medium">Create News</span>
-            </div>
-          </a>
-          
-          <a href="{{ url_for('eggmin_marketplace') }}" class="p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <i data-lucide="package-plus" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+
+              <div>
+                <label class="block text-xs mb-1">Harga per butir (Rp)</label>
+                <input type="number" name="price" required
+                       class="w-full text-sm px-3 py-2 rounded-md border bg-background"
+                       placeholder="cth: 1500">
               </div>
-              <span class="text-sm font-medium">Manage Products</span>
-            </div>
-          </a>
-          
-          <a href="{{ url_for('eggmin_chats') }}" class="p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-                <i data-lucide="message-square" class="w-4 h-4 text-orange-600 dark:text-orange-400"></i>
+
+              <div>
+                <label class="block text-xs mb-1">Stok (butir)</label>
+                <input type="number" name="stock" min="1" required
+                       class="w-full text-sm px-3 py-2 rounded-md border bg-background"
+                       placeholder="cth: 30">
               </div>
-              <span class="text-sm font-medium">Reply Messages</span>
+
+              <div class="flex gap-2">
+                <button type="submit"
+                        class="flex-1 inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-3 py-2 text-sm font-medium hover:bg-primary/90">
+                  Simpan Listing
+                </button>
+              </div>
+            </form>
+
+            <!-- TABEL LISTING AKTIF -->
+            <h3 class="text-sm font-semibold mb-2">Listing Aktif</h3>
+            <div class="border border-border rounded-lg overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-muted">
+                  <tr>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Grade</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Harga/Butir</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Stok (butir)</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if listings %}
+                    {% for l in listings %}
+                    <tr class="border-t border-border">
+                      <td class="px-3 py-2">Grade {{ l.grade }}</td>
+                      <td class="px-3 py-2">
+                        Rp {{ "{:,.0f}".format(l.price) }}
+                      </td>
+                      <td class="px-3 py-2">{{ l.stock }}</td>
+                      <td class="px-3 py-2">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs border
+                          {{ 'bg-success/10 text-success border-success/40' if l.status == 'active' else 'bg-muted text-muted-foreground border-border' }}">
+                          {{ l.status }}
+                        </span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="4" class="px-3 py-3 text-xs text-muted-foreground">
+                        Belum ada listing aktif. Tambahkan harga & stok di form di atas.
+                      </td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
             </div>
-          </a>
+          </div>
+
+          </section>
+
+          <section>
+            <!-- Tabs -->
+            <div class="inline-flex rounded-lg bg-card border border-border overflow-hidden">
+              <button
+                type="button"
+                class="egg-tab-trigger px-4 py-2 text-sm font-medium border-r border-border bg-primary text-primary-foreground"
+                data-tab-target="today">
+                Today
+              </button>
+              <button
+                type="button"
+                class="egg-tab-trigger px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+                data-tab-target="7days">
+                7 Days
+              </button>
+              <button
+                type="button"
+                class="egg-tab-trigger px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+                data-tab-target="30days">
+                30 Days
+              </button>
+              <button
+                type="button"
+                class="egg-tab-trigger px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+                data-tab-target="90days">
+                90 Days
+              </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="mt-6 space-y-6">
+              <!-- TODAY -->
+              <div class="egg-tab-content space-y-6" data-tab-content="today">
+                <!-- Stats Grid -->
+                  <!-- Card 1: Produk Terjual Hari Ini -->
+                  <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20">
+                    <div class="flex items-start justify-between mb-4">
+                      <p class="text-sm text-muted-foreground font-medium">Produk Terjual</p>
+                      <i data-lucide="shopping-cart" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-end justify-between">
+                      <h3 class="text-3xl font-bold text-foreground">
+                        {{ cards.today.sold_eggs or 0 }}
+                      </h3>
+                      <span class="text-xs font-semibold text-muted-foreground">
+                        butir terjual hari ini
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Card 2: Transaksi Selesai -->
+                  <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20">
+                    <div class="flex items-start justify-between mb-4">
+                      <p class="text-sm text-muted-foreground font-medium">Transaksi Selesai</p>
+                      <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-end justify-between">
+                      <h3 class="text-3xl font-bold text-foreground">
+                        {{ cards.today.completed_orders or 0 }}
+                      </h3>
+                      <span class="text-xs font-semibold text-muted-foreground">
+                        order selesai hari ini
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Card 3: Performa Chat -->
+                  <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20">
+                    <div class="flex items-start justify-between mb-4">
+                      <p class="text-sm text-muted-foreground font-medium">Performa Chat</p>
+                      <i data-lucide="package" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-end justify-between">
+                      <h3 class="text-3xl font-bold text-foreground">
+                        {{ chat_response_rate or 0 }}%
+                      </h3>
+                      <span class="text-xs font-semibold text-muted-foreground">
+                        sesi terbalas
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Card 4: Penilaian Toko -->
+                  <div class="p-6 rounded-xl border bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20">
+                    <div class="flex items-start justify-between mb-4">
+                      <p class="text-sm text-muted-foreground font-medium">Penilaian Toko</p>
+                      <i data-lucide="star" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-end justify-between">
+                      <h3 class="text-3xl font-bold text-foreground">
+                        {{ '%.1f'|format(store_rating.avg_rating or 0) }}
+                      </h3>
+                      <span class="text-xs font-semibold text-muted-foreground">
+                        {{ store_rating.total_reviews or 0 }} penilaian
+                      </span>
+                    </div>
+                  </div>
+
+              </div>
+
+              <!-- 7 DAYS -->
+              <div class="egg-tab-content hidden rounded-xl border bg-card p-6 text-sm text-muted-foreground" data-tab-content="7days">
+                Ringkasan data 7 hari akan ditambahkan di sini.
+              </div>
+
+              <!-- 30 DAYS -->
+              <div class="egg-tab-content hidden rounded-xl border bg-card p-6 text-sm text-muted-foreground" data-tab-content="30days">
+                Ringkasan data 30 hari akan ditambahkan di sini.
+              </div>
+
+              <!-- 90 DAYS -->
+              <div class="egg-tab-content hidden rounded-xl border bg-card p-6 text-sm text-muted-foreground" data-tab-content="90days">
+                Ringkasan data 90 hari akan ditambahkan di sini.
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- Kanan: Chat Section -->
+        <aside class="w-full xl:w-96">
+          <div class="h-full max-h-[600px] xl:max-h-none rounded-xl border bg-card flex flex-col">
+            <!-- LIST VIEW -->
+            <div id="chatListView" class="flex-1 flex flex-col">
+              <div class="p-4 border-b border-border">
+                <div class="flex items-center gap-2 mb-2">
+                  <i data-lucide="message-circle" class="w-5 h-5 text-primary"></i>
+                  <h3 class="font-semibold text-foreground">Chat</h3>
+                </div>
+                <p class="text-sm text-muted-foreground">
+                  {{ total_unread_chats }} pesan belum dibaca
+                </p>
+              </div>
+
+              <div class="flex-1 overflow-y-auto">
+                <div class="p-2 space-y-1">
+                
+
+
+                  <div class="p-2 space-y-1">
+  {% if chat_threads %}
+    {% for t in chat_threads %}
+      <button type="button"
+              class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+              data-chat-id="{{ t.id }}">
+        <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-semibold">
+          {{ t.initials }}
         </div>
+        <div class="flex-1 min-w-0 text-left">
+          <div class="flex items-center justify-between mb-1">
+            <p class="font-medium text-sm text-foreground truncate">
+              {{ t.name }}
+            </p>
+            <span class="text-xs text-muted-foreground">
+              {{ t.last_time.strftime('%H:%M') if t.last_time }}
+            </span>
+          </div>
+          <p class="text-xs text-muted-foreground truncate">
+            {{ t.last_message or 'Belum ada pesan' }}
+          </p>
+        </div>
+        {% if t.unread > 0 %}
+          <span class="inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5 font-medium">
+            {{ t.unread }}
+          </span>
+        {% endif %}
+      </button>
+    {% endfor %}
+  {% else %}
+    <p class="px-3 py-4 text-xs text-muted-foreground">
+      Belum ada sesi chat.
+    </p>
+  {% endif %}
+</div>
+
+
+
+
+
+
+
+
+                </div>
+              </div>
+            </div>
+
+            <!-- DETAIL VIEW -->
+            <div id="chatDetailView" class="hidden flex-1 flex-col">
+              <!-- Header -->
+              <div class="p-4 border-b border-border flex items-center gap-3">
+                <button
+                  type="button"
+                  id="backToListBtn"
+                  class="mr-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted">
+                  ←
+                </button>
+                <div
+                  id="chatDetailAvatar"
+                  class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-semibold">
+                  AW
+                </div>
+                <div>
+                  <p id="chatDetailName" class="font-semibold text-foreground">Nama Pembeli</p>
+                  <p id="chatDetailStatus" class="text-xs text-muted-foreground">Online</p>
+                </div>
+              </div>
+
+              <!-- Messages -->
+              <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- akan diisi via JS -->
+              </div>
+
+              <!-- Input -->
+              <div class="p-4 border-t border-border">
+                <form id="chatForm" class="flex gap-2">
+                  <input
+                    id="chatInput"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Ketik pesan..."
+                    class="flex-1 text-sm px-3 py-2 rounded-md border bg-background outline-none focus:ring-2 focus:ring-primary" />
+                  <button
+                    type="submit"
+                    class="inline-flex items-center justify-center rounded-md px-3 py-2 bg-primary text-primary-foreground text-sm hover:bg-primary/90">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
+    <!-- ====================== END SELLER DASHBOARD CONTENT ====================== -->
 
-    <!-- System Status -->
-    <div class="mt-6 bg-card rounded-lg p-6 border border-border">
-      <h3 class="text-lg font-semibold mb-4">System Status</h3>
-      <div class="grid grid-cols-3 gap-4">
-        <div class="flex items-center gap-3 p-3 border border-border rounded-lg">
-          <div class="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-            <i data-lucide="server" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-          </div>
-          <div>
-            <p class="text-sm font-medium">Database</p>
-            <p class="text-xs text-muted-foreground">Connected</p>
-          </div>
-        </div>
-        
-        <div class="flex items-center gap-3 p-3 border border-border rounded-lg">
-          <div class="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-            <i data-lucide="globe" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
-          </div>
-          <div>
-            <p class="text-sm font-medium">Web Server</p>
-            <p class="text-xs text-muted-foreground">Running</p>
-          </div>
-        </div>
-        
-        <div class="flex items-center gap-3 p-3 border border-border rounded-lg">
-          <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-            <i data-lucide="shield" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
-          </div>
-          <div>
-            <p class="text-sm font-medium">Security</p>
-            <p class="text-xs text-muted-foreground">Protected</p>
-          </div>
-        </div>
-      </div>
-    </div>
   </main>
 </div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // ================== TAB LOGIC ==================
+    const tabTriggers = document.querySelectorAll('.egg-tab-trigger');
+    const tabContents = document.querySelectorAll('.egg-tab-content');
+
+    tabTriggers.forEach(function (trigger) {
+      trigger.addEventListener('click', function () {
+        const target = this.dataset.tabTarget;
+
+        tabTriggers.forEach(function (btn) {
+          btn.classList.remove('bg-primary', 'text-primary-foreground');
+          btn.classList.add('text-muted-foreground');
+        });
+
+        this.classList.add('bg-primary', 'text-primary-foreground');
+        this.classList.remove('text-muted-foreground');
+
+        tabContents.forEach(function (content) {
+          if (content.dataset.tabContent === target) {
+            content.classList.remove('hidden');
+          } else {
+            content.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    // ================== SALES CHART ==================
+        // ================== SALES CHART ==================
+    const salesCanvas = document.getElementById('salesChart');
+    if (salesCanvas && window.Chart) {
+      const ctx = salesCanvas.getContext('2d');
+      let primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+      if (!primary) {
+        primary = 'rgb(59,130,246)'; // fallback
+      }
+
+      const labels = {{ sales_chart_labels|tojson }};
+      const datasetData = {{ sales_chart_data|tojson }};
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: datasetData,
+            borderColor: primary,
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0.4,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              displayColors: false,
+              padding: 8
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 12 } }
+            },
+            y: {
+              grid: { color: 'rgba(148,163,184,0.2)' },
+              ticks: { font: { size: 12 } }
+            }
+          }
+        }
+      });
+    }
+
+
+    // ================== CHAT LOGIC ==================
+        // ================== CHAT LOGIC (REAL) ==================
+    const chatThreads = {{ chat_threads|tojson }};
+
+    const listView = document.getElementById('chatListView');
+    const detailView = document.getElementById('chatDetailView');
+    const detailName = document.getElementById('chatDetailName');
+    const detailAvatar = document.getElementById('chatDetailAvatar');
+    const messagesContainer = document.getElementById('chatMessages');
+    const backBtn = document.getElementById('backToListBtn');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+
+    let activeChatId = null;
+    let activeChatApiUrl = null;
+
+    function findChatById(id) {
+      return chatThreads.find(function (c) {
+        return String(c.id) === String(id);
+      });
+    }
+
+    function clearMessages() {
+      if (messagesContainer) {
+        messagesContainer.innerHTML = '';
+      }
+    }
+
+    function appendMessageBubble(sender, text, time) {
+      if (!messagesContainer) return;
+
+      // Di dashboard seller:
+      // - sender 'seller'  -> di kanan (warna primary)
+      // - sender 'buyer'   -> di kiri (warna muted)
+      const isSelf = sender === 'seller';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex ' + (isSelf ? 'justify-end' : 'justify-start');
+
+      const bubble = document.createElement('div');
+      bubble.className =
+        'max-w-[70%] rounded-lg p-3 text-sm ' +
+        (isSelf ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground');
+
+      const textEl = document.createElement('p');
+      textEl.textContent = text;
+
+      const timeEl = document.createElement('p');
+      timeEl.className =
+        'text-xs mt-1 ' +
+        (isSelf ? 'text-primary-foreground/70' : 'text-muted-foreground');
+      timeEl.textContent = time || '';
+
+      bubble.appendChild(textEl);
+      bubble.appendChild(timeEl);
+      wrapper.appendChild(bubble);
+      messagesContainer.appendChild(wrapper);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function loadMessages(chat) {
+      if (!chat || !chat.fetch_url) return;
+      activeChatApiUrl = chat.fetch_url;
+
+      clearMessages();
+      appendMessageBubble('buyer', 'Memuat pesan...', '');
+
+      fetch(chat.fetch_url, {
+        method: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (res) {
+          clearMessages();
+          if (!res.success) {
+            appendMessageBubble('buyer', res.message || 'Gagal memuat chat.', '');
+            return;
+          }
+
+          (res.messages || []).forEach(function (msg) {
+            // server kirim sender 'buyer' / 'seller'
+            appendMessageBubble(msg.sender, msg.text, msg.time);
+          });
+        })
+        .catch(function (err) {
+          console.error(err);
+          clearMessages();
+          appendMessageBubble('buyer', 'Terjadi kesalahan saat memuat chat.', '');
+        });
+    }
+
+    const chatItems = document.querySelectorAll('[data-chat-id]');
+
+    chatItems.forEach(function (item) {
+      item.addEventListener('click', function () {
+        const chatId = this.dataset.chatId;
+        const chat = findChatById(chatId);
+        if (!chat) return;
+
+        activeChatId = chat.id;
+        detailName.textContent = chat.name;
+        detailAvatar.textContent = chat.initials;
+
+        listView.classList.add('hidden');
+        detailView.classList.remove('hidden');
+
+        loadMessages(chat);
+      });
+    });
+
+    if (backBtn) {
+      backBtn.addEventListener('click', function () {
+        activeChatId = null;
+        activeChatApiUrl = null;
+        detailView.classList.add('hidden');
+        listView.classList.remove('hidden');
+      });
+    }
+
+    if (chatForm && chatInput && messagesContainer) {
+      chatForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const value = chatInput.value.trim();
+        if (!value || !activeChatApiUrl) return;
+
+        const nowTime = new Date().toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        fetch(activeChatApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ message: value })
+        })
+          .then(function (res) { return res.json(); })
+          .then(function (res) {
+            if (!res.success) {
+              console.error('Gagal mengirim pesan:', res.message);
+              return;
+            }
+            const msg = res.message || { text: value, time: nowTime };
+            appendMessageBubble('seller', msg.text, msg.time);
+            chatInput.value = '';
+          })
+          .catch(function (err) {
+            console.error(err);
+          });
+      });
+    }
+
+
+
+
+  });
+</script>
 {% endblock %}
