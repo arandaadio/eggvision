@@ -25,7 +25,7 @@ mdurl==0.1.2
 ml_dtypes==0.5.3
 mysql-connector-python==9.0.0
 namex==0.1.0
-numpy==2.0.2
+numpy==2.3.5
 opt_einsum==3.4.0
 optree==0.17.0
 packaging==25.0

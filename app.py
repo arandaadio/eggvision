@@ -1,3 +1,4 @@
+from flask import Flask
 from flask_login import LoginManager
 from dotenv import load_dotenv
 import os
