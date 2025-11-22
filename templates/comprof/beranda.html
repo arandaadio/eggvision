@@ -94,7 +94,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
 <section id="hero" class="hero-section relative flex items-center justify-center text-center text-pure-white overflow-hidden hero-bg">
     <div class="hero-overlay absolute inset-0 z-0"></div>
 
@@ -110,7 +109,6 @@
     </div>
 </section>
 
-<!-- Layanan dan Produk Section -->
 <section id="layanan" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
         <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
@@ -118,7 +116,6 @@
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            <!-- EggMart Card -->
             <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggMart Platform" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
@@ -128,11 +125,10 @@
                     Marketplace eksklusif untuk jual beli telur berkualitas yang telah terverifikasi oleh sistem grading mesin EggVision.
                 </p>
                 <div>
-                    {{ egg_cta('Pelajari Lebih Lanjut', href=url_for('comprof_layanan'), type='link') }}
+                    {{ egg_cta('Pelajari Lebih Lanjut', href=url_for('comprof_controller.comprof_layanan'), type='link') }}
                 </div>
             </div>
             
-            <!-- EggVision Machine Card -->
             <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggVision Grading Machine" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
@@ -142,11 +138,10 @@
                     Mesin grading telur otomatis kami menggunakan AI canggih untuk menyortir, mendeteksi retak, dan mengukur kualitas telur dengan akurasi dan kecepatan tinggi.
                 </p>
                 <div>
-                    {{ egg_cta('Pelajari Lebih Lanjut', href=url_for('comprof_layanan'), type='link') }}
+                    {{ egg_cta('Pelajari Lebih Lanjut', href=url_for('comprof_controller.comprof_layanan'), type='link') }}
                 </div>
             </div>
             
-            <!-- EggMonitor Card -->
             <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggMonitor Dashboard" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
@@ -156,7 +151,7 @@
                     Dashboard pemantauan untuk pemilik bisnis. Lacak produktivitas mesin, kualitas hasil panen, dan inventaris.
                 </p>
                 <div>
-                    {{ egg_cta('Pelajari Lebih Lanjut', href=url_for('comprof_layanan'), type='link') }}
+                    {{ egg_cta('Pelajari Lebih Lanjut', href=url_for('comprof_controller.comprof_layanan'), type='link') }}
                 </div>
             </div>
 
@@ -164,7 +159,6 @@
     </div>
 </section>
 
-<!-- Berita Terkini Section -->
 <section id="berita" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
         <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
@@ -206,7 +200,6 @@
     </div>
 </section>
 
-<!-- Testimoni Section -->
 <section id="testimoni" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white relative overflow-hidden">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
         <h2 class="font-title text-5xl text-center mb-24 text-gray-800 dark:text-pure-white">
@@ -262,7 +255,6 @@
     </div>
 </section>
 
-<!-- CTA Section -->
 <section id="cta" class="py-24 bg-white dark:bg-primary-black text-center text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
         <h2 class="font-title text-6xl mb-6 text-gray-800 dark:text-pure-white">
@@ -272,7 +264,7 @@
             Hubungi tim kami untuk mendapatkan demo gratis dan konsultasi tentang bagaimana EggVision dapat membantu meningkatkan efisiensi dan profitabilitas peternakan Anda.
         </p>
         <div>
-            {{ egg_cta('Hubungi Kami Sekarang', href=url_for('comprof_tentang_kami', _anchor='kontak'), type='link', extra_class='mx-auto') }}
+            {{ egg_cta('Hubungi Kami Sekarang', href=url_for('comprof_controller.comprof_tentang_kami', _anchor='kontak'), type='link', extra_class='mx-auto') }}
         </div>
     </div>
 </section>
