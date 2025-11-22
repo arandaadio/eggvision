@@ -2,10 +2,8 @@
 {% block title %}Chats · EggMin{% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-background">
-  <!-- Sidebar Lengkap -->
-  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
-    <!-- Logo -->
+<div class="min-h-screen bg-background overflow-hidden flex flex-col">
+  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col z-20">
     <div class="p-6 border-b border-sidebar-border">
       <div class="flex flex-col items-center gap-2">
         <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -14,8 +12,6 @@
         <span class="text-primary text-sm font-semibold">EGGMIN</span>
       </div>
     </div>
-
-    <!-- Menu -->
     <nav class="flex-1 py-4">
       {% set menu = [
         {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin')},
@@ -34,284 +30,277 @@
         </a>
       {% endfor %}
     </nav>
-
-    <!-- Profile -->
     <div class="p-4 border-t border-sidebar-border">
       <a href="{{ url_for('comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
         <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" 
-               alt="Profile" class="w-full h-full object-cover" />
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" alt="Profile" class="w-full h-full object-cover" />
         </div>
         <span class="text-xs">Kembali</span>
       </a>
     </div>
   </aside>
 
-  <!-- Main -->
-  <main class="ml-[130px] p-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-4xl font-bold mb-1">Manajemen Chat</h1>
-        <p class="text-muted-foreground">Kelola percakapan dari Guest dan Pengusaha</p>
-      </div>
-      
-      <div class="flex items-center gap-4">
-        <!-- Stats -->
-        <div class="flex items-center gap-6 text-sm">
-          <div class="text-center">
-            <div class="text-2xl font-bold text-primary">{{ chat_messages|length }}</div>
-            <div class="text-xs text-muted-foreground">Total Pesan</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-red-500">
-              {{ chat_messages|selectattr('status', 'equalto', 'unread')|list|length }}
-            </div>
-            <div class="text-xs text-muted-foreground">Belum Dibaca</div>
-          </div>
+  <main class="ml-[130px] h-screen flex flex-col bg-gray-50 dark:bg-[#0f0f0f]">
+    
+    <header class="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i data-lucide="message-square" class="w-5 h-5 text-primary"></i>
+                Pusat Pesan
+            </h1>
         </div>
+        <div class="text-sm text-muted-foreground">
+            {{ now.strftime('%d %B %Y') }}
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
         
-        <!-- Date & Time -->
-        <div class="flex items-center gap-4 text-sm">
-          <div class="flex items-center gap-2">
-            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-date">{{ now.strftime('%d/%b/%Y') }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-time">{{ now.strftime('%H:%M') }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Chat Messages -->
-    <div class="bg-card rounded-lg border border-border overflow-hidden">
-      <div class="p-6 border-b border-border">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">Semua Percakapan</h3>
-          <div class="flex items-center gap-4">
-            <div class="relative">
-              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
-              <input type="text" placeholder="Cari pesan..." class="pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary">
-            </div>
-            <select class="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Semua Status</option>
-              <option value="unread">Belum Dibaca</option>
-              <option value="read">Sudah Dibaca</option>
-              <option value="replied">Sudah Dibalas</option>
-            </select>
-            <select class="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Semua Pengirim</option>
-              <option value="guest">Guest</option>
-              <option value="pembeli">Pembeli</option>
-              <option value="pengusaha">Pengusaha</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="divide-y divide-border max-h-[600px] overflow-y-auto">
-        {% for chat in chat_messages %}
-        <div class="p-6 hover:bg-secondary/30 transition-colors {{ 'bg-red-500/5' if chat.status == 'unread' }}">
-          <div class="flex items-start justify-between mb-3">
-            <div class="flex items-center gap-3">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ chat.sender_name|lower|replace(' ', '') }}" 
-                   alt="{{ chat.sender_name }}" class="w-10 h-10 rounded-full">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold">{{ chat.sender_name }}</span>
-                  <span class="badge {{ 'bg-blue-500/20 text-blue-500' if chat.sender_role == 'pembeli' else 'bg-yellow-500/20 text-yellow-500' if chat.sender_role == 'pengusaha' else 'bg-gray-500/20 text-gray-500' }}">
-                    {{ chat.sender_role|title }}
-                  </span>
-                  {% if chat.status == 'unread' %}
-                  <span class="badge bg-red-500/20 text-red-500">Baru</span>
-                  {% endif %}
+        <div class="w-[320px] md:w-[380px] bg-background border-r border-border flex flex-col">
+            <div class="p-4 border-b border-border">
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
+                    <input type="text" id="search-conversations" placeholder="Cari pengguna..." 
+                           class="w-full bg-secondary/50 pl-9 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
                 </div>
-                <p class="text-sm text-muted-foreground">{{ chat.sender_email }}</p>
-              </div>
             </div>
-            <div class="text-right">
-              <span class="text-xs text-muted-foreground block">
-                {{ chat.created_at.strftime('%d %b %Y %H:%M') }}
-              </span>
-              <span class="text-xs {{ 'text-yellow-500' if chat.status == 'unread' else 'text-green-500' if chat.status == 'replied' else 'text-blue-500' }}">
-                {{ 'Belum dibaca' if chat.status == 'unread' else 'Sudah dibalas' if chat.status == 'replied' else 'Sudah dibaca' }}
-              </span>
-            </div>
-          </div>
-          
-          <div class="mb-4">
-            <p class="text-sm leading-relaxed">{{ chat.message }}</p>
-          </div>
-          
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <!-- PERBAIKAN: Tambah quotes di parameter JavaScript -->
-              <button onclick="replyToChat('{{ chat.id }}')" class="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90 transition-colors flex items-center gap-1">
-                <i data-lucide="reply" class="w-3 h-3"></i>
-                Balas
-              </button>
-              <!-- PERBAIKAN: Tambah quotes di parameter JavaScript -->
-              <button onclick="markAsRead('{{ chat.id }}')" class="bg-secondary px-3 py-1 rounded text-sm hover:bg-secondary/80 transition-colors flex items-center gap-1">
-                <i data-lucide="check" class="w-3 h-3"></i>
-                Tandai Dibaca
-              </button>
-            </div>
-            <!-- PERBAIKAN: Tambah quotes di parameter JavaScript -->
-            <button onclick="deleteChat('{{ chat.id }}')" class="text-red-500 hover:text-red-600 transition-colors flex items-center gap-1">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span class="text-sm">Hapus</span>
-            </button>
-          </div>
 
-          <!-- Reply Form (hidden by default) -->
-          <div id="replyForm-{{ chat.id }}" class="mt-4 hidden">
-            <div class="flex gap-2">
-              <input type="text" placeholder="Ketik balasan..." class="flex-1 px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm">
-              <!-- PERBAIKAN: Tambah quotes di parameter JavaScript -->
-              <button onclick="sendReply('{{ chat.id }}')" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors text-sm">
-                Kirim
-              </button>
+            <div class="flex-1 overflow-y-auto hover:overflow-y-auto scrollbar-thin" id="conversation-list">
+                {% for chat in conversations %}
+                <button onclick="loadChat('{{ chat.conversation_id }}', '{{ chat.name }}', '{{ chat.email }}', '{{ chat.role }}')"
+                        class="w-full p-4 flex items-start gap-3 hover:bg-secondary/40 transition-colors border-b border-border/50 text-left group focus:bg-secondary/60 conversation-item"
+                        data-id="{{ chat.conversation_id }}">
+                    <div class="relative flex-shrink-0">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ chat.name|lower|replace(' ', '') }}" 
+                             class="w-10 h-10 rounded-full bg-muted">
+                        {% if chat.role == 'admin' %}
+                            <div class="absolute -bottom-1 -right-1 bg-blue-500 p-[2px] rounded-full border-2 border-background">
+                                <i data-lucide="shield" class="w-2 h-2 text-white"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <h4 class="font-semibold text-sm truncate text-foreground">{{ chat.name }}</h4>
+                            <span class="text-[10px] text-muted-foreground">{{ chat.last_message_time.strftime('%H:%M') }}</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground truncate group-hover:text-foreground/80 transition-colors">
+                            {{ chat.last_message }}
+                        </p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground border border-border capitalize">
+                                {{ chat.role }}
+                            </span>
+                            {% if chat.unread_count > 0 %}
+                            <span class="ml-auto bg-primary text-primary-foreground text-[10px] font-bold px-1.5 min-w-[1.25rem] h-5 rounded-full flex items-center justify-center shadow-sm shadow-primary/20">
+                                {{ chat.unread_count }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </button>
+                {% else %}
+                <div class="p-8 text-center text-muted-foreground">
+                    <p class="text-sm">Belum ada percakapan.</p>
+                </div>
+                {% endfor %}
             </div>
-          </div>
         </div>
-        {% endfor %}
-      </div>
-    </div>
 
-    <!-- Empty State -->
-    {% if not chat_messages %}
-    <div class="text-center py-12">
-      <i data-lucide="message-circle" class="w-16 h-16 text-muted-foreground mx-auto mb-4"></i>
-      <h3 class="text-lg font-semibold mb-2">Belum ada pesan</h3>
-      <p class="text-muted-foreground">Belum ada chat dari guest atau pengguna</p>
+        <div class="flex-1 flex flex-col bg-[#f0f2f5] dark:bg-[#0b0b0b] relative">
+            <div id="chat-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10 bg-background/50 backdrop-blur-sm">
+                <div class="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mb-4 animate-pulse">
+                    <i data-lucide="message-circle" class="w-10 h-10 text-muted-foreground"></i>
+                </div>
+                <h3 class="text-xl font-bold text-foreground">EggVision Chat Admin</h3>
+                <p class="text-muted-foreground mt-2 max-w-md">Pilih percakapan dari daftar di sebelah kiri untuk melihat detail, membalas, atau mengelola pesan.</p>
+            </div>
+
+            <div id="active-chat-container" class="flex-1 flex flex-col h-full hidden opacity-0 transition-opacity duration-300">
+                
+                <div class="h-16 px-6 bg-background border-b border-border flex items-center justify-between shadow-sm z-20">
+                    <div class="flex items-center gap-3">
+                        <img id="header-avatar" src="" class="w-10 h-10 rounded-full bg-secondary">
+                        <div>
+                            <h3 id="header-name" class="font-bold text-foreground">User Name</h3>
+                            <p id="header-email" class="text-xs text-muted-foreground">user@email.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="p-2 hover:bg-secondary rounded-full text-muted-foreground hover:text-foreground transition-colors" title="Hapus Percakapan (Coming Soon)">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="messages-area" class="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth">
+                    </div>
+
+                <div class="p-4 bg-background border-t border-border">
+                    <form id="reply-form" onsubmit="submitReply(event)" class="flex items-end gap-2 max-w-4xl mx-auto">
+                        <input type="hidden" id="current-chat-id" name="chat_id"> <div class="flex-1 bg-secondary/30 rounded-2xl border border-border focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all">
+                            <textarea id="reply-input" rows="1" 
+                                class="w-full bg-transparent px-4 py-3 text-sm focus:outline-none resize-none max-h-32"
+                                placeholder="Tulis balasan... (Shift+Enter untuk baris baru)"
+                                oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                        </div>
+                        <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-full shadow-lg shadow-primary/20 transition-transform hover:scale-105 active:scale-95 flex-shrink-0">
+                            <i data-lucide="send" class="w-5 h-5"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
   </main>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function replyToChat(chatId) {
-  const replyForm = document.getElementById(`replyForm-${chatId}`);
-  replyForm.classList.toggle('hidden');
-}
+  let currentConversationId = null;
+  let lastMessageId = null;
+  let adminPollingInterval = null; // Variable to hold the timer
 
-function sendReply(chatId) {
-  const input = document.querySelector(`#replyForm-${chatId} input`);
-  const message = input.value.trim();
-  
-  if (!message) {
-    alert('Pesan balasan tidak boleh kosong');
-    return;
+  function loadChat(convId, name, email, role) {
+      currentConversationId = convId;
+      
+      // UI Updates
+      document.getElementById('chat-placeholder').classList.add('hidden');
+      const chatContainer = document.getElementById('active-chat-container');
+      chatContainer.classList.remove('hidden');
+      setTimeout(() => chatContainer.classList.remove('opacity-0'), 50);
+
+      document.getElementById('header-name').textContent = name;
+      document.getElementById('header-email').textContent = email;
+      document.getElementById('header-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.toLowerCase().replace(' ', '')}`;
+
+      // Sidebar Highlight
+      document.querySelectorAll('.conversation-item').forEach(el => {
+          el.classList.remove('bg-secondary', 'border-primary');
+          if(el.dataset.id === convId) el.classList.add('bg-secondary', 'border-l-4', 'border-primary');
+          else el.classList.remove('border-l-4');
+      });
+
+      // === POLLING LOGIC ===
+      // 1. Clear existing interval (if switching chats)
+      if (adminPollingInterval) clearInterval(adminPollingInterval);
+      
+      // 2. Fetch immediately
+      fetchMessages(convId, true); 
+      
+      // 3. Set new interval (every 3 seconds)
+      adminPollingInterval = setInterval(() => {
+          fetchMessages(convId, false); // Pass false to disable loading spinner on polling
+      }, 3000);
   }
-  
-  const formData = new FormData();
-  formData.append('message', message);
-  
-  fetch(`/eggmin/api/chats/reply/${chatId}`, {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert('Balasan berhasil dikirim!');
-      input.value = '';
-      document.getElementById(`replyForm-${chatId}`).classList.add('hidden');
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat mengirim balasan');
-  });
-}
 
-function markAsRead(chatId) {
-  fetch(`/eggmin/api/chats/mark-read/${chatId}`, {
-    method: 'POST'
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert('Pesan ditandai sebagai sudah dibaca!');
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat menandai pesan');
-  });
-}
-
-function deleteChat(chatId) {
-  if (!confirm('Apakah Anda yakin ingin menghapus chat ini? Tindakan ini tidak dapat dibatalkan.')) return;
-  
-  fetch(`/eggmin/api/chats/delete/${chatId}`, {
-    method: 'POST'
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert('Chat berhasil dihapus!');
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat menghapus chat');
-  });
-}
-
-// Search and filter functionality for chats
-document.addEventListener('DOMContentLoaded', function() {
-  const searchInput = document.querySelector('input[placeholder="Cari pesan..."]');
-  const statusFilter = document.querySelector('select:first-of-type');
-  const senderFilter = document.querySelector('select:last-of-type');
-  
-  function filterChats() {
-    const searchTerm = searchInput.value.toLowerCase();
-    const statusValue = statusFilter.value;
-    const senderValue = senderFilter.value;
-    
-    const chatItems = document.querySelectorAll('.divide-y > div');
-    
-    chatItems.forEach(item => {
-      const senderName = item.querySelector('.font-semibold').textContent.toLowerCase();
-      const messageContent = item.querySelector('p.text-sm').textContent.toLowerCase();
-      const statusBadge = item.querySelector('.badge.bg-red-500')?.textContent || '';
-      const senderRole = item.querySelector('.badge:not(.bg-red-500)').textContent.toLowerCase();
+  function fetchMessages(convId, showLoading=true) {
+      const messagesArea = document.getElementById('messages-area');
       
-      const matchesSearch = senderName.includes(searchTerm) || messageContent.includes(searchTerm);
-      const matchesStatus = !statusValue || 
-        (statusValue === 'unread' && statusBadge === 'baru') ||
-        (statusValue === 'read' && !statusBadge) ||
-        (statusValue === 'replied' && item.querySelector('.text-green-500')?.textContent.includes('dibalas'));
-      const matchesSender = !senderValue || 
-        (senderValue === 'guest' && senderRole.includes('guest')) ||
-        (senderValue === 'pembeli' && senderRole.includes('pembeli')) ||
-        (senderValue === 'pengusaha' && senderRole.includes('pengusaha'));
-      
-      if (matchesSearch && matchesStatus && matchesSender) {
-        item.style.display = '';
-      } else {
-        item.style.display = 'none';
+      // Only show big spinner on first load, not on polling updates
+      if(showLoading) {
+          messagesArea.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>';
       }
-    });
+
+      fetch(`/eggmin/api/chats/history/${convId}`)
+          .then(res => res.json())
+          .then(data => {
+              if(data.success) {
+                  renderMessages(data.messages, showLoading);
+                  if(data.messages.length > 0) {
+                      lastMessageId = data.messages[data.messages.length - 1].id;
+                  }
+              }
+          })
+          .catch(err => console.error(err));
   }
-  
-  searchInput.addEventListener('input', filterChats);
-  statusFilter.addEventListener('change', filterChats);
-  senderFilter.addEventListener('change', filterChats);
-});
+
+  function renderMessages(messages, isFirstLoad) {
+      const container = document.getElementById('messages-area');
+      
+      // Save scroll position
+      const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+
+      container.innerHTML = ''; // Re-render all (simple way to sync state)
+
+      let lastDate = null;
+
+      messages.forEach(msg => {
+          const msgDate = msg.created_at.split(' ')[0] + ' ' + msg.created_at.split(' ')[1];
+          if (msgDate !== lastDate) {
+              container.innerHTML += `<div class="flex justify-center my-4"><span class="text-[10px] font-medium bg-border px-3 py-1 rounded-full text-muted-foreground">${msgDate}</span></div>`;
+              lastDate = msgDate;
+          }
+
+          const isMe = msg.message_type.startsWith('admin_to');
+          const alignment = isMe ? 'justify-end' : 'justify-start';
+          const bubbleColor = isMe ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-white dark:bg-gray-800 border border-border rounded-bl-none';
+          const textColor = isMe ? 'text-primary-foreground' : 'text-foreground';
+          
+          const html = `
+              <div class="flex ${alignment} mb-3 group">
+                  <div class="max-w-[70%]">
+                      <div class="${bubbleColor} px-4 py-2.5 rounded-2xl shadow-sm relative">
+                          <p class="text-sm leading-relaxed whitespace-pre-wrap ${textColor}">${msg.message}</p>
+                          <div class="flex items-center justify-end gap-1 mt-1">
+                              <span class="text-[10px] opacity-70">${msg.created_at.split(' ')[2]}</span>
+                              ${isMe ? `<i data-lucide="check-check" class="w-3 h-3 opacity-70"></i>` : ''}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          `;
+          container.innerHTML += html;
+      });
+
+      // Only auto-scroll if it was the first load OR user was already at the bottom
+      if (isFirstLoad || isNearBottom) {
+          container.scrollTop = container.scrollHeight;
+      }
+      
+      if(typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function submitReply(e) {
+      e.preventDefault();
+      const input = document.getElementById('reply-input');
+      const message = input.value.trim();
+      if(!message || !lastMessageId) return;
+
+      const formData = new FormData();
+      formData.append('message', message);
+
+      fetch(`/eggmin/api/chats/reply/${lastMessageId}`, {
+          method: 'POST',
+          body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+          if(data.success) {
+              input.value = '';
+              fetchMessages(currentConversationId, false); // Refresh immediately
+          } else {
+              alert('Error: ' + data.error);
+          }
+      });
+  }
+
+  document.getElementById('reply-input').addEventListener('keydown', function(e) {
+      if(e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          submitReply(e);
+      }
+  });
+
+  // Search filter logic... (keep existing search logic here)
+  document.getElementById('search-conversations').addEventListener('input', function(e) {
+      const term = e.target.value.toLowerCase();
+      document.querySelectorAll('.conversation-item').forEach(item => {
+          const text = item.innerText.toLowerCase();
+          item.style.display = text.includes(term) ? '' : 'none';
+      });
+  });
 </script>
 {% endblock %}

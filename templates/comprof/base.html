@@ -13,10 +13,10 @@
       theme: {
         extend: {
           colors: {
-            'primary-black': '#000000',
+            'primary-black': '#1a1a1a',
             'pure-white': '#FFFFFF',
             'premium-gold': '#FFD700',
-            'dark-gray': '#1a1a1a',
+            'dark-gray': '#262626',
             'light-gray': '#f8f9fa'
           },
           fontFamily: {
@@ -96,7 +96,7 @@
   
   {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-white dark:bg-primary-black theme-transition font-jakarta">
+<body class="min-h-screen bg-white dark:bg-primary-black theme-transition font-jakarta selection:bg-premium-gold/50 selection:text-primary-black">
   {% include 'comprof/navbar.html' %}
 
   <main class="theme-transition">

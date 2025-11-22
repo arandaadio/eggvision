@@ -3,6 +3,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_sqlalchemy import SQLAlchemy
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import math
 from datetime import datetime
 import os
@@ -13,6 +14,14 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+
+# Configure Upload Folder
+UPLOAD_FOLDER = 'static/uploads/products'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # MySQL configuration
 db_config = {
@@ -647,6 +656,113 @@ def comprof_kontak():
     """Contact page - accessible by everyone"""
     return render_template('comprof/kontak.html')
 
+@app.route('/api/chat/send', methods=['POST'])
+def comprof_send_chat():
+    """Handle chat messages from the public chat widget"""
+    try:
+        # 1. Get data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        message = data.get('message', '').strip()
+        if not message:
+            return jsonify({'success': False, 'error': 'Message is required'}), 400
+
+        # 2. Connect to Database
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+
+        try:
+            cur = conn.cursor()
+            
+            # 3. Check if it's a Logged-in User or Guest
+            if data.get('user_id'):
+                # Case A: Logged-in User
+                user_id = data['user_id']
+                cur.execute('''
+                    INSERT INTO chat_messages 
+                    (user_id, message, message_type, status) 
+                    VALUES (%s, %s, 'user_to_admin', 'unread')
+                ''', (user_id, message))
+            else:
+                # Case B: Guest User
+                guest_name = data.get('guest_name', '').strip()
+                guest_email = data.get('guest_email', '').strip()
+                
+                if not guest_name or not guest_email:
+                    return jsonify({'success': False, 'error': 'Name and email are required for guests'}), 400
+                
+                cur.execute('''
+                    INSERT INTO chat_messages 
+                    (guest_name, guest_email, message, message_type, status) 
+                    VALUES (%s, %s, %s, 'guest_to_admin', 'unread')
+                ''', (guest_name, guest_email, message))
+            
+            # 4. Commit changes
+            conn.commit()
+            cur.close()
+            
+            print(f"✅ New chat message received: {message}")
+            return jsonify({'success': True, 'message': 'Message sent successfully'})
+            
+        except mysql.connector.Error as e:
+            print(f"❌ Database Error in chat: {e}")
+            return jsonify({'success': False, 'error': 'Database error'}), 500
+        finally:
+            if conn:
+                conn.close()
+                
+    except Exception as e:
+        print(f"❌ Server Error in chat endpoint: {e}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+
+# Get Public Chat History (For realtime polling & restoring session)
+@app.route('/api/chat/history', methods=['GET'])
+def comprof_get_chat_history():
+    conn = get_db_connection()
+    messages = []
+    try:
+        cur = conn.cursor(dictionary=True)
+        
+        # 1. If User is Logged In -> Get their history
+        if current_user.is_authenticated:
+            cur.execute("""
+                SELECT * FROM chat_messages 
+                WHERE user_id = %s 
+                ORDER BY created_at ASC
+            """, (current_user.id,))
+            
+        # 2. If Guest -> Get history based on email provided in query string
+        else:
+            guest_email = request.args.get('guest_email')
+            if not guest_email:
+                 # No email provided? Return empty list (new guest)
+                 return jsonify({'success': True, 'messages': []})
+                 
+            cur.execute("""
+                SELECT * FROM chat_messages 
+                WHERE guest_email = %s 
+                ORDER BY created_at ASC
+            """, (guest_email,))
+            
+        raw_messages = cur.fetchall()
+        
+        # Format time for JSON
+        for msg in raw_messages:
+             msg['created_at'] = msg['created_at'].strftime('%d %b %H:%M')
+             messages.append(msg)
+             
+        cur.close()
+        return jsonify({'success': True, 'messages': messages})
+        
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn: conn.close()
+
 # ==================== EGGMART ROUTES (PEMBELI ONLY) ====================
 @app.route('/eggmart')
 @login_required
@@ -738,63 +854,6 @@ def eggmonitor_settings():
     data = build_user_data()
     return render_template('eggmonitor/settings.html', **data, active_menu="settings")
 
-# ==================== CHAT ROUTES ====================
-@app.route('/api/chat/send', methods=['POST'])
-def comprof_send_chat():
-    """Handle chat messages from Comprof pages"""
-    try:
-        data = request.get_json()
-        message = data.get('message', '').strip()
-        
-        if not message:
-            return jsonify({'success': False, 'error': 'Message is required'}), 400
-
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'success': False, 'error': 'Database connection failed'}), 500
-
-        try:
-            cur = conn.cursor()
-            
-            if data.get('user_id'):
-                # User is logged in
-                user_id = data['user_id']
-                cur.execute(
-                    "INSERT INTO chat_messages (user_id, message, message_type) VALUES (%s, %s, 'user_to_admin')",
-                    (user_id, message)
-                )
-            else:
-                # Guest user
-                guest_name = data.get('guest_name', '').strip()
-                guest_email = data.get('guest_email', '').strip()
-                
-                if not guest_name or not guest_email:
-                    return jsonify({'success': False, 'error': 'Name and email are required for guests'}), 400
-                
-                cur.execute(
-                    "INSERT INTO chat_messages (guest_name, guest_email, message, message_type) VALUES (%s, %s, %s, 'guest_to_admin')",
-                    (guest_name, guest_email, message)
-                )
-            
-            conn.commit()
-            cur.close()
-            
-            # TODO: Send email notification to admin
-            print(f"📩 New chat message received: {message}")
-            
-            return jsonify({'success': True, 'message': 'Message sent successfully'})
-            
-        except mysql.connector.Error as e:
-            print(f"Database error in chat: {e}")
-            return jsonify({'success': False, 'error': 'Database error'}), 500
-        finally:
-            if conn:
-                conn.close()
-                
-    except Exception as e:
-        print(f"Error in chat endpoint: {e}")
-        return jsonify({'success': False, 'error': 'Internal server error'}), 500
-
 # ==================== EGGMIN ROUTES (ADMIN ONLY) ====================
 @app.route('/eggmin')
 @login_required
@@ -855,6 +914,8 @@ def eggmin():
                          active_menu='dashboard',
                          now=datetime.now())
 
+# ==================== EGGMIN USER MANAGEMENT APIs ====================
+
 @app.route('/eggmin/users')
 @login_required
 def eggmin_users():
@@ -884,6 +945,8 @@ def eggmin_users():
                          active_menu='users',
                          now=datetime.now())
 
+# ==================== EGGMIN NEWS MANAGEMENT APIs ====================
+
 @app.route('/eggmin/news')
 @login_required
 def eggmin_news():
@@ -912,6 +975,8 @@ def eggmin_news():
                          news_list=news_list,
                          active_menu='news',
                          now=datetime.now())
+
+# ==================== EGGMIN PRODUCT MANAGEMENT APIs ====================
 
 @app.route('/eggmin/products')
 @login_required
@@ -945,45 +1010,275 @@ def eggmin_products():
     return render_template('eggmin/products.html', 
                          products=products,
                          active_menu='products',
-                         now=datetime.now())
+                         now=datetime.now())\
+
+@app.route('/eggmin/api/products/create', methods=['POST'])
+@login_required
+def eggmin_api_products_create():
+    if current_user.role != 'admin': return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    try:
+        name = request.form.get('name')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        grade = request.form.get('grade')
+        stock = request.form.get('stock')
+        seller_id = request.form.get('user_id') # Admin assigns product to a Seller (Pengusaha)
+
+        # Handle Image Upload
+        image_url = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
+                # Ensure directory exists
+                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                image_url = f"/static/uploads/products/{filename}"
+
+        conn = get_db_connection()
+        if not conn: return jsonify({'success': False, 'error': 'DB Connection failed'}), 500
+        
+        try:
+            cur = conn.cursor()
+            cur.execute('''
+                INSERT INTO products (user_id, name, description, price, grade, stock, image_url, is_active)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)
+            ''', (seller_id, name, description, price, grade, stock, image_url))
+            conn.commit()
+            cur.close()
+            return jsonify({'success': True, 'message': 'Produk berhasil ditambahkan'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        finally:
+            conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/eggmin/api/products/<int:product_id>', methods=['GET'])
+@login_required
+def eggmin_api_products_get(product_id):
+    conn = get_db_connection()
+    if not conn: return jsonify({'success': False}), 500
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT * FROM products WHERE id = %s", (product_id,))
+        product = cur.fetchone()
+        cur.close()
+        if product: return jsonify({'success': True, 'product': product})
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    finally:
+        conn.close()
+
+@app.route('/eggmin/api/products/update/<int:product_id>', methods=['POST'])
+@login_required
+def eggmin_api_products_update(product_id):
+    if current_user.role != 'admin': return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    try:
+        name = request.form.get('name')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        grade = request.form.get('grade')
+        stock = request.form.get('stock')
+        seller_id = request.form.get('user_id')
+
+        conn = get_db_connection()
+        if not conn: return jsonify({'success': False}), 500
+
+        try:
+            cur = conn.cursor()
+            
+            # Handle Image Update (Only if new file provided)
+            if 'image' in request.files:
+                file = request.files['image']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    image_url = f"/static/uploads/products/{filename}"
+                    
+                    # Update query WITH image
+                    cur.execute('''
+                        UPDATE products SET user_id=%s, name=%s, description=%s, price=%s, grade=%s, stock=%s, image_url=%s 
+                        WHERE id=%s
+                    ''', (seller_id, name, description, price, grade, stock, image_url, product_id))
+                else:
+                    # File invalid
+                    pass
+            else:
+                # Update query WITHOUT image
+                cur.execute('''
+                    UPDATE products SET user_id=%s, name=%s, description=%s, price=%s, grade=%s, stock=%s 
+                    WHERE id=%s
+                ''', (seller_id, name, description, price, grade, stock, product_id))
+
+            conn.commit()
+            cur.close()
+            return jsonify({'success': True, 'message': 'Produk berhasil diupdate'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        finally:
+            conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/eggmin/api/products/toggle-status/<int:product_id>', methods=['POST'])
+@login_required
+def eggmin_api_products_toggle(product_id):
+    if current_user.role != 'admin': return jsonify({'success': False}), 403
+    conn = get_db_connection()
+    if not conn: return jsonify({'success': False}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE products SET is_active = NOT is_active WHERE id = %s", (product_id,))
+        conn.commit()
+        cur.close()
+        return jsonify({'success': True})
+    finally:
+        conn.close()
+
+@app.route('/eggmin/api/products/delete/<int:product_id>', methods=['POST'])
+@login_required
+def eggmin_api_products_delete(product_id):
+    if current_user.role != 'admin': return jsonify({'success': False}), 403
+    conn = get_db_connection()
+    if not conn: return jsonify({'success': False}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM products WHERE id = %s", (product_id,))
+        conn.commit()
+        cur.close()
+        return jsonify({'success': True})
+    finally:
+        conn.close()
+
+# Helper API to get List of Sellers (Pengusaha) for dropdown
+@app.route('/eggmin/api/sellers', methods=['GET'])
+@login_required
+def eggmin_api_get_sellers():
+    conn = get_db_connection()
+    if not conn: return jsonify({'success': False}), 500
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT id, name FROM users WHERE role = 'pengusaha'")
+        sellers = cur.fetchall()
+        cur.close()
+        return jsonify({'success': True, 'sellers': sellers})
+    finally:
+        conn.close()
+
+# ==================== EGGMIN CHAT MANAGEMENT APIs ====================
 
 @app.route('/eggmin/chats')
 @login_required
 def eggmin_chats():
-    """Chat management page - Admin only"""
+    """Chat management page - Split View"""
     if current_user.role != 'admin':
         flash('Hanya Admin yang dapat mengakses halaman chat.', 'error')
         return redirect(url_for('comprof_beranda'))
     
-    # Get all chat messages with user info
     conn = get_db_connection()
-    chat_messages = []
+    conversations = []
     
     if conn:
         try:
             cur = conn.cursor(dictionary=True)
-            cur.execute('''
-                SELECT cm.*, 
-                       COALESCE(u.name, cm.guest_name) as sender_name,
-                       COALESCE(u.email, cm.guest_email) as sender_email,
-                       COALESCE(u.role, 'guest') as sender_role
+            # Query Complex: Mengelompokkan pesan berdasarkan User ID (jika ada) atau Guest Email
+            # Ini akan membuat list "Kontak" di sebelah kiri
+# Optimized Query: Get the latest message for each conversation
+            query = '''
+                SELECT 
+                    CASE 
+                        WHEN cm.user_id IS NOT NULL THEN CONCAT('user_', cm.user_id)
+                        ELSE CONCAT('guest_', cm.guest_email)
+                    END as conversation_id,
+                    COALESCE(u.name, cm.guest_name) as name,
+                    COALESCE(u.email, cm.guest_email) as email,
+                    COALESCE(u.role, 'guest') as role,
+                    cm.created_at as last_message_time,
+                    cm.message as last_message,
+                    (SELECT COUNT(*) 
+                     FROM chat_messages c2 
+                     WHERE c2.status = 'unread' 
+                     AND c2.message_type IN ('user_to_admin', 'guest_to_admin')
+                     AND (
+                        (cm.user_id IS NOT NULL AND c2.user_id = cm.user_id) OR 
+                        (cm.user_id IS NULL AND c2.guest_email = cm.guest_email)
+                     )
+                    ) as unread_count
                 FROM chat_messages cm
                 LEFT JOIN users u ON cm.user_id = u.id
+                WHERE cm.id IN (
+                    SELECT MAX(id)
+                    FROM chat_messages
+                    GROUP BY IFNULL(user_id, guest_email)
+                )
                 ORDER BY cm.created_at DESC
-                LIMIT 100
-            ''')
-            chat_messages = cur.fetchall()
+            '''
+            cur.execute(query)
+            conversations = cur.fetchall()
             cur.close()
         except mysql.connector.Error as e:
-            print(f"Error fetching chat messages: {e}")
+            print(f"Error fetching conversations: {e}")
         finally:
             if conn:
                 conn.close()
     
     return render_template('eggmin/chats.html', 
-                         chat_messages=chat_messages,
-                         active_menu='chats',
-                         now=datetime.now())
+                           conversations=conversations,
+                           active_menu='chats',
+                           now=datetime.now())
+
+# API BARU: Mengambil riwayat chat spesifik berdasarkan ID percakapan
+@app.route('/eggmin/api/chats/history/<string:conversation_id>', methods=['GET'])
+@login_required
+def eggmin_api_get_chat_history(conversation_id):
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    conn = get_db_connection()
+    messages = []
+    
+    try:
+        cur = conn.cursor(dictionary=True)
+        
+        # Parse conversation_id (format: "user_1" atau "guest_email@test.com")
+        is_user = conversation_id.startswith('user_')
+        identifier = conversation_id.split('_', 1)[1]
+
+        if is_user:
+            query = "SELECT * FROM chat_messages WHERE user_id = %s ORDER BY created_at ASC"
+            params = (identifier,)
+        else:
+            query = "SELECT * FROM chat_messages WHERE guest_email = %s ORDER BY created_at ASC"
+            params = (identifier,)
+
+        cur.execute(query, params)
+        raw_messages = cur.fetchall()
+        
+        # Mark as read when opened
+        if is_user:
+            update_query = "UPDATE chat_messages SET status = 'read' WHERE user_id = %s AND status = 'unread' AND message_type != 'admin_to_user'"
+        else:
+            update_query = "UPDATE chat_messages SET status = 'read' WHERE guest_email = %s AND status = 'unread' AND message_type != 'admin_to_guest'"
+        
+        cur.execute(update_query, params)
+        conn.commit()
+
+        # Format datetime
+        for msg in raw_messages:
+            msg['created_at'] = msg['created_at'].strftime('%d %b %H:%M')
+            messages.append(msg)
+            
+        cur.close()
+        return jsonify({'success': True, 'messages': messages})
+
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 # ==================== EGGMIN API ROUTES (ADMIN ONLY) ====================
 # Users Management APIs
@@ -1224,9 +1519,7 @@ def eggmin_api_news_create():
         print(f"Error in news create: {e}")
         return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
-# ==================== EGGMIN NEWS API ROUTES ====================
-
-# GET NEWS DATA FOR EDIT
+# Get News data for updating data
 @app.route('/eggmin/api/news/<int:news_id>', methods=['GET'])
 @login_required
 def eggmin_api_news_get(news_id):
