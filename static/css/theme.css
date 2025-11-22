@@ -1,0 +1,271 @@
+/* static/css/theme.css — DARK MODE */
+/* Palet utama */
+:root {
+  /* Latar & tipografi */
+  --background: #000000;
+  --card: linear-gradient(90deg, rgba(47,47,47,0.74) 0%, rgba(47,47,47,0.71) 100%);
+  --secondary: linear-gradient(90deg, rgba(47,47,47,0.74) 0%, rgba(47,47,47,0.71) 100%);
+  --border: #2f2f2f;         /* garis pembatas */
+  --foreground: #ffffff;     /* teks utama putih */
+  --muted: #ffffff;          /* teks sekunder/teredam */
+
+  /* Aksen */
+  --primary: #60a5fa;        /* biru cerah (boleh ganti sesuai brand) */
+  --success: #22c55e;        /* hijau */
+  --info: #38bdf8;           /* sky-blue */
+  --destructive: #ef4444;    /* merah */
+
+  /* Sidebar */
+  --sidebar-bg: #1A1A1A;
+  --sidebar-foreground: #9ca3af;          /* abu terang untuk teks menu */
+  --sidebar-accent: #1f1f1f;              /* bg aktif/hover */
+  --sidebar-accent-foreground: #ffffff;   /* teks menu aktif */
+  --sidebar-border: #262626;              /* garis sidebar */
+}
+
+/* Mapping utilitas “custom class” */
+.bg-background { background-color: var(--background); }
+.bg-card { background: var(--card); }
+.bg-secondary { background: var(--secondary); }
+.bg-muted { background-color: #27272a; } /* untuk avatar placeholder dsb */
+
+.text-foreground { color: var(--foreground); }
+.text-muted-foreground { color: var(--muted); }
+.text-primary { color: var(--primary); }
+.text-success { color: var(--success); }
+
+.border { border-color: var(--border); }
+.border-border { border-color: var(--border); }
+.border-info { border-color: var(--info); }
+.border-success { border-color: var(--success); }
+.border-destructive { border-color: var(--destructive); }
+
+/* Left border color helpers (dipakai di notifikasi/status) */
+.border-l-info { border-left-color: var(--info); }
+.border-l-success { border-left-color: var(--success); }
+.border-l-destructive { border-left-color: var(--destructive); }
+
+/* Sidebar */
+.bg-sidebar { background-color: var(--sidebar-bg); }
+.text-sidebar-foreground { color: var(--sidebar-foreground); }
+.text-sidebar-accent-foreground { color: var(--sidebar-accent-foreground); }
+.bg-sidebar-accent { background-color: var(--sidebar-accent); }
+.border-sidebar-border { border-color: var(--sidebar-border); }
+
+/* Transparansi utilitas (karena Tailwind CDN tidak kenal warna kustom ini) */
+.bg-info\/10 { background-color: color-mix(in srgb, var(--info) 10%, transparent); }
+.bg-success\/10 { background-color: color-mix(in srgb, var(--success) 10%, transparent); }
+.bg-destructive\/10 { background-color: color-mix(in srgb, var(--destructive) 10%, transparent); }
+.border-info\/30 { border-color: color-mix(in srgb, var(--info) 30%, var(--border)); }
+.border-success\/30 { border-color: color-mix(in srgb, var(--success) 30%, var(--border)); }
+.border-destructive\/30 { border-color: color-mix(in srgb, var(--destructive) 30%, var(--border)); }
+
+/* Hover helper untuk class yang terlanjur dipakai di HTML */
+.hover\:bg-secondary\/50:hover { 
+  background-color: color-mix(in srgb, var(--secondary) 50%, transparent);
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  background: #121212; /* sedikit lebih gelap dari card */
+  color: var(--foreground);
+}
+
+/* Tabel */
+.th, .td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--foreground);
+}
+.th { font-weight: 700; }
+.td { font-weight: 400; }
+
+/* Tombol overlay kamera */
+.ctrl-btn {
+  height: 56px; width: 56px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, #111 80%, transparent);
+  backdrop-filter: blur(6px);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #222;
+  color: var(--foreground);
+}
+.ctrl-btn:hover { background: #1b1b1b; }
+
+.ctrl-btn-sm {
+  height: 40px; width: 40px; border-radius: 9999px;
+  background: color-mix(in srgb, #111 80%, transparent);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #222;
+  color: var(--foreground);
+}
+.ctrl-btn-sm:hover { background: #1b1b1b; }
+
+.rec-dot {
+  width: 10px; height: 10px; border-radius: 9999px;
+  background: var(--destructive);
+}
+
+/* Switch */
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { display: none; }
+.switch .slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background-color: #2a2a2a; transition: .2s; border-radius: 9999px;
+  border: 1px solid #3a3a3a;
+}
+.switch .slider:before {
+  position: absolute; content: "";
+  height: 18px; width: 18px; left: 3px; top: 3px;
+  background-color: #ffffff; transition: .2s; border-radius: 9999px;
+}
+.switch input:checked + .slider {
+  background-color: color-mix(in srgb, var(--success) 40%, #1a1a1a);
+  border-color: color-mix(in srgb, var(--success) 60%, #3a3a3a);
+}
+.switch input:checked + .slider:before { transform: translateX(20px); }
+
+/* Switch kecil untuk sub-items */
+.switch.sm { width: 38px; height: 20px; }
+.switch.sm .slider:before { height: 14px; width: 14px; top: 3px; left: 3px; }
+.switch.sm input:checked + .slider:before { transform: translateX(18px); }
+
+
+/* Helper untuk gradient Tailwind agar pakai var() kustom */
+.from-background {
+  --tw-gradient-from: var(--background) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(255 255 255 / 0) 0%;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+.to-secondary {
+  --tw-gradient-to: var(--secondary) var(--tw-gradient-to-position);
+}
+
+
+
+/* Input dark toolbar */
+.input-dark {
+  background: #0f0f10;
+  border: 1px solid #2a2a2a;
+  color: var(--foreground);
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.5rem;
+  outline: none;
+  width: 100%;
+}
+.input-dark::placeholder { color: #8b8b8b; }
+.input-dark:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+
+/* Kartu gradient (atas grafik) */
+.card-gradient {
+  background: linear-gradient(90deg, #1a1a1a 0%, #1a1a1a 0%) padding-box; /* fallback */
+}
+.card-gradient .p-4, .card-gradient .p-5 { background: transparent; }
+
+/* Progress bar */
+.progress {
+  width: 100%;
+  height: 6px;
+  background: #242424;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid #2f2f2f;
+}
+.progress-fill {
+  height: 100%;
+  background: #3b82f6; /* biru */
+  border-radius: 9999px;
+}
+
+/* Switch biru (untuk filter kategori) */
+.switch-blue { position: relative; display: inline-block; width: 36px; height: 20px; }
+.switch-blue input { display: none; }
+.switch-blue .slider {
+  position: absolute; inset: 0; border-radius: 9999px;
+  background-color: #2a2a2a; border: 1px solid #3a3a3a; transition: .2s;
+}
+.switch-blue .slider:before {
+  content:""; position:absolute; width:14px; height:14px; top:2px; left:2px; border-radius:9999px;
+  background:#fff; transition:.2s;
+}
+.switch-blue input:checked + .slider {
+  background-color: color-mix(in srgb, #3b82f6 45%, #1a1a1a);
+  border-color: #3b82f6;
+}
+.switch-blue input:checked + .slider:before { transform: translateX(16px); }
+/* varian kecil */
+.switch-blue.sm { width: 34px; height: 18px; }
+.switch-blue.sm .slider:before { width:12px; height:12px; top:3px; left:3px; }
+.switch-blue.sm input:checked + .slider:before { transform: translateX(14px); }
+
+
+/* Dropdown (dark) */
+.dropdown { position: relative; }
+.dropdown-menu {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  min-width: 220px; background: var(--card); color: var(--foreground);
+  border: 1px solid var(--border); border-radius: .5rem;
+  box-shadow: 0 12px 28px rgba(0,0,0,.45); z-index: 50; display: none;
+}
+.dropdown.open > .dropdown-menu { display: block; }
+.dropdown-item {
+  width: 100%; display: flex; align-items: center; gap: .5rem;
+  padding: .5rem .75rem; font-size: .875rem; cursor: pointer; text-align: left;
+}
+.dropdown-item:hover { background: var(--secondary); }
+.dropdown-divider { height: 1px; background: var(--border); margin: .25rem 0; }
+
+.dropdown-item .w-4 { flex: 0 0 auto; }
+.dropdown-menu .checkbox { margin-right: .5rem; accent-color: #3b82f6; }
+.dropdown-menu label.dropdown-item { cursor: pointer; }
+
+
+/* helper: tailwind class yang dipakai di HTML */
+.text-primary-foreground { color: #ffffff; }
+.hover\:bg-primary\/90:hover { background-color: color-mix(in srgb, var(--primary) 90%, #000); }
+
+/* hero background glow */
+.gradient-glow {
+  background: radial-gradient(800px 400px at 50% 30%, rgba(34,211,238,.25), transparent 60%),
+              radial-gradient(800px 400px at 50% 70%, rgba(34,197,94,.25), transparent 60%);
+}
+
+/* ring glow untuk gambar bulat */
+.glow-effect {
+  box-shadow: 0 0 0 8px rgba(96,165,250,.08), 0 20px 60px rgba(0,0,0,.6);
+}
+
+/* animasi hover scale untuk card produk */
+.hover-scale { transition: transform .25s ease, box-shadow .25s ease; }
+.hover-scale:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.45); }
+
+/* input dark (sudah ada? jika belum, ini fallback) */
+.input-dark {
+  background: #0f0f10; border: 1px solid #2a2a2a; color: var(--foreground);
+  padding: 0.6rem 0.8rem; border-radius: 0.5rem; outline: none;
+}
+.input-dark::placeholder { color: #8b8b8b; }
+.input-dark:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+
+
+/* Sidebar mini naming dari versi React */
+.bg-sidebar-background { background-color: var(--sidebar-bg); }
+.bg-sidebar-hover { background-color: color-mix(in srgb, var(--sidebar-accent) 50%, transparent); }
+.bg-sidebar-active { background-color: var(--sidebar-accent); }
+
+/* Focus ring util */
+.focus\:ring-primary:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent); }
+
+/* Line clamp util */
+.line-clamp-1 {
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}

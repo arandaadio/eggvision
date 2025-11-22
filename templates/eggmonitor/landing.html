@@ -1,0 +1,169 @@
+{% extends "eggmonitor/base.html" %}
+{% block title %}Landing · EggVision{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background text-foreground">
+
+  <!-- Header (simple) -->
+  <header class="sticky top-0 z-40 bg-[#0a0a0a]/80 backdrop-blur border-b border-border">
+    <div class="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          <span class="text-primary font-bold text-xs">EV</span>
+        </div>
+        <span class="font-semibold">EGGVISION</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a href="#products" class="hover:text-primary">Products</a>
+        <a href="#features" class="hover:text-primary">Features</a>
+        <a href="#showcase" class="hover:text-primary">Showcase</a>
+        <a href="/laporan" class="hover:text-primary">Laporan</a>
+      </nav>
+      <a href="#footer" class="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90">Contact</a>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- HeroSection -->
+    <section class="min-h-[80vh] flex flex-col items-center justify-center px-6 relative overflow-hidden">
+      <div class="absolute inset-0 gradient-glow opacity-50"></div>
+
+      <div class="max-w-3xl mx-auto text-center space-y-8 relative z-10">
+        <h1 class="text-5xl lg:text-7xl font-bold">Beranda</h1>
+
+        <p class="text-sm lg:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+          Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        </p>
+
+        <div class="relative w-64 h-64 lg:w-80 lg:h-80 mx-auto my-12">
+          <img
+            src="{{ url_for('static', filename='img/hero-eggs.jpg') }}"
+            alt="Premium Eggs"
+            class="w-full h-full object-cover rounded-full glow-effect"
+          />
+        </div>
+
+        <a href="#products" class="inline-flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 font-medium px-8 py-3 rounded-md">
+          Pelajari Lebih Lanjut
+        </a>
+      </div>
+
+      <div class="mt-24 text-center space-y-2 relative z-10">
+        <h3 class="text-lg font-semibold">Learn functional genomics</h3>
+        <p class="text-sm text-muted-foreground max-w-md mx-auto">
+          In this free online tutorial course you can learn how to analyze DNA and RNA using open source and freely available tools.
+        </p>
+      </div>
+    </section>
+
+    <!-- ProductCards -->
+    <section id="products" class="py-24 px-6 lg:px-16">
+      <h2 class="text-5xl lg:text-6xl font-bold text-center mb-16">Beranda</h2>
+
+      <div class="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {% for p in products %}
+        <div class="bg-card border border-border rounded-lg overflow-hidden hover-scale">
+          <div class="aspect-square overflow-hidden">
+            <img src="{{ url_for('static', filename='img/hero-eggs.jpg') }}" alt="{{ p.title }}" class="w-full h-full object-cover">
+          </div>
+          <div class="p-6 space-y-4">
+            <h3 class="text-2xl font-semibold">{{ p.title }}</h3>
+            <p class="text-sm text-muted-foreground leading-relaxed">{{ p.description }}</p>
+          </div>
+          <div class="px-6 pb-6">
+            <a href="#showcase" class="block w-full text-center bg-primary text-primary-foreground hover:bg-primary/90 rounded-md py-2.5">Pelajari Lebih Lanjut</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- FeatureList -->
+    <section id="features" class="py-24 px-6 lg:px-16 bg-background">
+      <h2 class="text-5xl lg:text-6xl font-bold text-center mb-16">Beranda</h2>
+
+      <div class="max-w-6xl mx-auto space-y-12">
+        {% for f in features %}
+        <div class="grid lg:grid-cols-[1fr_300px] gap-8 items-center">
+          <div class="space-y-4">
+            <h3 class="text-2xl font-semibold">{{ f.title }}</h3>
+            <p class="text-sm text-muted-foreground leading-relaxed">{{ f.description }}</p>
+          </div>
+          <div class="relative aspect-square lg:aspect-auto lg:h-48 rounded-lg overflow-hidden">
+            <img src="{{ url_for('static', filename='img/hero-eggs.jpg') }}" alt="{{ f.title }}" class="w-full h-full object-cover">
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- ShowcaseSection -->
+    <section id="showcase" class="py-24 px-6 lg:px-16">
+      <h2 class="text-5xl lg:text-6xl font-bold text-center mb-16">Beranda</h2>
+
+      <div class="max-w-6xl mx-auto space-y-24">
+        {% for s in showcases %}
+        <div class="grid lg:grid-cols-2 gap-12 items-center {% if not s.imageLeft %}lg:grid-flow-dense{% endif %}">
+          <div class="space-y-4 {% if not s.imageLeft %}lg:col-start-2{% endif %}">
+            <h3 class="text-3xl font-semibold">{{ s.title }}</h3>
+            <p class="text-sm text-muted-foreground leading-relaxed">{{ s.description }}</p>
+          </div>
+          <div class="relative aspect-square rounded-lg overflow-hidden {% if not s.imageLeft %}lg:col-start-1 lg:row-start-1{% endif %}">
+            <img src="{{ url_for('static', filename='img/hero-eggs.jpg') }}" alt="{{ s.title }}" class="w-full h-full object-cover">
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer id="footer" class="py-24 px-6 lg:px-16 border-t border-border">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold">EGGVISION</h3>
+          <p class="text-sm text-muted-foreground">
+            Innovative solutions for functional genomics and egg production monitoring.
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <h4 class="font-semibold">Products</h4>
+          <ul class="space-y-2 text-sm text-muted-foreground">
+            <li><a href="#products" class="hover:text-foreground transition-colors">EggMart</a></li>
+            <li><a href="#products" class="hover:text-foreground transition-colors">EggVision</a></li>
+            <li><a href="#products" class="hover:text-foreground transition-colors">EggMonitor</a></li>
+          </ul>
+        </div>
+
+        <div class="space-y-4">
+          <h4 class="font-semibold">Company</h4>
+          <ul class="space-y-2 text-sm text-muted-foreground">
+            <li><a href="#" class="hover:text-foreground transition-colors">About Us</a></li>
+            <li><a href="#" class="hover:text-foreground transition-colors">Careers</a></li>
+            <li><a href="#" class="hover:text-foreground transition-colors">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="space-y-4">
+          <h4 class="font-semibold">Newsletter</h4>
+          <p class="text-sm text-muted-foreground">Stay updated with our latest news</p>
+          <form class="flex gap-2" onsubmit="return false;">
+            <input type="email" placeholder="Your email" class="input-dark flex-1">
+            <button class="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90">Subscribe</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="pt-8 border-t border-border text-center text-sm text-muted-foreground">
+        <p>&copy; 2025 EggVision. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+{% endblock %}

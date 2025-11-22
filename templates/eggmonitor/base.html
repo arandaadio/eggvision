@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}EggVision{% endblock %}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Theme mapping untuk class kustom -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-background text-foreground">
+  {% block body %}{% endblock %}
+
+  <script>
+    // Render lucide icons
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.lucide) lucide.createIcons();
+
+      // jam real-time di header
+      const timeEl = document.getElementById("live-time");
+      const dateEl = document.getElementById("live-date");
+      function pad(n){ return n.toString().padStart(2,"0"); }
+      function tick() {
+        const now = new Date();
+        const d = pad(now.getDate());
+        const mIdx = now.getMonth();
+        const y = now.getFullYear();
+        const months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+        if (dateEl) dateEl.textContent = `${d}/${months[mIdx]}/${y}`;
+        if (timeEl) timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      }
+      tick();
+      setInterval(tick, 1000);
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

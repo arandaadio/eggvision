@@ -1,0 +1,237 @@
+{% extends "eggmonitor/base.html" %}
+{% block title %}Laporan · EggVision{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+  <!-- Sidebar -->
+ <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <!-- Logo -->
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <div class="text-primary font-bold text-xs">EV</div>
+        </div>
+        <span class="text-primary text-sm font-semibold">EGGVISION</span>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 py-4">
+      {% set menu = [
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/eggmonitor/index"},
+        {"id":"laporan","icon":"database","label":"Laporan","href":"/eggmonitor/laporan"},
+        {"id":"detail","icon":"grid-3x3","label":"Detail Alat","href":"#"},
+        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"/eggmart/dashboard"},
+        {"id":"settings","icon":"settings","label":"Pengaturan","href":"#"}
+      ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <!-- Profile -->
+    <div class="p-4 border-t border-sidebar-border">
+      <a href="/profile" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
+            alt="Profile"
+            class="w-full h-full object-cover" />
+        </div>
+        <span class="text-xs">Profil</span>
+    </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] p-6 md:p-8">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between">
+      <h1 class="text-4xl font-bold text-foreground">Laporan</h1>
+
+      <div class="flex-1 mx-8 hidden md:block">
+        <!-- Search / filter field (dummy) -->
+        <input class="input-dark w-full" placeholder="Cari / filter data..."/>
+      </div>
+
+      <!-- User info -->
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <div class="text-sm font-semibold text-foreground">{{ header.user_name }}</div>
+          <div class="text-xs text-muted-foreground">{{ header.egg_vision_count }} EggVision</div>
+        </div>
+        <div class="relative">
+          <img class="w-10 h-10 rounded-full object-cover" src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ header.avatar_seed }}" alt="avatar">
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-[#0a0a0a]"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histori Data (Tabel) -->
+    <section class="mt-6">
+      <div class="flex justify-between">
+        <h3 class="text-lg font-semibold text-foreground mb-3">Histori Data</h3>
+
+      <button class="bg-blue-500 text-white py-2 px-4 rounded">Export Data</button>
+
+      </div>
+<br>
+      <!-- toolbar -->
+      <div class="bg-card border border-border rounded-t-lg px-4 py-3 flex items-center justify-between">
+        <div class="text-sm text-muted-foreground">{{ table_meta.total_records }}</div>
+        <div class="text-sm text-muted-foreground">No of row in table: {{ table_meta.rows_shown }}</div>
+        <div>
+          <button class="flex items-center gap-2 text-foreground hover:text-primary">
+            Sort by <i data-lucide="chevron-down" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="border-x border-b border-border rounded-b-lg overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-secondary">
+              <th class="th">No.</th>
+              <th class="th">ID Numerik</th>
+              <th class="th">Tanggal</th>
+              <th class="th">Ketebalan</th>
+              <th class="th">Kebersihan</th>
+              <th class="th">Keutuhan</th>
+              <th class="th">Kesegaran</th>
+              <th class="th">Berat Telur</th>
+              <th class="th">Kategori Mutu</th>
+              <th class="th">Parameter (–)</th>
+              <th class="th">Keterangan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+            <tr class="border-t border-border hover:bg-secondary/50">
+              <td class="td">{{ r.no }}</td>
+              <td class="td">{{ r.idNumerik }}</td>
+              <td class="td">{{ r.tanggal }}</td>
+              <td class="td">{{ r.ketebalan }}</td>
+              <td class="td">{{ r.kebersihan }}</td>
+              <td class="td">{{ r.keutuhan }}</td>
+              <td class="td">{{ r.kesegaran }}</td>
+              <td class="td">{{ r.beratTelur }}</td>
+              <td class="td">{{ r.kategori }}</td>
+              <td class="td">{{ r.parameter }}</td>
+              <td class="td">{{ r.keterangan }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Histori Data (Grafik) -->
+    <section class="mt-8">
+      <h3 class="text-lg font-semibold text-foreground mb-3">Histori Data (Grafik)</h3>
+
+      <div class="card-gradient rounded-lg border border-border overflow-hidden">
+        <!-- canvas bar chart di atas gradient -->
+        <div class="p-4 md:p-5">
+          <canvas id="histChart" height="300"></canvas>
+        </div>
+
+        <!-- Ringkasan kategori -->
+        <div class="p-4 md:p-5 grid grid-cols-1 md:grid-cols-4 gap-4 bg-card border-t border-border">
+          {% for g in grade_summary %}
+          <div class="flex items-start gap-3">
+            <label class="switch-blue sm mt-1">
+              <input type="checkbox" checked />
+              <span class="slider"></span>
+            </label>
+            <div class="flex-1">
+              <div class="text-sm font-semibold text-foreground">{{ g.label }}</div>
+              <div class="text-xs text-muted-foreground">{{ g.count }} butir</div>
+              <div class="progress mt-2">
+                <div class="progress-fill" style="width: {{ g.pct }}%"></div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    // BAR CHART di atas gradient biru-hijau, bar putih
+    const ctx = document.getElementById('histChart').getContext('2d');
+    const grad = ctx.createLinearGradient(0,0,ctx.canvas.width,0);
+    grad.addColorStop(0, '#22c55e');   // green
+    grad.addColorStop(1, '#22d3ee');   // cyan
+
+    // background gradient di canvas via plugin
+    const bgPlugin = {
+      id: 'bgGradient',
+      beforeDraw(chart, args, opts) {
+        const {ctx, chartArea} = chart;
+        const {top, bottom, left, right, width, height} = chartArea;
+        const gradient = ctx.createLinearGradient(left, 0, right, 0);
+        gradient.addColorStop(0, '#22c55e');
+        gradient.addColorStop(1, '#22d3ee');
+        ctx.save();
+        ctx.fillStyle = gradient;
+        ctx.fillRect(left, top, width, height);
+        ctx.restore();
+      }
+    };
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: {{ hist_labels|tojson }},
+        datasets: [{
+          label: 'Butir',
+          data: {{ hist_values|tojson }},
+          borderWidth: 0,
+          borderRadius: 6,
+          backgroundColor: '#ffffff',   // bar putih
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: 12 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(0,0,0,.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderWidth: 0
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#e5e5e5', font: { size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,.08)' },
+            ticks: { color: '#e5e5e5', font: { size: 11 } }
+          }
+        }
+      },
+      plugins: [bgPlugin]
+    });
+  </script>
+{% endblock %}

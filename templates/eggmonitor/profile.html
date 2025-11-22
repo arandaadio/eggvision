@@ -1,0 +1,159 @@
+{% extends "eggmonitor/base.html" %}
+{% block title %}Pengaturan · EggVision{% endblock %}
+
+{% block body %}
+<div class="flex min-h-screen bg-background text-foreground">
+  <!-- Sidebar mini -->
+   <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <!-- Logo -->
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <div class="text-primary font-bold text-xs">EV</div>
+        </div>
+        <span class="text-primary text-sm font-semibold">EGGVISION</span>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 py-4">
+      {% set menu = [
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/"},
+        {"id":"laporan","icon":"database","label":"Laporan","href":"/laporan"},
+        {"id":"detail","icon":"grid-3x3","label":"Detail Alat","href":"#"},
+        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"#"},
+        {"id":"settings","icon":"settings","label":"Pengaturan","href":"/settings"}
+      ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <!-- Profile -->
+    <div class="p-4 border-t border-sidebar-border">
+      <a href="/profile" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
+            alt="Profile"
+            class="w-full h-full object-cover" />
+        </div>
+        <span class="text-xs">Profil</span>
+    </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] ">
+    <!-- Settings Sidebar -->
+    <div class="flex items-center justify-content">
+        <div class="flex-1 border-r border-border bg-card flex flex-col w-[550px] h-[100vh]">
+      <div class="p-6 border-b border-border">
+        <h1 class="text-2xl font-semibold mb-4">Profile</h1>
+     
+      </div>
+
+
+
+
+
+
+      <div class="border-b border-border">
+    </div>
+
+    <div class="p-8 max-w-2xl">
+      <!-- Avatar -->
+     
+
+      <!-- Fields -->
+      <div class="space-y-6 ">
+          <div class="mt-16 flex justify-center">
+        <div class="text-center">
+          <div class="w-24 h-24 mx-auto rounded-full bg-secondary flex items-center justify-center">
+            <i data-lucide="user" class="w-12 h-12 text-muted-foreground"></i>
+          </div>
+          <p class="mt-4 text-lg font-semibold">Profil</p>
+        </div>
+      </div>
+
+        <!-- Nama -->
+        <div class="space-y-2">
+          <label class="text-sm text-muted-foreground">Nama</label>
+          <div class="flex items-center gap-3">
+            <input id="nameInput" type="text" value="{{ user.name }}"
+                   class="flex-1 px-4 py-3 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <button id="nameToggle" class="w-10 h-10 rounded-lg hover:bg-muted flex items-center justify-center">
+              <i data-lucide="edit-2" class="w-4 h-4 text-muted-foreground"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tagline -->
+        <div class="space-y-2">
+          <label class="text-sm text-muted-foreground">Tentang Saya</label>
+          <div class="flex items-center gap-3">
+            <input id="taglineInput" type="text" value="{{ user.tagline }}"
+                   class="flex-1 px-4 py-3 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            <button id="taglineToggle" class="w-10 h-10 rounded-lg hover:bg-muted flex items-center justify-center">
+              <i data-lucide="edit-2" class="w-4 h-4 text-muted-foreground"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Telepon -->
+        <div class="space-y-2">
+          <label class="text-sm text-muted-foreground">Telepon</label>
+          <div class="flex items-center gap-3">
+            <div id="phoneBox" class="flex-1 px-4 py-3 bg-muted rounded-lg font-medium">{{ user.phone_display }}</div>
+            <button id="copyBtn" class="w-10 h-10 rounded-lg hover:bg-muted flex items-center justify-center">
+              <i id="copyIcon" data-lucide="copy" class="w-4 h-4 text-muted-foreground"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Icon bawah -->
+    
+    </div>
+
+
+
+
+
+    </div>
+
+    <!-- Right content -->
+    <div class="ml-[250px] flex items-center justify-center">
+      <div class="text-center">
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-secondary flex items-center justify-center">
+          <i data-lucide="settings" class="w-10 h-10 text-muted-foreground"></i>
+        </div>
+        <h2 class="text-2xl font-semibold mb-2">Profile</h2>
+        <p class="text-muted-foreground">Pilih pengaturan untuk mengubah preferensi Anda</p>
+      </div>
+    </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // filter pencarian settings
+  const q = document.getElementById('settingsSearch');
+  const list = document.getElementById('settingsList');
+  q?.addEventListener('input', () => {
+    const term = q.value.toLowerCase();
+    list.querySelectorAll('button').forEach(btn => {
+      const txt = btn.textContent.toLowerCase();
+      btn.style.display = txt.includes(term) ? '' : 'none';
+    });
+  });
+</script>
+{% endblock %}

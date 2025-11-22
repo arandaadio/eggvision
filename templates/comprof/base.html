@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}EggVision - Platform Grading Telur Otomatis{% endblock %}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Colors & Fonts -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'primary-black': '#000000',
+            'pure-white': '#FFFFFF',
+            'premium-gold': '#FFD700',
+            'dark-gray': '#1a1a1a',
+            'light-gray': '#f8f9fa'
+          },
+          fontFamily: {
+            'canela': ['Canela Bold', 'serif'],
+            'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Fonts CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+
+  <!-- Plus Jakarta Sans Google Fonts CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .theme-transition {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .fixed-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(10px);
+    }
+    
+    .hero-section {
+      margin-top: 0;
+      min-height: 100vh;
+    }
+    
+    .logo-text {
+      font-family: 'Canela Bold', serif;
+    }
+    
+    .font-title {
+      font-family: 'Canela Bold', serif;
+    }
+    
+    .font-sans {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    .fullscreen-menu {
+      background: rgba(0, 0, 0, 0.98);
+      backdrop-filter: blur(20px);
+    }
+    
+    .menu-transition {
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .hover-grow {
+      transition: transform 0.3s ease;
+    }
+    
+    .hover-grow:hover {
+      transform: translateY(-5px);
+    }
+  </style>
+  
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-white dark:bg-primary-black theme-transition font-jakarta">
+  <!-- Navigation -->
+  {% include 'comprof/navbar.html' %}
+
+  <!-- Main Content -->
+  <main class="theme-transition">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  {% include 'comprof/footer.html' %}
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+          <div class="fixed top-20 right-4 z-50 space-y-2">
+              {% for category, message in messages %}
+                  <div class="px-6 py-3 rounded-lg shadow-lg border-l-4 
+                              {% if category == 'error' %}bg-red-100 border-red-500 text-red-700 dark:bg-red-900 dark:border-red-400 dark:text-red-300
+                              {% elif category == 'success' %}bg-green-100 border-green-500 text-green-700 dark:bg-green-900 dark:border-green-400 dark:text-green-300
+                              {% else %}bg-blue-100 border-blue-500 text-blue-700 dark:bg-blue-900 dark:border-blue-400 dark:text-blue-300{% endif %}">
+                      {{ message }}
+                  </div>
+              {% endfor %}
+          </div>
+      {% endif %}
+  {% endwith %}
+
+  <!-- Chat Widget -->
+  {% include 'comprof/components/chat_widget.html' %}
+
+  <script>
+    // Dark/Light Mode Toggle
+    function toggleDarkMode() {
+        const html = document.documentElement;
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            localStorage.theme = 'light';
+        } else {
+            html.classList.add('dark');
+            localStorage.theme = 'dark';
+        }
+    }
+
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    });
+  </script>
+  
+  {% block scripts %}{% endblock %}
+</body>
+</html>
