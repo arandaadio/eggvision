@@ -24,8 +24,5 @@ pip-wheel-metadata/
 npm-debug.log*
 yarn-debug.log*
 
-<<<<<<< HEAD
 static/cangkang-cnn.keras
-=======
 static/*.keras
->>>>>>> 1f60f5f86060076800885a56108bd9abda956442
