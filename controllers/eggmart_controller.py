@@ -6,8 +6,8 @@ import time
 import base64
 import requests
 
-from utils.db import get_db_connection  # sesuaikan
-import midtransclient   # <-- penting
+from utils.db import get_db_connection
+import midtransclient
 
 
 eggmart_controller = Blueprint('eggmart_controller', __name__)

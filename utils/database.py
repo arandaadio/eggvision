@@ -237,14 +237,14 @@ def init_db():
 
         if user_count == 0:
             # Admin
-            admin_pwd = generate_password_hash('admin123', method='pbkdf2:sha256')
+            eggmin_pwd = generate_password_hash('eggmin123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('Admin EggMin', 'admin@eggvision.test', admin_pwd, 'admin')
+                ('Admin EggMin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
             )
 
             # Pengusaha (punya farm)
-            seller_pwd = generate_password_hash('seller123', method='pbkdf2:sha256')
+            pengusaha_pwd = generate_password_hash('pengusaha123', method='pbkdf2:sha256')
             cur.execute(
                 '''
                 INSERT INTO users
@@ -254,8 +254,8 @@ def init_db():
                 ''',
                 (
                     'Peternakan Sejahtera',
-                    'seller@eggvision.test',
-                    seller_pwd,
+                    'pengusaha@eggvision.com',
+                    pengusaha_pwd,
                     'pengusaha',
                     'Peternakan Sejahtera',
                     'PS',
@@ -265,10 +265,10 @@ def init_db():
             )
 
             # Pembeli contoh
-            buyer_pwd = generate_password_hash('buyer123', method='pbkdf2:sha256')
+            pembeli_pwd = generate_password_hash('pembeli123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('Pembeli Contoh', 'buyer@eggvision.test', buyer_pwd, 'pembeli')
+                ('Pembeli Contoh', 'pembeli@eggvision.com', pembeli_pwd, 'pembeli')
             )
 
         conn.commit()
