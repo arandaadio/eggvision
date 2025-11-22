@@ -1,68 +1,81 @@
-<!-- Floating Chat Widget -->
-<div id="chat-widget" class="fixed bottom-6 right-6 z-50">
-    <!-- Chat Button -->
+<div id="chat-widget-container" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] font-sans">
+
     <button id="chat-toggle" 
-            class="w-14 h-14 bg-premium-gold hover:bg-yellow-500 text-primary-black rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            class="group relative 
+                w-12 h-14 sm:w-14 sm:h-16  bg-premium-gold hover:bg-yellow-400 text-primary-black 
+                rounded-[50%_50%_50%_50%_/_60%_60%_40%_40%] 
+                shadow-xl flex items-center justify-center 
+                transition-all duration-300 hover:scale-105 hover:rotate-6 
+                focus:outline-none focus:ring-4 focus:ring-yellow-500/50 z-50">
+        
+        <svg class="w-5 h-5 sm:w-6 sm:h-6 transform transition-transform duration-300 group-hover:scale-0 absolute" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
         </svg>
+        
+        <svg class="w-5 h-5 sm:w-6 sm:h-6 transform scale-0 transition-transform duration-300 group-hover:scale-100 absolute" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        
+        <span class="absolute top-0 right-1 flex h-2.5 w-2.5"> <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+        </span>
     </button>
 
-    <!-- Chat Box -->
     <div id="chat-box" 
-         class="absolute bottom-16 right-0 w-80 h-96 bg-white dark:bg-dark-gray border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl flex flex-col transition-all duration-300 transform scale-0 opacity-0 origin-bottom-right">
+         class="fixed bottom-0 right-0 left-0 sm:left-auto sm:inset-auto sm:absolute sm:bottom-24 sm:right-0 
+                w-full sm:w-96 
+                h-[70vh] sm:h-[28rem] 
+                bg-white/95 dark:bg-dark-gray/95 backdrop-blur-md 
+                border-t border-x sm:border border-gray-200 dark:border-gray-700 
+                rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col 
+                transition-all duration-300 ease-in-out 
+                origin-bottom-right transform translate-y-[120%] sm:translate-y-10 sm:scale-0 sm:opacity-0 z-40">
         
-        <!-- Chat Header -->
-        <div class="bg-premium-gold text-primary-black px-4 py-3 rounded-t-lg flex justify-between items-center">
-            <div>
-                <h3 class="font-semibold">Chat dengan Admin</h3>
-                <p class="text-xs opacity-80" id="chat-status">Online</p>
+        <div class="bg-gradient-to-r from-premium-gold to-yellow-500 text-primary-black px-6 py-3 sm:py-4 rounded-t-2xl flex justify-between items-center shadow-sm shrink-0 cursor-pointer" id="chat-header-mobile">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-green-600 animate-pulse"></div>
+                <div>
+                    <h3 class="font-bold text-lg leading-tight">EggMin</h3>
+                    <p class="text-xs font-medium opacity-80">Online & Siap Membantu</p>
+                </div>
             </div>
-            <button id="chat-close" class="text-primary-black hover:text-gray-700">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            <button id="chat-minimize-mobile" class="sm:hidden text-primary-black hover:bg-black/10 rounded-full p-1 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
         </div>
 
-        <!-- Chat Messages -->
-        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50 dark:bg-gray-800">
-            <!-- Welcome Message -->
-            <div class="flex justify-start">
-                <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-3 py-2 max-w-xs">
-                    <p class="text-sm text-gray-700 dark:text-gray-300">
-                        Halo! Ada yang bisa kami bantu? Silakan tanyakan tentang EggVision atau perangkat kami.
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50 dark:bg-[#121212]">
+            <div class="flex justify-start animate-fade-in-up">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-none px-4 py-3 max-w-[85%] shadow-sm">
+                    <p class="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+                        Halo! 👋 Selamat datang di EggVision. <br>Ada yang bisa kami bantu mengenai teknologi grading telur kami?
                     </p>
-                    <span class="text-xs text-gray-500 dark:text-gray-400 block mt-1">Admin • Sekarang</span>
+                    <span class="text-[10px] text-gray-400 block mt-1 text-right">EggMin • Baru saja</span>
                 </div>
             </div>
         </div>
 
-        <!-- Guest Info Form (untuk user belum login) -->
-        <div id="guest-info" class="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-gray {% if current_user.is_authenticated %}hidden{% endif %}">
-            <div class="space-y-2">
-                <input type="text" 
-                       id="guest-name" 
-                       placeholder="Nama Anda" 
-                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
-                <input type="email" 
-                       id="guest-email" 
-                       placeholder="Email Anda" 
-                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+        <div id="guest-info" class="px-6 py-4 bg-gray-50 dark:bg-dark-gray border-t border-gray-100 dark:border-gray-700 {% if current_user.is_authenticated %}hidden{% endif %}">
+            <div class="space-y-3">
+                <input type="text" id="guest-name" placeholder="Nama Lengkap" 
+                       class="w-full px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-sm focus:ring-2 focus:ring-premium-gold outline-none shadow-sm">
+                <input type="email" id="guest-email" placeholder="Alamat Email" 
+                       class="w-full px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-sm focus:ring-2 focus:ring-premium-gold outline-none shadow-sm">
             </div>
         </div>
 
-        <!-- Chat Input -->
-        <div class="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-gray">
-            <div class="flex space-x-2">
-                <input type="text" 
-                       id="chat-input" 
-                       placeholder="Ketik pesan Anda..." 
-                       class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-premium-gold">
+        <div class="p-3 sm:p-4 bg-white dark:bg-dark-gray border-t border-gray-200 dark:border-gray-700 sm:rounded-b-2xl shrink-0">
+            <div class="flex items-center gap-2">
+                <input type="text" id="chat-input" placeholder="Tulis pesan..." 
+                       class="flex-1 px-4 py-2.5 sm:py-3 rounded-full bg-gray-100 dark:bg-gray-800 border-0 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-premium-gold transition-all text-sm">
+                
                 <button id="send-message" 
-                        class="px-4 py-2 bg-premium-gold text-primary-black rounded text-sm font-semibold hover:bg-yellow-500 transition-colors">
-                    Kirim
+                        class="w-10 h-10 sm:w-11 sm:h-11 bg-premium-gold text-primary-black rounded-full flex items-center justify-center shadow-md hover:bg-yellow-400 transition-all duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -70,173 +83,423 @@
 </div>
 
 <style>
-    #chat-messages {
-        scrollbar-width: thin;
-        scrollbar-color: #cbd5e0 transparent;
+    /* Custom Scrollbar */
+    #chat-messages { scrollbar-width: thin; scrollbar-color: #cbd5e0 transparent; }
+    .dark #chat-messages { scrollbar-color: #4b5563 transparent; }
+    #chat-messages::-webkit-scrollbar { width: 4px; }
+    #chat-messages::-webkit-scrollbar-track { background: transparent; }
+    #chat-messages::-webkit-scrollbar-thumb { background-color: #cbd5e0; border-radius: 10px; }
+    .dark #chat-messages::-webkit-scrollbar-thumb { background-color: #4b5563; }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-    
-    #chat-messages::-webkit-scrollbar {
-        width: 4px;
-    }
-    
-    #chat-messages::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    
-    #chat-messages::-webkit-scrollbar-thumb {
-        background-color: #cbd5e0;
-        border-radius: 2px;
-    }
-    
-    .dark #chat-messages::-webkit-scrollbar-thumb {
-        background-color: #4b5563;
-    }
-    
-    .chat-message-user {
-        justify-content: flex-end;
-    }
-    
-    .chat-message-admin {
-        justify-content: flex-start;
-    }
-    
-    .message-bubble-user {
-        background-color: #FFD700;
-        color: #000000;
-    }
-    
-    .message-bubble-admin {
-        background-color: #e5e7eb;
-        color: #374151;
-    }
-    
-    .dark .message-bubble-admin {
-        background-color: #4b5563;
-        color: #e5e7eb;
-    }
+    .animate-fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
+
+    /* iOS Safe Area for mobile inputs */
+    .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const chatToggle = document.getElementById('chat-toggle');
-        const chatBox = document.getElementById('chat-box');
-        const chatClose = document.getElementById('chat-close');
-        const chatInput = document.getElementById('chat-input');
-        const sendButton = document.getElementById('send-message');
-        const chatMessages = document.getElementById('chat-messages');
-        const guestInfo = document.getElementById('guest-info');
-        const guestName = document.getElementById('guest-name');
-        const guestEmail = document.getElementById('guest-email');
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const chatBox = document.getElementById('chat-box');
+    const chatToggle = document.getElementById('chat-toggle');
+    const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-message');
+    const chatMessages = document.getElementById('chat-messages');
+    const guestInfo = document.getElementById('guest-info');
+    const guestName = document.getElementById('guest-name');
+    const guestEmail = document.getElementById('guest-email');
+    const chatMinimizeMobile = document.getElementById('chat-minimize-mobile');
+    const chatHeaderMobile = document.getElementById('chat-header-mobile');
 
-        let isChatOpen = false;
+    let isChatOpen = false;
+    let pollingInterval = null;
 
-        // Toggle chat box
-        chatToggle.addEventListener('click', function() {
-            isChatOpen = !isChatOpen;
-            if (isChatOpen) {
-                chatBox.classList.remove('scale-0', 'opacity-0');
-                chatBox.classList.add('scale-100', 'opacity-100');
-                chatInput.focus();
-            } else {
-                chatBox.classList.remove('scale-100', 'opacity-100');
-                chatBox.classList.add('scale-0', 'opacity-0');
+    // 1. LOAD GUEST INFO FROM STORAGE (Persistence Logic)
+    // This ensures if they refresh, we remember who they are
+    const savedName = localStorage.getItem('eggvision_guest_name');
+    const savedEmail = localStorage.getItem('eggvision_guest_email');
+    
+    {% if not current_user.is_authenticated %}
+        if(savedName && savedEmail) {
+            guestName.value = savedName;
+            guestEmail.value = savedEmail;
+            guestInfo.classList.add('hidden'); // Hide form since we know them
+            loadMessages(); // Load previous chat immediately
+        }
+    {% else %}
+        guestInfo.classList.add('hidden'); // Logged in users don't need this form
+        loadMessages(); // Load previous chat immediately
+    {% endif %}
+
+    // 2. TOGGLE CHAT
+    function toggleChat() {
+        isChatOpen = !isChatOpen;
+        const isMobile = window.innerWidth < 640;
+        
+        if (isChatOpen) {
+            // Open animation
+            chatBox.classList.remove('translate-y-[120%]', 'sm:translate-y-10', 'sm:scale-0', 'sm:opacity-0');
+            
+            if (isMobile) {
+                chatToggle.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+                document.body.style.overflow = 'hidden';
             }
-        });
-
-        // Close chat box
-        chatClose.addEventListener('click', function() {
-            isChatOpen = false;
-            chatBox.classList.remove('scale-100', 'opacity-100');
-            chatBox.classList.add('scale-0', 'opacity-0');
-        });
-
-        // Send message function
-        function sendMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
-
-            // Validate guest info for non-logged in users
-            {% if not current_user.is_authenticated %}
-            if (!guestName.value.trim() || !guestEmail.value.trim()) {
-                alert('Silakan isi nama dan email Anda terlebih dahulu.');
-                return;
+            
+            setTimeout(() => chatInput.focus(), 300);
+            
+            // START POLLING (Check for new messages every 3 seconds)
+            loadMessages();
+            if (!pollingInterval) {
+                pollingInterval = setInterval(loadMessages, 3000);
             }
-            {% endif %}
 
-            // Add user message to chat
-            addMessageToChat(message, 'user');
+        } else {
+            // Close animation
+            chatBox.classList.add('translate-y-[120%]', 'sm:translate-y-10', 'sm:scale-0', 'sm:opacity-0');
+            chatToggle.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+            document.body.style.overflow = '';
+            
+            // STOP POLLING to save resources
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+    }
 
-            // Send to server
-            fetch('{{ url_for("chat_controller.comprof_send_chat") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message,
-                    {% if current_user.is_authenticated %}
-                    user_id: '{{ current_user.id }}',
-                    {% else %}
-                    guest_name: guestName.value.trim(),
-                    guest_email: guestEmail.value.trim(),
-                    {% endif %}
-                })
-            })
-            .then(response => response.json())
+    // Listeners
+    chatToggle.addEventListener('click', toggleChat);
+    chatMinimizeMobile.addEventListener('click', (e) => { e.stopPropagation(); toggleChat(); });
+    chatHeaderMobile.addEventListener('click', function() { if(window.innerWidth < 640) toggleChat(); });
+
+    // 3. HTML HELPER
+    function createMessageHTML(message, messageType, time) {
+        // Check if message was sent by USER or ADMIN
+        // messageType can be 'user_to_admin' OR 'guest_to_admin' -> Align Right
+        // messageType can be 'admin_to_user' OR 'admin_to_guest' -> Align Left
+        
+        const isMe = (messageType === 'user_to_admin' || messageType === 'guest_to_admin');
+        
+        const alignClass = isMe ? 'justify-end' : 'justify-start';
+        const bubbleClass = isMe 
+            ? 'bg-premium-gold text-primary-black rounded-tr-none' 
+            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-gray-200 rounded-tl-none';
+        const senderLabel = isMe ? 'Anda' : 'Admin';
+        
+        // Fallback for time if not provided in realtime send
+        const displayTime = time || 'Baru saja';
+
+        return `
+            <div class="flex ${alignClass} animate-fade-in-up">
+                <div class="${bubbleClass} rounded-2xl px-4 py-2.5 max-w-[85%] shadow-sm text-sm relative group">
+                    <p class="leading-relaxed">${message}</p>
+                    <span class="text-[10px] opacity-60 block mt-1 ${isMe ? 'text-primary-black text-left' : 'text-gray-400 text-right'}">
+                        ${senderLabel} • ${displayTime}
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
+    // 4. LOAD MESSAGES (Polling Function)
+    function loadMessages() {
+        // Determine URL based on login status
+        let url = '{{ url_for("comprof_get_chat_history") }}';
+        
+        {% if not current_user.is_authenticated %}
+            const email = guestEmail.value.trim();
+            // If guest hasn't entered email yet, don't fetch
+            if(!email) return; 
+            url += `?guest_email=${encodeURIComponent(email)}`;
+        {% endif %}
+
+        fetch(url)
+            .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    chatInput.value = '';
-                    // Simulate admin auto-reply (bisa dihapus nanti)
-                    setTimeout(() => {
-                        addMessageToChat('Terima kasih pesan Anda sudah kami terima. Admin akan membalas secepatnya melalui email.', 'admin');
-                    }, 1000);
-                } else {
-                    addMessageToChat('Maaf, terjadi error. Silakan coba lagi.', 'admin');
+                if(data.success && data.messages) {
+                    // Ideally we diff the DOM, but for simplicity, we just check count
+                    // Or clear and redraw (simple but can flicker). 
+                    // Better: Only append if count differs or check last ID. 
+                    // For now, we will clear to ensure order, but in production consider optimization.
+                    
+                    const currentCount = chatMessages.children.length;
+                    // Only redraw if we have a different number of messages (simple check)
+                    // Or just always redraw to catch status updates
+                    
+                    chatMessages.innerHTML = ''; 
+                    
+                    // Add Welcome Message back
+                    chatMessages.innerHTML = `
+                    <div class="flex justify-start">
+                        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-none px-4 py-3 max-w-[85%] shadow-sm">
+                            <p class="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">Halo! 👋 Selamat datang di EggVision. <br>Ada yang bisa kami bantu?</p>
+                            <span class="text-[10px] text-gray-400 block mt-1 text-right">Admin • Bot</span>
+                        </div>
+                    </div>`;
+
+                    data.messages.forEach(msg => {
+                        chatMessages.insertAdjacentHTML('beforeend', createMessageHTML(msg.message, msg.message_type, msg.created_at));
+                    });
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                addMessageToChat('Maaf, terjadi error. Silakan coba lagi.', 'admin');
-            });
-        }
+            .catch(err => console.error("Polling error:", err));
+    }
 
-        // Send message on button click
-        sendButton.addEventListener('click', sendMessage);
+    // 5. SEND MESSAGE
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
 
-        // Send message on Enter key
-        chatInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
+        // Guest Validation
+        {% if not current_user.is_authenticated %}
+            if (!guestName.value.trim() || !guestEmail.value.trim()) {
+                alert("Mohon isi Nama dan Email Anda untuk memulai chat.");
+                guestName.classList.add('ring-2', 'ring-red-500');
+                guestEmail.classList.add('ring-2', 'ring-red-500');
+                return;
             }
-        });
-
-        // Add message to chat UI
-        function addMessageToChat(message, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex ${sender === 'user' ? 'chat-message-user' : 'chat-message-admin'}`;
-            
-            const bubbleDiv = document.createElement('div');
-            bubbleDiv.className = `rounded-lg px-3 py-2 max-w-xs ${sender === 'user' ? 'message-bubble-user' : 'message-bubble-admin'}`;
-            
-            const messageText = document.createElement('p');
-            messageText.className = 'text-sm';
-            messageText.textContent = message;
-            
-            const timeSpan = document.createElement('span');
-            timeSpan.className = 'text-xs opacity-70 block mt-1';
-            timeSpan.textContent = sender === 'user' ? 'Anda • Sekarang' : 'Admin • Sekarang';
-            
-            bubbleDiv.appendChild(messageText);
-            bubbleDiv.appendChild(timeSpan);
-            messageDiv.appendChild(bubbleDiv);
-            
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // Auto-hide guest info after first message for logged-in users
-        {% if current_user.is_authenticated %}
-        guestInfo.classList.add('hidden');
+            // Save to local storage so it persists on refresh
+            localStorage.setItem('eggvision_guest_name', guestName.value.trim());
+            localStorage.setItem('eggvision_guest_email', guestEmail.value.trim());
+            guestInfo.classList.add('hidden');
         {% endif %}
-    });
+
+        // Send to API
+        fetch('{{ url_for("comprof_send_chat") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: message,
+                {% if current_user.is_authenticated %}
+                user_id: '{{ current_user.id }}',
+                {% else %}
+                guest_name: guestName.value.trim(),
+                guest_email: guestEmail.value.trim(),
+                {% endif %}
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                chatInput.value = '';
+                loadMessages(); // Fetch immediately to show the new message
+            } else {
+                alert("Gagal mengirim: " + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Terjadi kesalahan koneksi.");
+        });
+    }
+
+    sendButton.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const chatBox = document.getElementById('chat-box');
+    const chatToggle = document.getElementById('chat-toggle');
+    const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-message');
+    const chatMessages = document.getElementById('chat-messages');
+    const guestInfo = document.getElementById('guest-info');
+    const guestName = document.getElementById('guest-name');
+    const guestEmail = document.getElementById('guest-email');
+    const chatMinimizeMobile = document.getElementById('chat-minimize-mobile');
+    const chatHeaderMobile = document.getElementById('chat-header-mobile');
+
+    let isChatOpen = false;
+    let pollingInterval = null;
+
+    // 1. LOAD GUEST INFO FROM STORAGE (Persistence Logic)
+    // This ensures if they refresh, we remember who they are
+    const savedName = localStorage.getItem('eggvision_guest_name');
+    const savedEmail = localStorage.getItem('eggvision_guest_email');
+    
+    {% if not current_user.is_authenticated %}
+        if(savedName && savedEmail) {
+            guestName.value = savedName;
+            guestEmail.value = savedEmail;
+            guestInfo.classList.add('hidden'); // Hide form since we know them
+            loadMessages(); // Load previous chat immediately
+        }
+    {% else %}
+        guestInfo.classList.add('hidden'); // Logged in users don't need this form
+        loadMessages(); // Load previous chat immediately
+    {% endif %}
+
+    // 2. TOGGLE CHAT
+    function toggleChat() {
+        isChatOpen = !isChatOpen;
+        const isMobile = window.innerWidth < 640;
+        
+        if (isChatOpen) {
+            // Open animation
+            chatBox.classList.remove('translate-y-[120%]', 'sm:translate-y-10', 'sm:scale-0', 'sm:opacity-0');
+            
+            if (isMobile) {
+                chatToggle.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+                document.body.style.overflow = 'hidden';
+            }
+            
+            setTimeout(() => chatInput.focus(), 300);
+            
+            // START POLLING (Check for new messages every 3 seconds)
+            loadMessages();
+            if (!pollingInterval) {
+                pollingInterval = setInterval(loadMessages, 3000);
+            }
+
+        } else {
+            // Close animation
+            chatBox.classList.add('translate-y-[120%]', 'sm:translate-y-10', 'sm:scale-0', 'sm:opacity-0');
+            chatToggle.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+            document.body.style.overflow = '';
+            
+            // STOP POLLING to save resources
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+    }
+
+    // Listeners
+    chatToggle.addEventListener('click', toggleChat);
+    chatMinimizeMobile.addEventListener('click', (e) => { e.stopPropagation(); toggleChat(); });
+    chatHeaderMobile.addEventListener('click', function() { if(window.innerWidth < 640) toggleChat(); });
+
+    // 3. HTML HELPER
+    function createMessageHTML(message, messageType, time) {
+        // Check if message was sent by USER or ADMIN
+        // messageType can be 'user_to_admin' OR 'guest_to_admin' -> Align Right
+        // messageType can be 'admin_to_user' OR 'admin_to_guest' -> Align Left
+        
+        const isMe = (messageType === 'user_to_admin' || messageType === 'guest_to_admin');
+        
+        const alignClass = isMe ? 'justify-end' : 'justify-start';
+        const bubbleClass = isMe 
+            ? 'bg-premium-gold text-primary-black rounded-tr-none' 
+            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-gray-200 rounded-tl-none';
+        const senderLabel = isMe ? 'Anda' : 'Admin';
+        
+        // Fallback for time if not provided in realtime send
+        const displayTime = time || 'Baru saja';
+
+        return `
+            <div class="flex ${alignClass} animate-fade-in-up">
+                <div class="${bubbleClass} rounded-2xl px-4 py-2.5 max-w-[85%] shadow-sm text-sm relative group">
+                    <p class="leading-relaxed">${message}</p>
+                    <span class="text-[10px] opacity-60 block mt-1 ${isMe ? 'text-primary-black text-left' : 'text-gray-400 text-right'}">
+                        ${senderLabel} • ${displayTime}
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
+    // 4. LOAD MESSAGES (Polling Function)
+    function loadMessages() {
+        // Determine URL based on login status
+        let url = '{{ url_for("comprof_get_chat_history") }}';
+        
+        {% if not current_user.is_authenticated %}
+            const email = guestEmail.value.trim();
+            // If guest hasn't entered email yet, don't fetch
+            if(!email) return; 
+            url += `?guest_email=${encodeURIComponent(email)}`;
+        {% endif %}
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if(data.success && data.messages) {
+                    // Ideally we diff the DOM, but for simplicity, we just check count
+                    // Or clear and redraw (simple but can flicker). 
+                    // Better: Only append if count differs or check last ID. 
+                    // For now, we will clear to ensure order, but in production consider optimization.
+                    
+                    const currentCount = chatMessages.children.length;
+                    // Only redraw if we have a different number of messages (simple check)
+                    // Or just always redraw to catch status updates
+                    
+                    chatMessages.innerHTML = ''; 
+                    
+                    // Add Welcome Message back
+                    chatMessages.innerHTML = `
+                    <div class="flex justify-start">
+                        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-tl-none px-4 py-3 max-w-[85%] shadow-sm">
+                            <p class="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">Halo! 👋 Selamat datang di EggVision. <br>Ada yang bisa kami bantu?</p>
+                            <span class="text-[10px] text-gray-400 block mt-1 text-right">Admin • Bot</span>
+                        </div>
+                    </div>`;
+
+                    data.messages.forEach(msg => {
+                        chatMessages.insertAdjacentHTML('beforeend', createMessageHTML(msg.message, msg.message_type, msg.created_at));
+                    });
+                }
+            })
+            .catch(err => console.error("Polling error:", err));
+    }
+
+    // 5. SEND MESSAGE
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Guest Validation
+        {% if not current_user.is_authenticated %}
+            if (!guestName.value.trim() || !guestEmail.value.trim()) {
+                alert("Mohon isi Nama dan Email Anda untuk memulai chat.");
+                guestName.classList.add('ring-2', 'ring-red-500');
+                guestEmail.classList.add('ring-2', 'ring-red-500');
+                return;
+            }
+            // Save to local storage so it persists on refresh
+            localStorage.setItem('eggvision_guest_name', guestName.value.trim());
+            localStorage.setItem('eggvision_guest_email', guestEmail.value.trim());
+            guestInfo.classList.add('hidden');
+        {% endif %}
+
+        // Send to API
+        fetch('{{ url_for("comprof_send_chat") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: message,
+                {% if current_user.is_authenticated %}
+                user_id: '{{ current_user.id }}',
+                {% else %}
+                guest_name: guestName.value.trim(),
+                guest_email: guestEmail.value.trim(),
+                {% endif %}
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                chatInput.value = '';
+                loadMessages(); // Fetch immediately to show the new message
+            } else {
+                alert("Gagal mengirim: " + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Terjadi kesalahan koneksi.");
+        });
+    }
+
+    sendButton.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+});
 </script>

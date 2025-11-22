@@ -2,55 +2,93 @@
      class="fixed-nav transparent-nav bg-transparent text-pure-white border-b border-transparent transition-all duration-300" 
      id="mainNav">
     <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="relative flex items-center justify-between h-24">
+        <div class="relative flex items-center justify-between h-16 sm:h-20 lg:h-24">
             <!-- Logo -->
             <div class="flex-shrink-0">
-                <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text" title="EggVision Home">
-                    <img src="{{ url_for('static', filename='/img/logo.png') }}" alt="EggVision" class="h-16 w-auto" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <a href="{{ url_for('comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text" title="EggVision Home">
+                    <img src="{{ url_for('static', filename='/img/logo.png') }}" alt="EggVision" class="h-10 sm:h-12 lg:h-16 w-auto" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span style="display: none;">🥚 EggVision</span>
                 </a>
             </div>
 
             <!-- Right Section -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
                 <!-- Dark/Light Mode Toggle -->
                 <button 
                     onclick="toggleDarkMode()" 
-                    class="relative inline-flex items-center w-14 h-7 rounded-full transition-colors duration-300 ease-in-out 
+                    class="relative inline-flex items-center w-12 h-6 sm:w-14 sm:h-7 rounded-full transition-colors duration-300 ease-in-out 
                         bg-gray-300 dark:bg-gray-600 hover:ring-2 hover:ring-premium-gold focus:outline-none"
                     aria-label="Toggle dark mode"
                 >
                 <span 
-                    class="absolute left-1 top-1 w-5 h-5 rounded-full bg-white dark:bg-primary-black transform transition-transform duration-300 ease-in-out 
-                        dark:translate-x-7"
+                    class="absolute left-0.5 top-0.5 w-5 h-5 sm:left-1 sm:top-1 sm:w-5 sm:h-5 rounded-full bg-white dark:bg-primary-black transform transition-transform duration-300 ease-in-out 
+                        dark:translate-x-6 sm:dark:translate-x-7"
                 ></span>
                 <svg xmlns="http://www.w3.org/2000/svg" 
-                    class="absolute left-1.5 top-1.5 w-4 h-4 text-gray-700 dark:hidden" 
+                    class="absolute left-1.5 w-3 h-3 sm:w-4 sm:h-4 text-gray-700 dark:hidden" 
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                         d="M12 3v1m0 16v1m8.66-9H21M3 12H2m15.36-6.36l.7.7M6.34 17.66l.7.7M17.66 17.66l.7-.7M6.34 6.34l.7-.7M12 8a4 4 0 100 8 4 4 0 000-8z" />
                 </svg>
                 <svg xmlns="http://www.w3.org/2000/svg" 
-                    class="absolute right-1.5 top-1.5 w-4 h-4 hidden dark:block text-yellow-400" 
+                    class="absolute right-1.5 w-3 h-3 sm:w-4 sm:h-4 hidden dark:block text-yellow-400" 
                     fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 2a8 8 0 107.446 5.032A6 6 0 0110 2z"/>
                 </svg>
                 </button>
 
-                <!-- Auth Links -->
+                <!-- Auth Links - Hidden on mobile, shown on desktop -->
                 {% if current_user.is_authenticated %}
-                <div class="relative group">
-                    <button class="text-gray-300 hover:text-premium-gold px-3 py-2 theme-transition text-sm">
-                        {{ current_user.name }}
+                <div class="hidden sm:flex relative group h-full items-center ml-2">
+                    <button class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 transition-colors duration-200 rounded-full hover:bg-white/10 hover:text-premium-gold focus:outline-none">
+                        <div class="w-8 h-8 rounded-full bg-premium-gold/20 flex items-center justify-center text-premium-gold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        
+                        <span>{{ current_user.name }}</span>
+                        
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
                     </button>
-                    <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-gray border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible theme-transition z-50">
-                        {% if current_user.role == 'pengusaha' %}
-                        {% elif current_user.role == 'pembeli' %}
-                        <a href="{{ url_for('eggmart_controller.eggmart') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition text-sm">EggMart</a>
-                        {% elif current_user.role == 'admin' %}
-                        <a href="{{ url_for('eggmin_controller.eggmin') }}" class="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition text-sm">EggMin</a>
-                        {% endif %}
-                        <a href="{{ url_for('auth_controller.auth_logout') }}" class="block px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 theme-transition text-sm">Logout</a>
+                
+                    <div class="absolute right-0 top-full pt-4 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out transform origin-top-right scale-95 group-hover:scale-100 z-50">
+                        
+                        <div class="bg-white/95 dark:bg-dark-gray/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black ring-opacity-5">
+                            
+                            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-white/5">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold tracking-wider">Logged in as</p>
+                                <p class="text-sm font-medium text-gray-900 dark:text-pure-white truncate">{{ current_user.role|capitalize }}</p>
+                            </div>
+                
+                            <div class="py-1">
+                                {% if current_user.role == 'pengusaha' %}
+                                <a href="{{ url_for('eggmonitor') }}" class="group flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-premium-gold transition-colors">
+                                    <svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-premium-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                    EggMonitor
+                                </a>
+                                {% elif current_user.role == 'pembeli' %}
+                                <a href="{{ url_for('eggmart') }}" class="group flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-premium-gold transition-colors">
+                                    <svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-premium-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                    EggMart
+                                </a>
+                                {% elif current_user.role == 'admin' %}
+                                <a href="{{ url_for('eggmin') }}" class="group flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-premium-gold transition-colors">
+                                    <svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-premium-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    EggMin Panel
+                                </a>
+                                {% endif %}
+                                
+                                <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                
+                                <a href="{{ url_for('auth_logout') }}" class="group flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 transition-colors">
+                                    <svg class="mr-3 h-4 w-4 text-red-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
@@ -58,12 +96,12 @@
                 <!-- Menu Button -->
                 <button @click="open = !open" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-premium-gold hover:text-pure-white focus:outline-none">
                     <span class="sr-only">Buka menu</span>
-                    <span x-show="!open" class="text-lg">Menu</span>
-                    <span x-show="open" class="text-lg">Close</span>
-                    <svg x-show="!open" class="ml-2 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <span x-show="!open" class="text-sm sm:text-lg">Menu</span>
+                    <span x-show="open" class="text-sm sm:text-lg">Close</span>
+                    <svg x-show="!open" class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
-                    <svg x-show="open" class="ml-2 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <svg x-show="open" class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
@@ -80,205 +118,445 @@
         x-transition:leave="transition-transform ease-in-out duration-500"
         x-transition:leave-start="translate-y-0"
         x-transition:leave-end="-translate-y-full"
-        class="fixed inset-0 z-50 h-screen w-screen fullscreen-menu p-6"
+        class="fixed inset-0 z-50 h-screen w-screen fullscreen-menu p-4 sm:p-6"
         style="display: none;"
         @click.away="open = false" 
     >
-        <div class="container mx-auto h-full flex flex-col max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="container mx-auto h-full flex flex-col max-w-7xl px-2 sm:px-4 lg:px-8">
             <!-- Menu Header -->
-            <div class="flex items-center justify-between h-24 -mt-2 sm:-mt-3 lg:-mt-4">
+            <div class="flex items-center justify-between h-16 sm:h-20 lg:h-24 -mt-2 sm:-mt-3 lg:-mt-4">
                 <div class="flex-shrink-0">
-                    <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text">
-                        <img src="{{ url_for('static', filename='/img/logo.png') }}" alt="EggVision" class="h-16 w-auto" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <a href="{{ url_for('comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text">
+                        <img src="{{ url_for('static', filename='/img/logo.png') }}" alt="EggVision" class="h-10 sm:h-12 lg:h-16 w-auto" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <span style="display: none;">🥚 EggVision</span>
                     </a>
                 </div>
                 <button @click="open = false" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-premium-gold hover:text-pure-white focus:outline-none">
-                    <span class="text-lg">Close</span>
-                    <svg class="ml-2 h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <span class="text-sm sm:text-lg">Close</span>
+                    <svg class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
             
             <!-- Menu Content -->
-            <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-16 mt-16">
-            <!-- Main Navigation -->
-            <div class="flex flex-col justify-center relative">
-                <ul class="space-y-6">
-                    <li>
-                        <button 
-                            @click="activeMenu = (activeMenu === 'beranda' ? '' : 'beranda')" 
-                            :class="activeMenu === 'beranda' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
-                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
-                        >
-                            Beranda
-                        </button>
-                    </li>
-                    <li>
-                        <button 
-                            @click="activeMenu = (activeMenu === 'berita' ? '' : 'berita')" 
-                            :class="activeMenu === 'berita' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
-                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
-                        >
-                            Berita
-                        </button>
-                    </li>
-                    <li>
-                        <button 
-                            @click="activeMenu = (activeMenu === 'layanan' ? '' : 'layanan')" 
-                            :class="activeMenu === 'layanan' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
-                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
-                        >
-                            Layanan
-                        </button>
-                    </li>
-                    <li>
-                        <button 
-                            @click="activeMenu = (activeMenu === 'produk' ? '' : 'produk')" 
-                            :class="activeMenu === 'produk' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
-                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
-                        >
-                            Produk
-                        </button>
-                    </li>
-                    <li>
-                        <button 
-                            @click="activeMenu = (activeMenu === 'tentang_kami' ? '' : 'tentang_kami')" 
-                            :class="activeMenu === 'tentang_kami' ? 'text-pure-white border-b-2 border-premium-gold relative' : 'text-gray-400'"
-                            class="font-title text-6xl hover:text-pure-white transition duration-300 pb-2 flex items-center"
-                        >
-                            Tentang Kami
-                        </button>
-                    </li>
-                </ul>
-            </div>
+            <div class="flex-grow mt-8 sm:mt-12 lg:mt-16">
+                <!-- Desktop Layout -->
+                <div class="hidden lg:grid grid-cols-2 gap-16">
+                    <!-- Main Navigation -->
+                    <div class="flex flex-col justify-center relative">
+                        <ul class="space-y-4 sm:space-y-6">
 
-                <!-- Submenu Content -->
-                <div class="flex flex-col justify-center text-gray-300 font-sans">
-                    <!-- Beranda Submenu -->
-                    <div x-show="activeMenu === 'beranda'" class="space-y-8">
-                        <a href="{{ url_for('comprof_controller.comprof_beranda') }}#layanan" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Layanan dan Produk</h3>
-                                <p>Jelajahi solusi digital kami untuk industri peternakan modern.</p>
-                            </div>
-                        </a>
-                        <a href="{{ url_for('comprof_controller.comprof_beranda') }}#berita" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Berita Terkini</h3>
-                                <p>Dapatkan informasi terbaru seputar industri, teknologi, dan kegiatan kami.</p>
-                            </div>
-                        </a>
-                        <a href="{{ url_for('comprof_controller.comprof_beranda') }}#testimoni" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Ulasan Pembeli</h3>
-                                <p>Baca pengalaman dan testimoni dari para pengguna EggVision dari berbagai daerah di Indonesia.</p>
-                            </div>
-                        </a>
+                            <li>
+                                <button 
+                                    @click="activeMenu = (activeMenu === 'beranda' ? '' : 'beranda')" 
+                                    :class="activeMenu === 'beranda' ? 'text-pure-white' : 'text-gray-400'"
+                                    class="group transition duration-300 pb-2 flex items-center w-full text-left"
+                                >
+                                    <span class="relative inline-block font-canela text-3xl sm:text-4xl lg:text-6xl">
+                                        Beranda
+                                        <span 
+                                            :class="activeMenu === 'beranda' ? 'w-full' : 'w-0 group-hover:w-full'"
+                                            class="absolute bottom-0 left-0 h-0.5 bg-premium-gold transition-all duration-300 ease-out">
+                                        </span>
+                                    </span>
+                                </button>
+                            </li>
+
+                            <li>
+                                <button 
+                                    @click="activeMenu = (activeMenu === 'berita' ? '' : 'berita')" 
+                                    :class="activeMenu === 'berita' ? 'text-pure-white' : 'text-gray-400'"
+                                    class="group transition duration-300 pb-2 flex items-center w-full text-left"
+                                >
+                                    <span class="relative inline-block font-canela text-3xl sm:text-4xl lg:text-6xl">
+                                        Berita
+                                        <span 
+                                            :class="activeMenu === 'berita' ? 'w-full' : 'w-0 group-hover:w-full'"
+                                            class="absolute bottom-0 left-0 h-0.5 bg-premium-gold transition-all duration-300 ease-out">
+                                        </span>
+                                    </span>
+                                </button>
+                            </li>
+
+                            <li>
+                                <button 
+                                    @click="activeMenu = (activeMenu === 'layanan' ? '' : 'layanan')" 
+                                    :class="activeMenu === 'layanan' ? 'text-pure-white' : 'text-gray-400'"
+                                    class="group transition duration-300 pb-2 flex items-center w-full text-left"
+                                >
+                                    <span class="relative inline-block font-canela text-3xl sm:text-4xl lg:text-6xl">
+                                        Layanan Kami
+                                        <span 
+                                            :class="activeMenu === 'layanan' ? 'w-full' : 'w-0 group-hover:w-full'"
+                                            class="absolute bottom-0 left-0 h-0.5 bg-premium-gold transition-all duration-300 ease-out">
+                                        </span>
+                                    </span>
+                                </button>
+                            </li>
+
+                            <li>
+                                <button 
+                                    @click="activeMenu = (activeMenu === 'tentang_kami' ? '' : 'tentang_kami')" 
+                                    :class="activeMenu === 'tentang_kami' ? 'text-pure-white' : 'text-gray-400'"
+                                    class="group transition duration-300 pb-2 flex items-center w-full text-left"
+                                >
+                                    <span class="relative inline-block font-canela text-3xl sm:text-4xl lg:text-6xl">
+                                        Tentang Kami
+                                        <span 
+                                            :class="activeMenu === 'tentang_kami' ? 'w-full' : 'w-0 group-hover:w-full'"
+                                            class="absolute bottom-0 left-0 h-0.5 bg-premium-gold transition-all duration-300 ease-out">
+                                        </span>
+                                    </span>
+                                </button>
+                            </li>
+
+                            <li>
+                                <a href="{{ url_for('auth_login') }}" 
+                                class="group transition duration-300 pb-2 flex items-center w-full text-left"
+                                @click="open = false">
+                                    <span class="relative inline-block font-canela text-3xl sm:text-4xl lg:text-6xl text-gray-400 hover:text-pure-white">
+                                        Login
+                                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-premium-gold transition-all duration-300 ease-out group-hover:w-full"></span>
+                                    </span>
+                                </a>
+                            </li>
+                            
+                        </ul>
                     </div>
 
-                    <!-- Berita Submenu -->
-                    <div x-show="activeMenu === 'berita'" class="space-y-8">
-                        <a href="{{ url_for('comprof_controller.comprof_berita') }}#berita" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Berita Lengkap</h3>
-                                <p>Arsip lengkap artikel, laporan, dan publikasi terkait EggVision.</p>
-                            </div>
-                        </a>
-                        <a href="{{ url_for('comprof_controller.comprof_berita') }}#pencapaian" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Pencapaian Kami</h3>
-                                <p>Prestasi dan sertifikasi resmi yang telah diraih EggVision.</p>
-                            </div>
-                        </a>
-                        <a href="{{ url_for('comprof_controller.comprof_berita') }}#event" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Event dan Webinar</h3>
-                                <p>Ikuti acara atau webinar yang akan datang dan pelajari lebih lanjut.</p>
-                            </div>
-                        </a>
-                    </div>
+                    <!-- Desktop Submenu Content -->
+                    <div class="flex flex-col justify-center text-gray-300 font-sans">
+                        <!-- Beranda Submenu -->
+                        <div x-show="activeMenu === 'beranda'" class="space-y-8">
+                            <a href="{{ url_for('comprof_beranda') }}#layanan" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Layanan dan Produk</h3>
+                                    <p class="text-base">Jelajahi solusi digital kami untuk industri peternakan modern.</p>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('comprof_beranda') }}#berita" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Berita Terkini</h3>
+                                    <p class="text-base">Dapatkan informasi terbaru seputar industri, teknologi, dan kegiatan kami.</p>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('comprof_beranda') }}#testimoni" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Ulasan Pembeli</h3>
+                                    <p class="text-base">Baca pengalaman dan testimoni dari para pengguna EggVision.</p>
+                                </div>
+                            </a>
+                        </div>
 
-                    <!-- Layanan Submenu -->
-                    <div x-show="activeMenu === 'layanan'" class="space-y-8">
-                        <a href="{{ url_for('comprof_controller.comprof_layanan') }}#eggmart" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">EggMart</h3>
-                                <p>Platform jual beli telur bagi mitra resmi pengguna sistem grading EggVision.</p>
-                            </div>
-                        </a>
-                        <a href="{{ url_for('comprof_controller.comprof_layanan') }}#eggmonitor" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">EggMonitor</h3>
-                                <p>Pusat kontrol dan pemantauan sistem untuk grading telur EggVision.</p>
-                            </div>
-                        </a>
-                    </div>
+                        <!-- Other desktop submenus... (same structure as before) -->
+                        <!-- Berita Submenu -->
+                        <div x-show="activeMenu === 'berita'" class="space-y-8">
+                            <a href="{{ url_for('comprof_berita') }}#berita" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Berita Lengkap</h3>
+                                    <p class="text-base">Arsip lengkap artikel, laporan, dan publikasi terkait EggVision.</p>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('comprof_berita') }}#pencapaian" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Pencapaian Kami</h3>
+                                    <p class="text-base">Prestasi dan sertifikasi resmi yang telah diraih EggVision.</p>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('comprof_berita') }}#event" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Event dan Webinar</h3>
+                                    <p class="text-base">Ikuti acara atau webinar yang akan datang dan pelajari lebih lanjut.</p>
+                                </div>
+                            </a>
+                        </div>
 
-                    <!-- Produk Submenu -->
-                    <div x-show="activeMenu === 'produk'" class="space-y-8">
-                        <a href="{{ url_for('comprof_controller.comprof_produk') }}#eggvision" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">EggVision</h3>
-                                <p>Alat sortir telur otomatis berbasis IoT dan Machine Learning.</p>
-                            </div>
-                        </a>
-                    </div>
+                        <!-- Layanan Submenu -->
+                        <div x-show="activeMenu === 'layanan'" class="space-y-8">
+                            <a href="{{ url_for('comprof_produk') }}#eggvision" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">EggVision Machine</h3>
+                                    <p class="text-base">Alat sortir telur otomatis berbasis IoT dan Machine Learning.</p>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('comprof_layanan') }}#eggmonitor" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">EggMonitor</h3>
+                                    <p class="text-base">Pusat kontrol dan pemantauan sistem untuk grading telur EggVision.</p>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('comprof_layanan') }}#eggmart" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">EggMart</h3>
+                                    <p class="text-base">Platform jual beli telur bagi mitra resmi pengguna sistem grading EggVision.</p>
+                                </div>
+                            </a>
+                        </div>
 
-                    <!-- Tentang Kami Submenu -->
-                    <div x-show="activeMenu === 'tentang_kami'" class="space-y-8">
-                        <a href="{{ url_for('comprof_controller.comprof_tentang_kami') }}#profil" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Profil Perusahaan</h3>
-                                <p>Kenali visi, misi, dan nilai-nilai yang mendasari setiap langkah kami.</p>
-                            </div>
-                        </a>
-                        <a href="{{ url_for('comprof_controller.comprof_tentang_kami') }}#tim" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Tim Kami</h3>
-                                <p>Para profesional di balik EggVision yang berkomitmen pada inovasi dan kualitas.</p>
-                            </div>
-                        </a>
-                        <a href="{{ url_for('comprof_controller.comprof_tentang_kami') }}#kontak" class="group flex items-center gap-6">
-                            <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
-                            <div>
-                                <h3 class="text-xl text-pure-white font-semibold">Hubungi Kami</h3>
-                                <p>Saluran resmi untuk pertanyaan, kerja sama, dan dukungan pelanggan.</p>
-                            </div>
-                        </a>
+                        <!-- Produk Submenu -->
+                        <div x-show="activeMenu === 'produk'" class="space-y-8">
+                            <a href="{{ url_for('comprof_produk') }}#eggvision" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">EggVision</h3>
+                                    <p class="text-base">Alat sortir telur otomatis berbasis IoT dan Machine Learning.</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <!-- Tentang Kami Submenu -->
+                        <div x-show="activeMenu === 'tentang_kami'" class="space-y-8">
+                            <a href="{{ url_for('comprof_tentang_kami') }}#profil" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Profil Perusahaan</h3>
+                                    <p class="text-base">Kenali visi, misi, dan nilai-nilai yang mendasari setiap langkah kami.</p>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('comprof_tentang_kami') }}#tim" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Tim Kami</h3>
+                                    <p class="text-base">Para profesional di balik EggVision yang berkomitmen pada inovasi dan kualitas.</p>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('comprof_tentang_kami') }}#kontak" class="group flex items-center gap-6" @click="open = false">
+                                <span class="text-premium-gold group-hover:translate-x-2 transition-transform duration-300 text-xl">→</span>
+                                <div>
+                                    <h3 class="text-xl text-pure-white ">Hubungi Kami</h3>
+                                    <p class="text-base">Saluran resmi untuk pertanyaan, kerja sama, dan dukungan pelanggan.</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <!-- Default State (No menu selected) -->
+                        <div x-show="!activeMenu" class="text-left">
+                            <p class="text-xl text-pure-white mb-4">Pilih menu untuk melihat detail</p>
+                            <p class="text-gray-400 text-base">Jelajahi layanan dan produk EggVision</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+
+                <!-- Mobile Layout -->
+                <div class="lg:hidden space-y-8">
+                    <div class="space-y-2">
+                        <div>
+                            <button 
+                                @click="activeMenu = (activeMenu === 'beranda' ? '' : 'beranda')" 
+                                :class="activeMenu === 'beranda' ? 'text-pure-white relative' : 'text-gray-400'"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                            >
+                                <span class="font-canela text-3xl sm:text-4xl">Beranda</span>
+                                <svg :class="activeMenu === 'beranda' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                                <span x-show="activeMenu === 'beranda'" class="absolute bottom-0 left-0 w-full h-0.5 bg-premium-gold transition-all duration-300"></span>
+                                <span x-show="activeMenu !== 'beranda'" class="absolute bottom-0 left-0 w-0 h-0.5 bg-premium-gold transition-all duration-300 group-hover:w-full"></span>
+                            </button>
+                            <div x-show="activeMenu === 'beranda'" class="mt-4 ml-4 space-y-4 pl-4">
+                                <a href="{{ url_for('comprof_beranda') }}#layanan" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Layanan dan Produk</h3>
+                                        <p class="text-sm text-gray-400">Jelajahi solusi digital kami</p>
+                                    </div>
+                                </a>
+                                <a href="{{ url_for('comprof_beranda') }}#berita" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Berita Terkini</h3>
+                                        <p class="text-sm text-gray-400">Informasi terbaru seputar industri</p>
+                                    </div>
+                                </a>
+                                <a href="{{ url_for('comprof_beranda') }}#testimoni" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Ulasan Pembeli</h3>
+                                        <p class="text-sm text-gray-400">Testimoni dari pengguna EggVision</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button 
+                                @click="activeMenu = (activeMenu === 'berita' ? '' : 'berita')" 
+                                :class="activeMenu === 'berita' ? 'text-pure-white relative' : 'text-gray-400'"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                            >
+                                <span class="font-canela text-3xl sm:text-4xl">Berita</span>
+                                <svg :class="activeMenu === 'berita' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                                <span x-show="activeMenu === 'berita'" class="absolute bottom-0 left-0 w-full h-0.5 bg-premium-gold transition-all duration-300"></span>
+                                <span x-show="activeMenu !== 'berita'" class="absolute bottom-0 left-0 w-0 h-0.5 bg-premium-gold transition-all duration-300 group-hover:w-full"></span>
+                            </button>
+                            <div x-show="activeMenu === 'berita'" class="mt-4 ml-4 space-y-4 pl-4">
+                                <a href="{{ url_for('comprof_berita') }}#berita" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Berita Lengkap</h3>
+                                        <p class="text-sm text-gray-400">Arsip lengkap artikel dan publikasi</p>
+                                    </div>
+                                </a>
+                                <a href="{{ url_for('comprof_berita') }}#pencapaian" class="group flex items-center gap-4" @click="open =false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Pencapaian Kami</h3>
+                                        <p class="text-sm text-gray-400">Prestasi dan sertifikasi resmi</p>
+                                    </div>
+                                </a>
+                                <a href="{{ url_for('comprof_berita') }}#event" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Event dan Webinar</h3>
+                                        <p class="text-sm text-gray-400">Acara dan webinar mendatang</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button 
+                                @click="activeMenu = (activeMenu === 'layanan' ? '' : 'layanan')" 
+                                :class="activeMenu === 'layanan' ? 'text-pure-white relative' : 'text-gray-400'"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                            >
+                                <span class="font-canela text-3xl sm:text-4xl">Layanan</span>
+                                <svg :class="activeMenu === 'layanan' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                                <span x-show="activeMenu === 'layanan'" class="absolute bottom-0 left-0 w-full h-0.5 bg-premium-gold transition-all duration-300"></span>
+                                <span x-show="activeMenu !== 'layanan'" class="absolute bottom-0 left-0 w-0 h-0.5 bg-premium-gold transition-all duration-300 group-hover:w-full"></span>
+                            </button>
+                            <div x-show="activeMenu === 'layanan'" class="mt-4 ml-4 space-y-4 pl-4">
+                                <a href="{{ url_for('comprof_layanan') }}#eggmart" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">EggMart</h3>
+                                        <p class="text-sm text-gray-400">Platform jual beli telur</p>
+                                    </div>
+                                </a>
+                                <a href="{{ url_for('comprof_layanan') }}#eggmonitor" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">EggMonitor</h3>
+                                        <p class="text-sm text-gray-400">Pusat kontrol dan pemantauan</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button 
+                                @click="activeMenu = (activeMenu === 'produk' ? '' : 'produk')" 
+                                :class="activeMenu === 'produk' ? 'text-pure-white relative' : 'text-gray-400'"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                            >
+                                <span class="font-canela text-3xl sm:text-4xl">Produk</span>
+                                <svg :class="activeMenu === 'produk' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                                <span x-show="activeMenu === 'produk'" class="absolute bottom-0 left-0 w-full h-0.5 bg-premium-gold transition-all duration-300"></span>
+                                <span x-show="activeMenu !== 'produk'" class="absolute bottom-0 left-0 w-0 h-0.5 bg-premium-gold transition-all duration-300 group-hover:w-full"></span>
+                            </button>
+                            <div x-show="activeMenu === 'produk'" class="mt-4 ml-4 space-y-4 pl-4">
+                                <a href="{{ url_for('comprof_produk') }}#eggvision" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">EggVision</h3>
+                                        <p class="text-sm text-gray-400">Alat sortir telur otomatis</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button 
+                                @click="activeMenu = (activeMenu === 'tentang_kami' ? '' : 'tentang_kami')" 
+                                :class="activeMenu === 'tentang_kami' ? 'text-pure-white relative' : 'text-gray-400'"
+                                class="hover:text-pure-white transition duration-300 pb-2 flex items-center justify-between w-full text-left relative group"
+                            >
+                                <span class="font-canela text-3xl sm:text-4xl">Tentang Kami</span>
+                                <svg :class="activeMenu === 'tentang_kami' ? 'rotate-180' : ''" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                                <span x-show="activeMenu === 'tentang_kami'" class="absolute bottom-0 left-0 w-full h-0.5 bg-premium-gold transition-all duration-300"></span>
+                                <span x-show="activeMenu !== 'tentang_kami'" class="absolute bottom-0 left-0 w-0 h-0.5 bg-premium-gold transition-all duration-300 group-hover:w-full"></span>
+                            </button>
+                            <div x-show="activeMenu === 'tentang_kami'" class="mt-4 ml-4 space-y-4 pl-4">
+                                <a href="{{ url_for('comprof_tentang_kami') }}#profil" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Profil Perusahaan</h3>
+                                        <p class="text-sm text-gray-400">Visi, misi, dan nilai-nilai kami</p>
+                                    </div>
+                                </a>
+                                <a href="{{ url_for('comprof_tentang_kami') }}#tim" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Tim Kami</h3>
+                                        <p class="text-sm text-gray-400">Profesional di balik EggVision</p>
+                                    </div>
+                                </a>
+                                <a href="{{ url_for('comprof_tentang_kami') }}#kontak" class="group flex items-center gap-4" @click="open = false">
+                                    <span class="text-premium-gold group-hover:translate-x-1 transition-transform duration-300 text-lg">→</span>
+                                    <div>
+                                        <h3 class="text-lg text-pure-white ">Hubungi Kami</h3>
+                                        <p class="text-sm text-gray-400">Saluran resmi untuk dukungan</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if current_user.is_authenticated %}
+                    <div class="pt-6 border-t border-gray-700">
+                        <div class="space-y-3">
+                            <p class="text-premium-gold font-semibold text-lg">{{ current_user.name }}</p>
+                            {% if current_user.role == 'pengusaha' %}
+                            <a href="{{ url_for('eggmonitor') }}" class="block text-gray-300 hover:text-premium-gold py-2 text-lg" @click="open = false">EggMonitor</a>
+                            {% elif current_user.role == 'pembeli' %}
+                            <a href="{{ url_for('eggmart') }}" class="block text-gray-300 hover:text-premium-gold py-2 text-lg" @click="open = false">EggMart</a>
+                            {% elif current_user.role == 'admin' %}
+                            <a href="{{ url_for('eggmin') }}" class="block text-gray-300 hover:text-premium-gold py-2 text-lg" @click="open = false">EggMin</a>
+                            {% endif %}
+                            <a href="{{ url_for('auth_logout') }}" class="block text-red-400 hover:text-red-300 py-2 text-lg" @click="open = false">Logout</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
 
             <!-- Quick Links Footer -->
-            <div class="border-t border-dark-gray mt-16 py-6 font-sans px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-wrap items-center gap-x-8 gap-y-2 text-gray-400">
-                    <span class="font-semibold text-pure-white">Quick Links</span>
-                    <span class="text-premium-gold text-xl">→</span>
-                    <a href="{{ url_for('comprof_controller.comprof_tentang_kami') }}" class="hover:text-premium-gold">Kenali EggVision</a>
-                    <a href="{{ url_for('comprof_controller.comprof_kontak') }}" class="hover:text-premium-gold">Hubungi Kami</a>
-                    {% if current_user.is_authenticated %}
-                        {% if current_user.role == 'pembeli' %}
-                        <a href="{{ url_for('eggmart_controller.eggmart') }}" class="hover:text-premium-gold">Kunjungi EggMart</a>
-                        {% elif current_user.role == 'pengusaha' %}
-                        {% elif current_user.role == 'admin' %}
-                        <a href="{{ url_for('eggmin_controller.eggmin') }}" class="hover:text-premium-gold">Panel Admin</a>
+            <div class="border-t border-dark-gray mt-8 sm:mt-12 lg:mt-16 py-4 sm:py-6 font-sans px-2 sm:px-4 lg:px-8">
+                <div class="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-x-6 sm:gap-y-2 text-gray-400">
+                    <span class="font-semibold text-pure-white text-sm sm:text-base">Quick Links</span>
+                    <span class="text-premium-gold text-lg sm:text-xl hidden sm:inline">→</span>
+                    <div class="flex flex-wrap gap-2 sm:gap-x-4">
+                        <a href="{{ url_for('comprof_tentang_kami') }}" class="hover:text-premium-gold text-sm sm:text-base" @click="open = false">Kenali EggVision</a>
+                        <a href="{{ url_for('comprof_tentang_kami') }}#kontak" class="hover:text-premium-gold text-sm sm:text-base" @click="open = false">Hubungi Kami</a>
+                        {% if current_user.is_authenticated %}
+                            {% if current_user.role == 'pembeli' %}
+                            <a href="{{ url_for('eggmart') }}" class="hover:text-premium-gold text-sm sm:text-base" @click="open = false">Kunjungi EggMart</a>
+                            {% elif current_user.role == 'pengusaha' %}
+                            <a href="{{ url_for('eggmonitor') }}" class="hover:text-premium-gold text-sm sm:text-base" @click="open = false">Akses EggMonitor</a>
+                            {% elif current_user.role == 'admin' %}
+                            <a href="{{ url_for('eggmin') }}" class="hover:text-premium-gold text-sm sm:text-base" @click="open = false">Panel Admin</a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{{ url_for('auth_login') }}" class="hover:text-premium-gold text-sm sm:text-base" @click="open = false">Login</a>
                         {% endif %}
-                    {% else %}
-                        <a href="{{ url_for('comprof_controller.comprof_layanan') }}#login" class="hover:text-premium-gold">Login</a>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
         </div>

@@ -2,18 +2,14 @@
 {% block title %}Produk · EggMin{% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-background">
-  <!-- Sidebar (sama seperti sebelumnya) -->
-  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+<div class="min-h-screen bg-background flex flex-col">
+  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col z-20">
     <div class="p-6 border-b border-sidebar-border">
       <div class="flex flex-col items-center gap-2">
-        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <div class="text-primary font-bold text-xs">EM</div>
-        </div>
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center"><div class="text-primary font-bold text-xs">EM</div></div>
         <span class="text-primary text-sm font-semibold">EGGMIN</span>
       </div>
     </div>
-
     <nav class="flex-1 py-4">
       {% set menu = [
         {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin_controller.eggmin')},
@@ -23,273 +19,267 @@
         {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_controller.eggmin_chats')}
       ] %}
       {% for item in menu %}
-        {% set is_active = (item.id == active_menu) %}
-        <a href="{{ item.href }}"
-           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
-           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
-          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
-          <span class="text-xs">{{ item.label }}</span>
+        <a href="{{ item.href }}" class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if item.id == active_menu else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i><span class="text-xs">{{ item.label }}</span>
         </a>
       {% endfor %}
     </nav>
-
     <div class="p-4 border-t border-sidebar-border">
-      <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
-        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" 
-               alt="Profile" class="w-full h-full object-cover" />
-        </div>
+      <a href="{{ url_for('comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" class="w-full h-full object-cover" /></div>
         <span class="text-xs">Kembali</span>
       </a>
     </div>
   </aside>
 
-  <!-- Main -->
   <main class="ml-[130px] p-8">
-    <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-4xl font-bold mb-1">Manajemen Produk</h1>
-        <p class="text-muted-foreground">Kelola semua produk di EggMart</p>
+        <p class="text-muted-foreground">Kelola stok dan listing produk EggMart</p>
       </div>
-      
       <div class="flex items-center gap-4">
-        <!-- Stats -->
-        <div class="flex items-center gap-6 text-sm">
-          <div class="text-center">
-            <div class="text-2xl font-bold text-primary">{{ products|length }}</div>
-            <div class="text-xs text-muted-foreground">Total Produk</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-green-500">
-              {{ products|selectattr('is_active')|list|length }}
-            </div>
-            <div class="text-xs text-muted-foreground">Aktif</div>
-          </div>
-        </div>
-        
-        <!-- Date & Time -->
-        <div class="flex items-center gap-4 text-sm">
-          <div class="flex items-center gap-2">
-            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-date">{{ now.strftime('%d/%b/%Y') }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-time">{{ now.strftime('%H:%M') }}</span>
-          </div>
-        </div>
+        <button onclick="openModal()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors">
+            <i data-lucide="plus" class="w-4 h-4"></i> Tambah Produk
+        </button>
       </div>
     </div>
 
-    <!-- Products Table -->
     <div class="bg-card rounded-lg border border-border overflow-hidden">
-      <div class="p-6 border-b border-border">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">Semua Produk ({{ products|length }})</h3>
-          <div class="flex items-center gap-4">
-            <div class="relative">
-              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
-              <input type="text" placeholder="Cari produk..." class="pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary">
+        <div class="p-6 border-b border-border flex justify-between">
+            <h3 class="text-lg font-semibold">List Produk ({{ products|length }})</h3>
+            <div class="flex gap-4">
+                <input type="text" id="searchInput" placeholder="Cari produk..." class="px-3 py-2 bg-background border border-border rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary">
             </div>
-            <select class="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Semua Grade</option>
-              <option value="A">Grade A</option>
-              <option value="B">Grade B</option>
-              <option value="C">Grade C</option>
-            </select>
-            <select class="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="">Semua Status</option>
-              <option value="active">Aktif</option>
-              <option value="inactive">Nonaktif</option>
-            </select>
-          </div>
         </div>
-      </div>
 
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="bg-secondary border-b border-border">
-            <th class="th">Produk</th>
-            <th class="th">Penjual</th>
-            <th class="th">Grade</th>
-            <th class="th">Harga</th>
-            <th class="th">Stok</th>
-            <th class="th">Status</th>
-            <th class="th">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for product in products %}
-          <tr class="border-b border-border hover:bg-secondary/50 transition-colors">
-            <td class="td">
-              <div class="flex items-center gap-3">
-                {% if product.image_url %}
-                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-10 h-10 rounded-lg object-cover">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-secondary border-b border-border text-left">
+                    <th class="p-4 font-medium text-muted-foreground">Produk</th>
+                    <th class="p-4 font-medium text-muted-foreground">Penjual (Pengusaha)</th>
+                    <th class="p-4 font-medium text-muted-foreground">Grade</th>
+                    <th class="p-4 font-medium text-muted-foreground">Harga</th>
+                    <th class="p-4 font-medium text-muted-foreground">Stok</th>
+                    <th class="p-4 font-medium text-muted-foreground">Status</th>
+                    <th class="p-4 font-medium text-muted-foreground text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                {% for product in products %}
+                <tr class="hover:bg-secondary/30 transition-colors">
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            {% if product.image_url %}
+                            <img src="{{ product.image_url }}" class="w-10 h-10 rounded object-cover bg-muted">
+                            {% else %}
+                            <div class="w-10 h-10 bg-secondary rounded flex items-center justify-center"><i data-lucide="image" class="w-4 h-4 text-muted-foreground"></i></div>
+                            {% endif %}
+                            <div>
+                                <div class="font-medium text-foreground">{{ product.name }}</div>
+                                <div class="text-xs text-muted-foreground truncate max-w-[200px]">{{ product.description }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-muted-foreground">{{ product.seller_name or 'Unknown' }}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500">{{ product.grade }}</span></td>
+                    <td class="p-4 font-medium">Rp {{ "{:,.0f}".format(product.price) }}</td>
+                    <td class="p-4 {{ 'text-red-500' if product.stock < 10 else 'text-green-500' }}">{{ product.stock }}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded-full text-xs {{ 'bg-green-500/10 text-green-500' if product.is_active else 'bg-gray-500/10 text-gray-500' }}">
+                            {{ 'Aktif' if product.is_active else 'Nonaktif' }}
+                        </span>
+                    </td>
+                    <td class="p-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="editProduct('{{ product.id }}')" class="p-2 hover:bg-secondary rounded text-blue-500"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                            <button onclick="toggleStatus('{{ product.id }}')" class="p-2 hover:bg-secondary rounded text-yellow-500"><i data-lucide="power" class="w-4 h-4"></i></button>
+                            <button onclick="deleteProduct('{{ product.id }}')" class="p-2 hover:bg-secondary rounded text-red-500"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                        </div>
+                    </td>
+                </tr>
                 {% else %}
-                <div class="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
-                  <i data-lucide="package" class="w-5 h-5 text-muted-foreground"></i>
-                </div>
-                {% endif %}
-                <div>
-                  <p class="font-medium">{{ product.name }}</p>
-                  <p class="text-xs text-muted-foreground line-clamp-1">{{ product.description[:50] }}...</p>
-                </div>
-              </div>
-            </td>
-            <td class="td">
-              <div class="flex items-center gap-2">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ product.seller_name|lower|replace(' ', '') }}" 
-                     alt="{{ product.seller_name }}" class="w-6 h-6 rounded-full">
-                <span class="text-sm">{{ product.seller_name }}</span>
-              </div>
-            </td>
-            <td class="td">
-              <span class="badge {{ 'bg-green-500/20 text-green-500' if product.grade == 'A' else 'bg-yellow-500/20 text-yellow-500' if product.grade == 'B' else 'bg-orange-500/20 text-orange-500' }}">
-                Grade {{ product.grade }}
-              </span>
-            </td>
-            <td class="td">
-              <span class="font-medium">Rp {{ "{:,.0f}".format(product.price) }}</span>
-            </td>
-            <td class="td">
-              <span class="font-medium {{ 'text-green-500' if product.stock > 10 else 'text-yellow-500' if product.stock > 0 else 'text-red-500' }}">
-                {{ product.stock }}
-              </span>
-            </td>
-            <td class="td">
-              <span class="badge {{ 'bg-green-500/20 text-green-500' if product.is_active else 'bg-red-500/20 text-red-500' }}">
-                {{ 'Aktif' if product.is_active else 'Nonaktif' }}
-              </span>
-            </td>
-            <td class="td">
-              <div class="flex items-center gap-2">
-                <button onclick="editProduct('{{ product.id }}')" class="p-1 text-blue-500 hover:bg-blue-500/10 rounded transition-colors" title="Edit">
-                  <i data-lucide="edit" class="w-4 h-4"></i>
-                </button>
-                <button onclick="toggleProductStatus('{{ product.id }}')" class="p-1 {{ 'text-yellow-500' if product.is_active else 'text-green-500' }} hover:bg-yellow-500/10 rounded transition-colors" title="{{ 'Nonaktifkan' if product.is_active else 'Aktifkan' }}">
-                  <i data-lucide="{{ 'pause' if product.is_active else 'play' }}" class="w-4 h-4"></i>
-                </button>
-                <button onclick="deleteProduct('{{ product.id }}')" class="p-1 text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Hapus">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+                <tr><td colspan="7" class="p-8 text-center text-muted-foreground">Belum ada produk.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <!-- Empty State -->
-    {% if not products %}
-    <div class="text-center py-12">
-      <i data-lucide="package" class="w-16 h-16 text-muted-foreground mx-auto mb-4"></i>
-      <h3 class="text-lg font-semibold mb-2">Belum ada produk</h3>
-      <p class="text-muted-foreground">Pengusaha belum menambahkan produk apapun</p>
-    </div>
-    {% endif %}
   </main>
+
+  <div id="productModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background border border-border rounded-xl shadow-2xl p-6">
+        <h2 id="modalTitle" class="text-xl font-bold mb-4">Tambah Produk</h2>
+        <form id="productForm" onsubmit="handleSubmit(event)" enctype="multipart/form-data">
+            <input type="hidden" id="productId" name="id">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Nama Produk</label>
+                    <input type="text" name="name" id="productName" required class="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Penjual (Pengusaha)</label>
+                        <select name="user_id" id="productSeller" required class="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                            <option value="">Pilih Pengusaha...</option>
+                            </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Grade Telur</label>
+                        <select name="grade" id="productGrade" required class="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                            <option value="A">Grade A</option>
+                            <option value="B">Grade B</option>
+                            <option value="C">Grade C</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Harga (Rp)</label>
+                        <input type="number" name="price" id="productPrice" required class="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Stok</label>
+                        <input type="number" name="stock" id="productStock" required class="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Deskripsi</label>
+                    <textarea name="description" id="productDesc" rows="3" class="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Gambar Produk</label>
+                    <input type="file" name="image" accept="image/*" class="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium hover:bg-secondary rounded-lg transition-colors">Batal</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">Simpan</button>
+            </div>
+        </form>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function editProduct(productId) {
-  // For now, show alert. You can implement edit modal later
-  alert('Edit produk ID: ' + productId + '\n\nFitur edit akan membuka modal dengan data produk yang ada.');
-  // TODO: Implement edit modal functionality
-}
-
-function toggleProductStatus(productId) {
-  if (!confirm('Apakah Anda yakin ingin mengubah status produk ini?')) return;
-  
-  fetch(`/eggmin/api/products/toggle-status/${productId}`, {
-    method: 'POST'
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert('Status produk berhasil diubah!');
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
+    // 1. Load Sellers for Dropdown
+    function loadSellers() {
+        fetch('/eggmin/api/sellers')
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    const select = document.getElementById('productSeller');
+                    // Keep the first placeholder option
+                    select.innerHTML = '<option value="">Pilih Pengusaha...</option>';
+                    data.sellers.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.name;
+                        select.appendChild(opt);
+                    });
+                }
+            });
     }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat mengubah status produk');
-  });
-}
-
-function deleteProduct(productId) {
-  if (!confirm('Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.')) return;
-  
-  fetch(`/eggmin/api/products/delete/${productId}`, {
-    method: 'POST'
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert('Produk berhasil dihapus!');
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat menghapus produk');
-  });
-}
-
-// Search and filter functionality
-document.addEventListener('DOMContentLoaded', function() {
-  const searchInput = document.querySelector('input[placeholder="Cari produk..."]');
-  const gradeFilter = document.querySelector('select:first-of-type');
-  const statusFilter = document.querySelector('select:last-of-type');
-  
-  function filterProducts() {
-    const searchTerm = searchInput.value.toLowerCase();
-    const gradeValue = gradeFilter.value;
-    const statusValue = statusFilter.value;
     
-    const rows = document.querySelectorAll('tbody tr');
-    
-    rows.forEach(row => {
-      const productName = row.querySelector('.font-medium').textContent.toLowerCase();
-      const productDesc = row.querySelector('.text-muted-foreground').textContent.toLowerCase();
-      const gradeBadge = row.querySelector('.badge').textContent;
-      const statusBadge = row.querySelector('td:nth-child(6) .badge').textContent;
-      
-      const matchesSearch = productName.includes(searchTerm) || productDesc.includes(searchTerm);
-      const matchesGrade = !gradeValue || gradeBadge.includes(gradeValue);
-      const matchesStatus = !statusValue || 
-        (statusValue === 'active' && statusBadge === 'Aktif') ||
-        (statusValue === 'inactive' && statusBadge === 'Nonaktif');
-      
-      if (matchesSearch && matchesGrade && matchesStatus) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSellers();
+        
+        // Simple Search Filter
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('tbody tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        });
     });
-  }
-  
-  searchInput.addEventListener('input', filterProducts);
-  gradeFilter.addEventListener('change', filterProducts);
-  statusFilter.addEventListener('change', filterProducts);
-});
-</script>
 
-<style>
-.line-clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  line-clamp: 1;
-  box-orient: vertical;
-  overflow: hidden;
-}
-</style>
+    // 2. Modal Logic
+    function openModal(isEdit = false) {
+        const modal = document.getElementById('productModal');
+        const title = document.getElementById('modalTitle');
+        const form = document.getElementById('productForm');
+        
+        modal.classList.remove('hidden');
+        if (!isEdit) {
+            title.textContent = 'Tambah Produk Baru';
+            form.reset();
+            document.getElementById('productId').value = '';
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('productModal').classList.add('hidden');
+    }
+
+    // 3. Edit Action
+    function editProduct(id) {
+        fetch(`/eggmin/api/products/${id}`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    const p = data.product;
+                    openModal(true);
+                    document.getElementById('modalTitle').textContent = 'Edit Produk';
+                    document.getElementById('productId').value = p.id;
+                    document.getElementById('productName').value = p.name;
+                    document.getElementById('productSeller').value = p.user_id;
+                    document.getElementById('productGrade').value = p.grade;
+                    document.getElementById('productPrice').value = parseInt(p.price);
+                    document.getElementById('productStock').value = p.stock;
+                    document.getElementById('productDesc').value = p.description;
+                }
+            });
+    }
+
+    // 4. Submit Action (Create/Update)
+    function handleSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const id = document.getElementById('productId').value;
+        
+        const url = id ? `/eggmin/api/products/update/${id}` : '/eggmin/api/products/create';
+        
+        fetch(url, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(err => alert('Terjadi kesalahan koneksi'));
+    }
+
+    // 5. Toggle Status
+    function toggleStatus(id) {
+        if(!confirm('Ubah status produk ini?')) return;
+        fetch(`/eggmin/api/products/toggle-status/${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) location.reload();
+            });
+    }
+
+    // 6. Delete Action
+    function deleteProduct(id) {
+        if(!confirm('Hapus produk ini permanen?')) return;
+        fetch(`/eggmin/api/products/delete/${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) location.reload();
+            });
+    }
+</script>
 {% endblock %}
