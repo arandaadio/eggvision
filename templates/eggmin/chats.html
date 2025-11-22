@@ -14,11 +14,11 @@
     </div>
     <nav class="flex-1 py-4">
       {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin')},
-        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_users')},
-        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_news')},
-        {"id":"products","icon":"package","label":"Produk","href":url_for('eggmin_products')},
-        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_chats')}
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin_controller.eggmin')},
+        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_controller.eggmin_users')},
+        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_controller.eggmin_news')},
+        {"id":"products","icon":"package","label":"Produk","href":url_for('eggmin_controller.eggmin_products')},
+        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_controller.eggmin_chats')}
       ] %}
       {% for item in menu %}
         {% set is_active = (item.id == active_menu) %}
@@ -31,7 +31,7 @@
       {% endfor %}
     </nav>
     <div class="p-4 border-t border-sidebar-border">
-      <a href="{{ url_for('comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+      <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
         <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
           <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" alt="Profile" class="w-full h-full object-cover" />
         </div>

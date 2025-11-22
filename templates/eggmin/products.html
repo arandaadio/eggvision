@@ -12,11 +12,11 @@
     </div>
     <nav class="flex-1 py-4">
       {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin')},
-        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_users')},
-        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_news')},
-        {"id":"products","icon":"package","label":"Produk","href":url_for('eggmin_products')},
-        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_chats')}
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin_controller.eggmin')},
+        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_controller.eggmin_users')},
+        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_controller.eggmin_news')},
+        {"id":"products","icon":"package","label":"Produk","href":url_for('eggmin_controller.eggmin_products')},
+        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_controller.eggmin_chats')}
       ] %}
       {% for item in menu %}
         <a href="{{ item.href }}" class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if item.id == active_menu else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">

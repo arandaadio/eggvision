@@ -6,18 +6,18 @@
             <div class="text-center">
                 <h4 class="text-lg md:text-xl text-pure-white mb-4">Jelajahi Kami</h4>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="{{ url_for('comprof_beranda') }}" class="hover:text-premium-gold">Beranda</a></li>
-                    <li><a href="{{ url_for('comprof_berita') }}" class="hover:text-premium-gold">Berita</a></li>
-                    <li><a href="{{ url_for('comprof_tentang_kami') }}" class="hover:text-premium-gold">Tentang Kami</a></li>
+                    <li><a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="hover:text-premium-gold">Beranda</a></li>
+                    <li><a href="{{ url_for('comprof_controller.comprof_berita') }}" class="hover:text-premium-gold">Berita</a></li>
+                    <li><a href="{{ url_for('comprof_controller.comprof_tentang_kami') }}" class="hover:text-premium-gold">Tentang Kami</a></li>
                 </ul>
             </div>
             
             <div class="text-center">
                 <h4 class="text-lg md:text-xl text-pure-white mb-4">Layanan Kami</h4>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="{{ url_for('comprof_layanan') }}" class="hover:text-premium-gold">EggMart</a></li>
-                    <li><a href="{{ url_for('comprof_layanan') }}" class="hover:text-premium-gold">EggMonitor</a></li>
-                    <li><a href="{{ url_for('comprof_produk') }}" class="hover:text-premium-gold">EggVision Machine</a></li>
+                    <li><a href="{{ url_for('comprof_controller.comprof_layanan') }}" class="hover:text-premium-gold">EggMart</a></li>
+                    <li><a href="{{ url_for('comprof_controller.comprof_layanan') }}" class="hover:text-premium-gold">EggMonitor</a></li>
+                    <li><a href="{{ url_for('comprof_controller.comprof_produk') }}" class="hover:text-premium-gold">EggVision Machine</a></li>
                 </ul>
             </div>
 
@@ -26,7 +26,7 @@
         <div class="mt-16 border-t border-dark-gray pt-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
             
             <div class="flex justify-center md:order-2">
-                <a href="{{ url_for('comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text inline-block">
+                <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text inline-block">
                     <img src="{{ url_for('static', filename='/img/logo.png') }}" alt="EggVision" class="h-16 w-auto" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span style="display: none;">🥚 EggVision</span>
                 </a>
