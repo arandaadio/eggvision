@@ -22,7 +22,12 @@ def auth_login():
         if user and check_password_hash(user.password, password):
             login_user(user, remember=remember)
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('eggmonitor_controller.eggmonitor'))
+            if current_user=='pengusaha':
+                return redirect(next_page or url_for('eggmonitor_controller.eggmonitor'))
+            elif current_user=='pembeli':
+                return redirect(next_page or url_for('eggmart_controller.eggmart'))
+            else:
+                return redirect(next_page or url_for('eggmin_controller.eggmin'))
         else:
             flash('Email atau password salah!', 'error')
     
