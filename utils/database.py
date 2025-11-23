@@ -266,7 +266,7 @@ def init_db():
             eggmin_pwd = generate_password_hash('eggmin123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('Sandbox EggMin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
+                ('EggMin Admin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
             )
 
             # Pengusaha
@@ -279,7 +279,7 @@ def init_db():
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ''',
                 (
-                    'Sandbox EggMonitor',
+                    'Fulan Setiawan',
                     'pengusaha@eggvision.com',
                     pengusaha_pwd,
                     'pengusaha',
@@ -299,8 +299,33 @@ def init_db():
             pembeli_pwd = generate_password_hash('pembeli123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('Sandbox EggMart', 'pembeli@eggvision.com', pembeli_pwd, 'pembeli')
+                ('Rina Saraswati', 'pembeli@eggvision.com', pembeli_pwd, 'pembeli')
             )
+
+        # ==========================
+        # SEED BERITA DUMMY
+        # ==========================
+        from utils.news_data import get_dummy_news_data
+        
+        cur.execute("SELECT COUNT(*) FROM news")
+        news_count = cur.fetchone()[0]
+        
+        if news_count == 0:
+            print("📝 Seeding dummy news data...")
+            dummy_news = get_dummy_news_data()
+            
+            for item in dummy_news:
+                cur.execute('''
+                    INSERT INTO news (title, content, image_url, tags, is_published, published_at)
+                    VALUES (%s, %s, %s, %s, TRUE, %s)
+                ''', (
+                    item['title'], 
+                    item['content'], 
+                    item['image_url'], 
+                    item['tags'], 
+                    item['published_at']
+                ))
+            conn.commit()
 
         conn.commit()
         cur.close()
