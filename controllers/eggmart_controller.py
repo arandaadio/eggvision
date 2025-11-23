@@ -89,6 +89,7 @@ SELLERS = [
 ]
 
 
+
 @eggmart_controller.route('/transaction', methods=['POST'])
 @login_required
 def create_transaction():
@@ -883,12 +884,13 @@ def eggmartDetail(seller_id):
     now = datetime.now()
     conn = get_db_connection()
     seller = None
+    reviews = []    # <--- INISIASI LIST REVIEW
 
     if conn:
         try:
             cur = conn.cursor(dictionary=True)
 
-            # Info penjual + rating
+            # Info penjual + rating summary
             cur.execute("""
                 SELECT 
                     u.id,
@@ -940,6 +942,15 @@ def eggmartDetail(seller_id):
                 for p in product_rows
             ]
 
+            # Review detail
+            cur.execute("""
+                SELECT buyer_id, buyer_name, rating, review, created_at
+                FROM seller_ratings
+                WHERE seller_id = %s
+                ORDER BY created_at ASC
+            """, (seller_id,))
+            reviews = cur.fetchall()
+
             cur.close()
         finally:
             conn.close()
@@ -947,6 +958,7 @@ def eggmartDetail(seller_id):
     return render_template(
         "eggmart/catalog_detail.html",
         seller=seller,
+        reviews=reviews,
         active_menu="catalog",
         now=now,
         midtrans_client_key=current_app.config.get("MIDTRANS_CLIENT_KEY")
