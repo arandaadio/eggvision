@@ -127,11 +127,10 @@
         let isChatOpen = false;
         let pollingInterval = null;
         
-        // To track existing messages and prevent re-animation/duplication
         let existingMessageIds = new Set(); 
         existingMessageIds.add('welcome'); 
     
-        // 1. LOAD GUEST INFO FROM STORAGE
+        // 1. LOAD GUEST INFO
         const savedName = localStorage.getItem('eggvision_guest_name');
         const savedEmail = localStorage.getItem('eggvision_guest_email');
         
@@ -178,34 +177,23 @@
         chatMinimizeMobile.addEventListener('click', (e) => { e.stopPropagation(); toggleChat(); });
         chatHeaderMobile.addEventListener('click', function() { if(window.innerWidth < 640) toggleChat(); });
     
-        // 3. HTML HELPER (Updated Color Logic)
+        // 3. HTML HELPER
         function createMessageHTML(message, messageType, time, id) {
             const isMe = (messageType === 'user_to_admin' || messageType === 'guest_to_admin');
             const alignClass = isMe ? 'justify-end' : 'justify-start';
             const bubbleClass = isMe 
                 ? 'bg-premium-gold text-primary-black rounded-tr-none' 
                 : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-gray-200 rounded-tl-none';
-            
             const senderLabel = isMe ? 'Anda' : 'Admin';
             
-            // Format time to be shorter (HH:MM) if it looks like a full date string
+            // Time formatting logic...
             let displayTime = time || 'Baru saja';
-            if (displayTime.length > 10 && !displayTime.includes('Baru saja')) {
-                try {
-                    const dateObj = new Date(displayTime);
-                    if (!isNaN(dateObj)) {
-                        // Format as 17:30
-                        displayTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    }
-                } catch (e) {
-                    // Keep original if parsing fails
-                }
-            }
+            try {
+                const dateObj = new Date(displayTime);
+                if (!isNaN(dateObj)) displayTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch(e) {}
     
-            // COLOR FIX HERE: Changed text-gray-400 to text-primary-black dark:text-pure-white
-            const timeColorClass = isMe 
-                ? 'text-primary-black text-left' 
-                : 'text-primary-black dark:text-pure-white text-right';
+            const timeColorClass = isMe ? 'text-primary-black text-left' : 'text-primary-black dark:text-pure-white text-right';
     
             return `
                 <div class="flex ${alignClass} animate-fade-in-up" data-msg-id="${id}">
@@ -234,7 +222,8 @@
                 .then(data => {
                     if(data.success && data.messages) {
                         data.messages.forEach((msg) => {
-                            const msgId = msg.created_at + "_" + msg.message.substring(0, 10); 
+                            // Gunakan Session ID + ID Message (atau timestamp) untuk unik key
+                            const msgId = "msg_" + (msg.id || msg.created_at); 
     
                             if (!existingMessageIds.has(msgId)) {
                                 const html = createMessageHTML(msg.message, msg.message_type, msg.created_at, msgId);
@@ -243,9 +232,7 @@
                             }
                         });
     
-                        if (shouldScroll) {
-                            scrollToBottom();
-                        }
+                        if (shouldScroll) scrollToBottom();
                     }
                 })
                 .catch(err => console.error("Polling error:", err));
@@ -263,8 +250,6 @@
             {% if not current_user.is_authenticated %}
                 if (!guestName.value.trim() || !guestEmail.value.trim()) {
                     alert("Mohon isi Nama dan Email Anda untuk memulai chat.");
-                    guestName.classList.add('ring-2', 'ring-red-500');
-                    guestEmail.classList.add('ring-2', 'ring-red-500');
                     return;
                 }
                 localStorage.setItem('eggvision_guest_name', guestName.value.trim());
@@ -272,17 +257,13 @@
                 guestInfo.classList.add('hidden');
             {% endif %}
     
-            // 1. Generate Temp ID
+            // Optimistic UI
             const tempId = 'temp_' + Date.now();
-            
-            // 2. Show Optimistic UI
             const tempHtml = createMessageHTML(message, 'user_to_admin', 'Mengirim...', tempId);
             chatMessages.insertAdjacentHTML('beforeend', tempHtml);
             scrollToBottom(); 
-            
             chatInput.value = ''; 
     
-            // 3. Send to Server
             fetch('{{ url_for("comprof_controller.comprof_send_chat") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -300,9 +281,7 @@
             .then(data => {
                 if (data.success) {
                     const tempElement = document.querySelector(`[data-msg-id="${tempId}"]`);
-                    if (tempElement) {
-                        tempElement.remove();
-                    }
+                    if (tempElement) tempElement.remove();
                     loadMessages(true);
                 } else {
                     alert("Gagal mengirim: " + data.error);
@@ -312,13 +291,10 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("Terjadi kesalahan koneksi.");
-                const tempElement = document.querySelector(`[data-msg-id="${tempId}"]`);
-                if (tempElement) tempElement.remove();
             });
         }
     
         sendButton.addEventListener('click', sendMessage);
         chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     });
-    </script>
+</script>

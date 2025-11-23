@@ -1,151 +1,165 @@
 {% extends "eggmin/base.html" %}
 {% block title %}Chats · EggMin{% endblock %}
 
-{% block body %}
-<div class="min-h-screen bg-background overflow-hidden flex flex-col">
-  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col z-20">
-    <div class="p-6 border-b border-sidebar-border">
-      <div class="flex flex-col items-center gap-2">
-        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <div class="text-primary font-bold text-xs">EM</div>
-        </div>
-        <span class="text-primary text-sm font-semibold">EGGMIN</span>
-      </div>
-    </div>
-    <nav class="flex-1 py-4">
-      {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin_controller.eggmin')},
-        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_controller.eggmin_users')},
-        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_controller.eggmin_news')},
-        {"id":"products","icon":"package","label":"Produk","href":url_for('eggmin_controller.eggmin_products')},
-        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_controller.eggmin_chats')}
-      ] %}
-      {% for item in menu %}
-        {% set is_active = (item.id == active_menu) %}
-        <a href="{{ item.href }}"
-           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
-           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
-          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
-          <span class="text-xs">{{ item.label }}</span>
-        </a>
-      {% endfor %}
-    </nav>
-    <div class="p-4 border-t border-sidebar-border">
-      <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
-        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" alt="Profile" class="w-full h-full object-cover" />
-        </div>
-        <span class="text-xs">Kembali</span>
-      </a>
-    </div>
-  </aside>
+{% block header_title %}Pusat Pesan{% endblock %}
+{% block header_subtitle %}Kelola percakapan dan bantuan langsung dengan pengguna.{% endblock %}
 
-  <main class="ml-[130px] h-screen flex flex-col bg-gray-50 dark:bg-[#0f0f0f]">
-    
-    <header class="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 flex items-center justify-between flex-shrink-0">
-        <div>
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <i data-lucide="message-square" class="w-5 h-5 text-primary"></i>
-                Pusat Pesan
-            </h1>
-        </div>
-        <div class="text-sm text-muted-foreground">
-            {{ now.strftime('%d %B %Y') }}
-        </div>
-    </header>
-
-    <div class="flex flex-1 overflow-hidden">
+{% block content %}
+    <div class="flex flex-col lg:flex-row h-[calc(100vh-13rem)] bg-white dark:bg-[#161616] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
         
-        <div class="w-[320px] md:w-[380px] bg-background border-r border-border flex flex-col">
-            <div class="p-4 border-b border-border">
+        <div class="w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 flex flex-col bg-gray-50/50 dark:bg-[#1a1a1a]">
+            
+            <div class="p-3 border-b border-gray-200 dark:border-gray-800 space-y-3">
                 <div class="relative">
-                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
-                    <input type="text" id="search-conversations" placeholder="Cari pengguna..." 
-                           class="w-full bg-secondary/50 pl-9 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Cari nama/email..." 
+                           value="{{ current_filters.q }}"
+                           onkeypress="handleSearch(event)"
+                           class="w-full pl-9 pr-4 py-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder-gray-500 dark:text-white">
+                </div>
+                
+                <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    <select id="roleFilter" onchange="applyFilters()" class="bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-xs rounded-lg px-2 py-1.5 focus:outline-none dark:text-gray-300">
+                        <option value="all" {% if current_filters.role == 'all' %}selected{% endif %}>Semua Role</option>
+                        <option value="pembeli" {% if current_filters.role == 'pembeli' %}selected{% endif %}>Pembeli</option>
+                        <option value="pengusaha" {% if current_filters.role == 'pengusaha' %}selected{% endif %}>Pengusaha</option>
+                        <option value="guest" {% if current_filters.role == 'guest' %}selected{% endif %}>Guest</option>
+                    </select>
+
+                    <select id="statusFilter" onchange="applyFilters()" class="bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-xs rounded-lg px-2 py-1.5 focus:outline-none dark:text-gray-300">
+                        <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>Semua Status</option>
+                        <option value="unread" {% if current_filters.status == 'unread' %}selected{% endif %}>Belum Dibaca</option>
+                        <option value="archived" {% if current_filters.status == 'archived' %}selected{% endif %}>Diarsipkan</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto hover:overflow-y-auto scrollbar-thin" id="conversation-list">
-                {% for chat in conversations %}
-                <button onclick="loadChat('{{ chat.conversation_id }}', '{{ chat.name }}', '{{ chat.email }}', '{{ chat.role }}')"
-                        class="w-full p-4 flex items-start gap-3 hover:bg-secondary/40 transition-colors border-b border-border/50 text-left group focus:bg-secondary/60 conversation-item"
-                        data-id="{{ chat.conversation_id }}">
-                    <div class="relative flex-shrink-0">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ chat.name|lower|replace(' ', '') }}" 
-                             class="w-10 h-10 rounded-full bg-muted">
-                        {% if chat.role == 'admin' %}
-                            <div class="absolute -bottom-1 -right-1 bg-blue-500 p-[2px] rounded-full border-2 border-background">
-                                <i data-lucide="shield" class="w-2 h-2 text-white"></i>
-                            </div>
-                        {% endif %}
-                    </div>
+            <div class="flex-1 overflow-y-auto" id="conversation-list">
+                {% if conversations %}
+                    {% for chat in conversations %}
+                    <div class="conversation-item relative w-full border-b border-gray-100 dark:border-gray-800/50 group hover:bg-white dark:hover:bg-[#222] transition-all cursor-pointer"
+                         onclick="loadChat('{{ chat.conversation_id }}', '{{ chat.name }}', '{{ chat.email }}', '{{ chat.role }}')"
+                         data-id="{{ chat.conversation_id }}">
+                        
+                        <div class="active-indicator hidden absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
 
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-baseline mb-1">
-                            <h4 class="font-semibold text-sm truncate text-foreground">{{ chat.name }}</h4>
-                            <span class="text-[10px] text-muted-foreground">{{ chat.last_message_time.strftime('%H:%M') }}</span>
-                        </div>
-                        <p class="text-xs text-muted-foreground truncate group-hover:text-foreground/80 transition-colors">
-                            {{ chat.last_message }}
-                        </p>
-                        <div class="flex items-center gap-2 mt-2">
-                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground border border-border capitalize">
-                                {{ chat.role }}
-                            </span>
-                            {% if chat.unread_count > 0 %}
-                            <span class="ml-auto bg-primary text-primary-foreground text-[10px] font-bold px-1.5 min-w-[1.25rem] h-5 rounded-full flex items-center justify-center shadow-sm shadow-primary/20">
-                                {{ chat.unread_count }}
-                            </span>
-                            {% endif %}
+                        <div class="p-4 flex items-start gap-3">
+                            <div class="relative flex-shrink-0">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ chat.name|lower|replace(' ', '') }}" 
+                                     class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 object-cover border border-gray-200 dark:border-gray-600">
+                                
+                                {% if chat.is_pinned %}
+                                    <div class="absolute -top-1 -left-1 bg-yellow-500 text-black p-0.5 rounded-full border border-white dark:border-black shadow-sm z-10" title="Pinned">
+                                        <i data-lucide="pin" class="w-2.5 h-2.5 fill-current"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-baseline mb-1">
+                                    <h4 class="font-bold text-sm truncate text-gray-900 dark:text-white">{{ chat.name }}</h4>
+                                    </div>
+                                
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors line-clamp-1 pr-6">
+                                    {{ chat.last_message }}
+                                </p>
+                                
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                                        {{ chat.last_message_time.strftime('%H:%M') }}
+                                    </span>
+                            
+                                    <span class="text-[10px] text-gray-300 dark:text-gray-600">•</span>
+                            
+                                    <span class="text-[10px] px-2 py-0.5 rounded-md border capitalize font-medium
+                                        {{ 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900' if chat.role == 'pembeli' else 
+                                           'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900' if chat.role == 'pengusaha' else 
+                                           'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700' }}">
+                                        {{ chat.role }}
+                                    </span>
+                                    
+                                    {% if chat.unread_count > 0 %}
+                                    <span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 min-w-[1.25rem] h-5 rounded-full flex items-center justify-center shadow-sm">
+                                        {{ chat.unread_count }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity z-20" onclick="event.stopPropagation()">
+                                <div class="relative" x-data="{ open: false }">
+                                    <button @click="open = !open" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500">
+                                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                    </button>
+                                    <div x-show="open" @click.away="open = false" 
+                                         class="absolute right-0 mt-1 w-32 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50"
+                                         style="display: none;">
+                                        <button onclick="chatAction('pin', '{{ chat.conversation_id }}')" class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-white/5 text-left">
+                                            <i data-lucide="pin" class="w-3 h-3"></i> {{ 'Unpin' if chat.is_pinned else 'Pin Chat' }}
+                                        </button>
+                                        <button onclick="chatAction('archive', '{{ chat.conversation_id }}')" class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-white/5 text-left">
+                                            <i data-lucide="archive" class="w-3 h-3"></i> {{ 'Unarchive' if chat.is_archived else 'Arsipkan' }}
+                                        </button>
+                                        <div class="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                                        <button onclick="chatAction('delete', '{{ chat.conversation_id }}')" class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 text-left">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i> Hapus
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </button>
+                    {% endfor %}
                 {% else %}
-                <div class="p-8 text-center text-muted-foreground">
-                    <p class="text-sm">Belum ada percakapan.</p>
-                </div>
-                {% endfor %}
+                    <div class="flex flex-col items-center justify-center h-64 text-center px-4">
+                        <div class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3 text-gray-400">
+                            <i data-lucide="inbox" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Tidak ada chat</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col bg-[#f0f2f5] dark:bg-[#0b0b0b] relative">
-            <div id="chat-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10 bg-background/50 backdrop-blur-sm">
-                <div class="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mb-4 animate-pulse">
-                    <i data-lucide="message-circle" class="w-10 h-10 text-muted-foreground"></i>
+        <div class="flex-1 flex flex-col bg-white dark:bg-[#161616] relative">
+            
+            <div id="chat-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10 bg-white dark:bg-[#161616]">
+                <div class="w-24 h-24 bg-gray-50 dark:bg-[#1a1a1a] rounded-full flex items-center justify-center mb-6 animate-pulse border border-gray-100 dark:border-gray-800">
+                    <i data-lucide="message-circle" class="w-10 h-10 text-primary"></i>
                 </div>
-                <h3 class="text-xl font-bold text-foreground">EggVision Chat Admin</h3>
-                <p class="text-muted-foreground mt-2 max-w-md">Pilih percakapan dari daftar di sebelah kiri untuk melihat detail, membalas, atau mengelola pesan.</p>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white font-canela">EggVision Chat Admin</h3>
+                <p class="text-gray-500 dark:text-gray-400 mt-2 max-w-md">
+                    Pilih percakapan dari daftar di sebelah kiri untuk melihat detail.
+                </p>
             </div>
 
             <div id="active-chat-container" class="flex-1 flex flex-col h-full hidden opacity-0 transition-opacity duration-300">
-                
-                <div class="h-16 px-6 bg-background border-b border-border flex items-center justify-between shadow-sm z-20">
+                <div class="h-16 px-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white/80 dark:bg-[#161616]/80 backdrop-blur-sm sticky top-0 z-20">
                     <div class="flex items-center gap-3">
-                        <img id="header-avatar" src="" class="w-10 h-10 rounded-full bg-secondary">
+                        <img id="header-avatar" src="" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 object-cover border border-gray-200 dark:border-gray-700">
                         <div>
-                            <h3 id="header-name" class="font-bold text-foreground">User Name</h3>
-                            <p id="header-email" class="text-xs text-muted-foreground">user@email.com</p>
+                            <h3 id="header-name" class="font-bold text-gray-900 dark:text-white leading-tight">User Name</h3>
+                            <p id="header-email" class="text-xs text-gray-500 dark:text-gray-400 font-mono">user@email.com</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button class="p-2 hover:bg-secondary rounded-full text-muted-foreground hover:text-foreground transition-colors" title="Hapus Percakapan (Coming Soon)">
-                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        <button onclick="chatAction('archive', currentConversationId)" class="p-2 hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors" title="Arsipkan">
+                            <i data-lucide="archive" class="w-5 h-5"></i>
                         </button>
                     </div>
                 </div>
 
-                <div id="messages-area" class="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth">
-                    </div>
+                <div id="messages-area" class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/30 dark:bg-black/20"></div>
 
-                <div class="p-4 bg-background border-t border-border">
+                <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#161616]">
                     <form id="reply-form" onsubmit="submitReply(event)" class="flex items-end gap-2 max-w-4xl mx-auto">
-                        <input type="hidden" id="current-chat-id" name="chat_id"> <div class="flex-1 bg-secondary/30 rounded-2xl border border-border focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all">
+                        <div class="flex-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-2xl border border-transparent focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 transition-all">
                             <textarea id="reply-input" rows="1" 
-                                class="w-full bg-transparent px-4 py-3 text-sm focus:outline-none resize-none max-h-32"
-                                placeholder="Tulis balasan... (Shift+Enter untuk baris baru)"
-                                oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+                                      class="w-full bg-transparent px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none resize-none max-h-32 placeholder-gray-500"
+                                      placeholder="Tulis balasan... (Shift+Enter untuk baris baru)"
+                                      oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
                         </div>
-                        <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-full shadow-lg shadow-primary/20 transition-transform hover:scale-105 active:scale-95 flex-shrink-0">
+                        <button type="submit" class="bg-primary hover:bg-yellow-500 text-black p-3 rounded-full shadow-lg shadow-yellow-500/20 transition-transform hover:scale-105 active:scale-95 flex-shrink-0">
                             <i data-lucide="send" class="w-5 h-5"></i>
                         </button>
                     </form>
@@ -153,20 +167,53 @@
             </div>
         </div>
     </div>
-  </main>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
   let currentConversationId = null;
   let lastMessageId = null;
-  let adminPollingInterval = null; // Variable to hold the timer
+  let adminPollingInterval = null;
 
+  // --- FILTERING LOGIC ---
+  function applyFilters() {
+      const role = document.getElementById('roleFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      const query = document.getElementById('searchInput').value;
+      
+      // Reload page with query params
+      const url = new URL(window.location.href);
+      url.searchParams.set('role', role);
+      url.searchParams.set('status', status);
+      url.searchParams.set('q', query);
+      window.location.href = url.toString();
+  }
+
+  function handleSearch(e) {
+      if (e.key === 'Enter') applyFilters();
+  }
+
+  // --- ACTION LOGIC (Pin, Archive, Delete) ---
+  function chatAction(action, id) {
+      if (action === 'delete' && !confirm("Hapus percakapan ini secara permanen?")) return;
+      
+      fetch(`/eggmin/api/chats/action/${action}/${id}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                // Refresh page to show new order/status
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(err => console.error(err));
+  }
+
+  // --- EXISTING CHAT LOGIC (Load, Fetch, Reply) ---
   function loadChat(convId, name, email, role) {
       currentConversationId = convId;
       
-      // UI Updates
       document.getElementById('chat-placeholder').classList.add('hidden');
       const chatContainer = document.getElementById('active-chat-container');
       chatContainer.classList.remove('hidden');
@@ -176,90 +223,77 @@
       document.getElementById('header-email').textContent = email;
       document.getElementById('header-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.toLowerCase().replace(' ', '')}`;
 
-      // Sidebar Highlight
+      // Highlight Active
       document.querySelectorAll('.conversation-item').forEach(el => {
-          el.classList.remove('bg-secondary', 'border-primary');
-          if(el.dataset.id === convId) el.classList.add('bg-secondary', 'border-l-4', 'border-primary');
-          else el.classList.remove('border-l-4');
+          const indicator = el.querySelector('.active-indicator');
+          if(el.dataset.id === convId) {
+              el.classList.add('bg-white', 'dark:bg-[#1a1a1a]', 'shadow-sm');
+              el.classList.remove('hover:bg-white');
+              if(indicator) indicator.classList.remove('hidden');
+          } else {
+              el.classList.remove('bg-white', 'dark:bg-[#1a1a1a]', 'shadow-sm');
+              el.classList.add('hover:bg-white');
+              if(indicator) indicator.classList.add('hidden');
+          }
       });
 
-      // === POLLING LOGIC ===
-      // 1. Clear existing interval (if switching chats)
       if (adminPollingInterval) clearInterval(adminPollingInterval);
-      
-      // 2. Fetch immediately
-      fetchMessages(convId, true); 
-      
-      // 3. Set new interval (every 3 seconds)
-      adminPollingInterval = setInterval(() => {
-          fetchMessages(convId, false); // Pass false to disable loading spinner on polling
-      }, 3000);
+      fetchMessages(convId, true);
+      adminPollingInterval = setInterval(() => fetchMessages(convId, false), 3000);
   }
 
   function fetchMessages(convId, showLoading=true) {
       const messagesArea = document.getElementById('messages-area');
-      
-      // Only show big spinner on first load, not on polling updates
-      if(showLoading) {
-          messagesArea.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>';
-      }
+      if(showLoading) messagesArea.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>';
 
       fetch(`/eggmin/api/chats/history/${convId}`)
           .then(res => res.json())
           .then(data => {
               if(data.success) {
                   renderMessages(data.messages, showLoading);
-                  if(data.messages.length > 0) {
-                      lastMessageId = data.messages[data.messages.length - 1].id;
-                  }
+                  if(data.messages.length > 0) lastMessageId = data.messages[data.messages.length - 1].id;
               }
-          })
-          .catch(err => console.error(err));
+          });
   }
 
   function renderMessages(messages, isFirstLoad) {
       const container = document.getElementById('messages-area');
-      
-      // Save scroll position
       const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-
-      container.innerHTML = ''; // Re-render all (simple way to sync state)
-
+      
+      container.innerHTML = ''; 
       let lastDate = null;
 
       messages.forEach(msg => {
-          const msgDate = msg.created_at.split(' ')[0] + ' ' + msg.created_at.split(' ')[1];
+          const parts = msg.created_at.split(' ');
+          const msgDate = parts[0] + ' ' + parts[1] + ' ' + parts[2];
+          const timeString = parts[3] || "";
+
           if (msgDate !== lastDate) {
-              container.innerHTML += `<div class="flex justify-center my-4"><span class="text-[10px] font-medium bg-border px-3 py-1 rounded-full text-muted-foreground">${msgDate}</span></div>`;
+              container.innerHTML += `<div class="flex justify-center my-6"><span class="text-[10px] font-bold bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-gray-500 dark:text-gray-400 uppercase tracking-wide">${msgDate}</span></div>`;
               lastDate = msgDate;
           }
 
           const isMe = msg.message_type.startsWith('admin_to');
           const alignment = isMe ? 'justify-end' : 'justify-start';
-          const bubbleColor = isMe ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-white dark:bg-gray-800 border border-border rounded-bl-none';
-          const textColor = isMe ? 'text-primary-foreground' : 'text-foreground';
-          
+          const bubbleColor = isMe ? 'bg-primary text-black rounded-br-none shadow-md shadow-primary/10' : 'bg-white dark:bg-[#262626] border border-gray-200 dark:border-gray-700 rounded-bl-none shadow-sm text-gray-800 dark:text-gray-200';
+          const timeColor = isMe ? 'text-black/60' : 'text-gray-400';
+
           const html = `
-              <div class="flex ${alignment} mb-3 group">
-                  <div class="max-w-[70%]">
-                      <div class="${bubbleColor} px-4 py-2.5 rounded-2xl shadow-sm relative">
-                          <p class="text-sm leading-relaxed whitespace-pre-wrap ${textColor}">${msg.message}</p>
-                          <div class="flex items-center justify-end gap-1 mt-1">
-                              <span class="text-[10px] opacity-70">${msg.created_at.split(' ')[2]}</span>
-                              ${isMe ? `<i data-lucide="check-check" class="w-3 h-3 opacity-70"></i>` : ''}
+              <div class="flex ${alignment} mb-4 group animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div class="max-w-[75%]">
+                      <div class="${bubbleColor} px-5 py-3 rounded-2xl relative">
+                          <p class="text-sm leading-relaxed whitespace-pre-wrap">${msg.message}</p>
+                          <div class="flex items-center justify-end gap-1.5 mt-1.5">
+                              <span class="text-[10px] font-medium ${timeColor}">${timeString}</span>
+                              ${isMe ? `<i data-lucide="check-check" class="w-3 h-3 ${timeColor}"></i>` : ''}
                           </div>
                       </div>
                   </div>
-              </div>
-          `;
+              </div>`;
           container.innerHTML += html;
       });
 
-      // Only auto-scroll if it was the first load OR user was already at the bottom
-      if (isFirstLoad || isNearBottom) {
-          container.scrollTop = container.scrollHeight;
-      }
-      
+      if (isFirstLoad || isNearBottom) container.scrollTop = container.scrollHeight;
       if(typeof lucide !== 'undefined') lucide.createIcons();
   }
 
@@ -267,23 +301,18 @@
       e.preventDefault();
       const input = document.getElementById('reply-input');
       const message = input.value.trim();
-      if(!message || !lastMessageId) return;
+      if(!message || !currentConversationId) return;
 
       const formData = new FormData();
       formData.append('message', message);
 
-      fetch(`/eggmin/api/chats/reply/${lastMessageId}`, {
-          method: 'POST',
-          body: formData
-      })
+      fetch(`/eggmin/api/chats/reply/${currentConversationId}`, { method: 'POST', body: formData })
       .then(res => res.json())
       .then(data => {
           if(data.success) {
               input.value = '';
-              fetchMessages(currentConversationId, false); // Refresh immediately
-          } else {
-              alert('Error: ' + data.error);
-          }
+              fetchMessages(currentConversationId, false);
+          } else alert('Error: ' + data.error);
       });
   }
 
@@ -292,15 +321,6 @@
           e.preventDefault();
           submitReply(e);
       }
-  });
-
-  // Search filter logic... (keep existing search logic here)
-  document.getElementById('search-conversations').addEventListener('input', function(e) {
-      const term = e.target.value.toLowerCase();
-      document.querySelectorAll('.conversation-item').forEach(item => {
-          const text = item.innerText.toLowerCase();
-          item.style.display = text.includes(term) ? '' : 'none';
-      });
   });
 </script>
 {% endblock %}

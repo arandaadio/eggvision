@@ -1,337 +1,376 @@
 {% extends "eggmin/base.html" %}
 {% block title %}Berita · EggMin{% endblock %}
 
-{% block body %}
-<div class="min-h-screen bg-background">
-  <!-- Sidebar (sama seperti sebelumnya) -->
-  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
-    <div class="p-6 border-b border-sidebar-border">
-      <div class="flex flex-col items-center gap-2">
-        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <div class="text-primary font-bold text-xs">EM</div>
-        </div>
-        <span class="text-primary text-sm font-semibold">EGGMIN</span>
-      </div>
-    </div>
+{% block header_title %}Manajemen Berita{% endblock %}
+{% block header_subtitle %}Kelola artikel, update publikasi, dan konten edukasi.{% endblock %}
 
-    <nav class="flex-1 py-4">
-      {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmin_controller.eggmin')},
-        {"id":"users","icon":"users","label":"Users","href":url_for('eggmin_controller.eggmin_users')},
-        {"id":"news","icon":"newspaper","label":"Berita","href":url_for('eggmin_controller.eggmin_news')},
-        {"id":"products","icon":"package","label":"Produk","href":url_for('eggmin_controller.eggmin_products')},
-        {"id":"chats","icon":"message-circle","label":"Chats","href":url_for('eggmin_controller.eggmin_chats')}
-      ] %}
-      {% for item in menu %}
-        {% set is_active = (item.id == active_menu) %}
-        <a href="{{ item.href }}"
-           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
-           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
-          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
-          <span class="text-xs">{{ item.label }}</span>
-        </a>
-      {% endfor %}
-    </nav>
-
-    <div class="p-4 border-t border-sidebar-border">
-      <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
-        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name|lower|replace(' ', '') }}" 
-               alt="Profile" class="w-full h-full object-cover" />
-        </div>
-        <span class="text-xs">Kembali</span>
-      </a>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <main class="ml-[130px] p-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-4xl font-bold mb-1">Manajemen Berita</h1>
-        <p class="text-muted-foreground">Kelola berita untuk halaman Comprof</p>
-      </div>
-      
-      <div class="flex items-center gap-4">
-        <!-- Add News Button -->
-        <button onclick="openAddNewsModal()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
-          <i data-lucide="plus" class="w-4 h-4"></i>
-          Buat Berita
-        </button>
+{% block content %}
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
         
-        <!-- Date & Time -->
-        <div class="flex items-center gap-4 text-sm">
-          <div class="flex items-center gap-2">
-            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-date">{{ now.strftime('%d/%b/%Y') }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-time">{{ now.strftime('%H:%M') }}</span>
-          </div>
+        <div class="flex items-center gap-3 w-full md:w-auto bg-white dark:bg-[#161616] p-1 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+            <div class="relative flex-1 md:w-72">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="Cari judul berita..." 
+                       class="w-full pl-9 pr-4 py-2 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none placeholder-gray-500">
+            </div>
+            <div class="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+            <select id="statusFilter" class="bg-transparent text-sm text-gray-600 dark:text-gray-300 px-3 py-2 focus:outline-none cursor-pointer hover:text-primary transition-colors dark:[&>option]:bg-[#161616] dark:[&>option]:text-gray-300">
+                <option value="all">Semua Status</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+            </select>
         </div>
-      </div>
+
+        <button onclick="openAddNewsModal()" class="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground font-bold rounded-xl shadow-lg shadow-yellow-500/20 transition-all duration-200 transform hover:scale-105">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Buat Berita</span>
+        </button>
     </div>
 
-    <!-- News Grid -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-card p-4 rounded-xl border border-border shadow-sm">
-      <div class="relative w-full sm:w-72">
-          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
-          <input type="text" id="searchInput" placeholder="Cari judul berita..." 
-                 class="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all">
-      </div>
-      
-      <div class="flex items-center gap-3 w-full sm:w-auto">
-          <div class="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-lg">
-              <i data-lucide="filter" class="w-4 h-4 text-muted-foreground"></i>
-              <select id="statusFilter" class="bg-transparent text-sm focus:outline-none text-foreground">
-                  <option value="all">Semua Status</option>
-                  <option value="published">Published</option>
-                  <option value="draft">Draft</option>
-              </select>
-          </div>
-      </div>
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="newsGrid">
-    {% for news in news_list %}
-    <div class="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all duration-300 news-item"
-         data-title="{{ news.title|lower }}"
-         data-status="{{ 'published' if news.is_published else 'draft' }}">
-      
-      <div class="relative h-52 overflow-hidden">
-          {% if news.image_url %}
-          <img src="{{ news.image_url }}" alt="{{ news.title }}" 
-               class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
-          {% else %}
-          <div class="w-full h-full bg-secondary flex items-center justify-center">
-              <i data-lucide="image" class="w-12 h-12 text-muted-foreground/50"></i>
-          </div>
-          {% endif %}
-          
-          <div class="absolute top-3 right-3">
-              <span class="px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md shadow-sm border border-white/10
-                           {{ 'bg-green-500/90 text-white' if news.is_published else 'bg-yellow-500/90 text-white' }}">
-                  {{ 'Published' if news.is_published else 'Draft' }}
-              </span>
-          </div>
-
-          <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-4 pt-10">
-              <div class="flex items-center gap-2 text-white/90 text-xs">
-                  <i data-lucide="calendar" class="w-3 h-3"></i>
-                  <span>{{ news.created_at.strftime('%d %b %Y') }}</span>
-              </div>
-          </div>
-      </div>
-      
-      <div class="p-5 flex flex-col h-[calc(100%-13rem)]">
-        <h3 class="font-bold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors leading-tight">
-          {{ news.title }}
-        </h3>
-        <p class="text-sm text-muted-foreground mb-6 line-clamp-3 flex-grow">
-          {{ news.content }}
-        </p>
-        
-        <div class="h-px w-full bg-border mb-4"></div>
-
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-1">
-              {% if news.published_at %}
-              <span class="text-[10px] text-muted-foreground bg-secondary px-2 py-1 rounded">
-                  Pub: {{ news.published_at.strftime('%H:%M') }}
-              </span>
-              {% endif %}
-          </div>
-          
-          <div class="flex items-center gap-2">
-            <button onclick="editNews('{{ news.id }}')" 
-                    class="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" 
-                    title="Edit">
-              <i data-lucide="edit-3" class="w-4 h-4"></i>
-            </button>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="newsGrid">
+        {% for news in news_list %}
+        <div class="news-item group flex flex-col bg-white dark:bg-[#161616] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300"
+             data-title="{{ news.title|lower }}"
+             data-status="{{ 'published' if news.is_published else 'draft' }}">
             
-            <button onclick="togglePublish('{{ news.id }}')" 
-                    class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors
-                           {{ 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' if not news.is_published else 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' }}"
-                    title="{{ 'Publish' if not news.is_published else 'Unpublish' }}">
-              <i data-lucide="{{ 'upload-cloud' if not news.is_published else 'eye-off' }}" class="w-4 h-4"></i>
-            </button>
+            <div class="relative h-52 overflow-hidden bg-gray-100 dark:bg-gray-900">
+                {% if news.image_url %}
+                <img src="{{ news.image_url }}" alt="{{ news.title }}" 
+                     class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                     onerror="this.src='https://placehold.co/600x400/1a1a1a/FFF?text=No+Image'">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-700">
+                    <i data-lucide="image" class="w-12 h-12"></i>
+                </div>
+                {% endif %}
+                
+                <div class="absolute top-3 right-3">
+                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide backdrop-blur-md shadow-sm border border-white/10
+                                 {{ 'bg-green-500 text-white' if news.is_published else 'bg-yellow-500 text-black' }}">
+                        {{ 'Published' if news.is_published else 'Draft' }}
+                    </span>
+                </div>
+
+                <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 pt-12">
+                    <div class="flex items-center gap-2 text-white/90 text-xs font-medium">
+                        <i data-lucide="calendar" class="w-3 h-3 text-primary"></i>
+                        <span>{{ news.created_at.strftime('%d %b %Y') }}</span>
+                    </div>
+                </div>
+            </div>
             
-            <button onclick="deleteNews('{{ news.id }}')" 
-                    class="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" 
-                    title="Hapus">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-          </div>
+            <div class="p-5 flex flex-col flex-1">
+                <h3 class="font-bold text-lg mb-2 text-gray-900 dark:text-white line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                    {{ news.title }}
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 line-clamp-3 flex-grow">
+                    {{ news.content }}
+                </p>
+                
+                <div class="h-px w-full bg-gray-100 dark:bg-gray-800 mb-4"></div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1">
+                        {% if news.published_at and news.is_published %}
+                        <span class="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                            {{ news.published_at.strftime('%H:%M') }} WIB
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex items-center gap-1">
+                        <button onclick="editNews('{{ news.id }}')" 
+                                class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" 
+                                title="Edit">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        
+                        <button onclick="togglePublish('{{ news.id }}')" 
+                                class="p-2 rounded-lg transition-colors
+                                       {{ 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' if not news.is_published else 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' }}"
+                                title="{{ 'Publish' if not news.is_published else 'Unpublish' }}">
+                            <i data-lucide="{{ 'upload-cloud' if not news.is_published else 'eye-off' }}" class="w-4 h-4"></i>
+                        </button>
+                        
+                        <button onclick="deleteNews('{{ news.id }}')" 
+                                class="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" 
+                                title="Hapus">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-  </div>
 
-  <div id="emptyState" class="hidden text-center py-20">
-    <div class="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-      <i data-lucide="search-x" class="w-10 h-10 text-muted-foreground"></i>
+    <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+            <i data-lucide="search-x" class="w-10 h-10 text-gray-400"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Tidak ada berita ditemukan</h3>
+        <p class="text-gray-500 dark:text-gray-400">Coba ubah kata kunci atau filter pencarian Anda.</p>
     </div>
-    <h3 class="text-lg font-semibold mb-1">Tidak ada berita ditemukan</h3>
-    <p class="text-muted-foreground">Coba ubah kata kunci atau filter pencarian Anda.</p>
-  </div>
 
-  {% if not news_list %}
-  <div class="text-center py-20">
-    <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-      <i data-lucide="newspaper" class="w-10 h-10 text-primary"></i>
+    {% if not news_list %}
+    <div class="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+        <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <i data-lucide="newspaper" class="w-10 h-10 text-primary"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Belum ada berita</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md">Berita yang Anda buat akan muncul di halaman Comprof.</p>
+        <button onclick="openAddNewsModal()" class="px-6 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition-all flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            Buat Berita Pertama
+        </button>
     </div>
-    <h3 class="text-xl font-bold mb-2">Belum ada berita</h3>
-    <p class="text-muted-foreground mb-6 max-w-md mx-auto">Berita yang Anda buat akan muncul di halaman Comprof untuk dibaca pengunjung.</p>
-    <button onclick="openAddNewsModal()" class="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors inline-flex items-center gap-2 font-medium shadow-lg shadow-primary/20">
-      <i data-lucide="plus-circle" class="w-5 h-5"></i>
-      Buat Berita Pertama
-    </button>
-  </div>
-  {% endif %}
- 
-<!-- Add News Modal -->
-<div id="addNewsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
-  <div class="bg-card rounded-lg p-6 w-full max-w-2xl border border-border max-h-[90vh] overflow-y-auto">
-    <h3 class="text-lg font-semibold mb-4">Buat Berita Baru</h3>
-    <form id="addNewsForm" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium mb-2">Judul Berita</label>
-        <input type="text" name="title" required class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium mb-2">Gambar URL (opsional)</label>
-        <input type="url" name="image_url" class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="https://example.com/image.jpg">
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium mb-2">Konten Berita</label>
-        <textarea name="content" required rows="10" class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-vertical"></textarea>
-      </div>
-      
-      <div class="flex items-center gap-2">
-        <input type="checkbox" name="is_published" id="is_published" class="rounded border-border">
-        <label for="is_published" class="text-sm">Publikasikan segera</label>
-      </div>
-      
-      <div class="flex gap-3 pt-4">
-        <button type="submit" class="flex-1 bg-primary text-primary-foreground py-2 rounded-lg hover:bg-primary/90 transition-colors">
-          Simpan Berita
-        </button>
-        <button type="button" onclick="closeAddNewsModal()" class="flex-1 bg-secondary py-2 rounded-lg hover:bg-secondary/80 transition-colors">
-          Batal
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+    {% endif %}
 
-<!-- Edit News Modal -->
-<div id="editNewsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
-  <div class="bg-card rounded-lg p-6 w-full max-w-2xl border border-border max-h-[90vh] overflow-y-auto">
-    <h3 class="text-lg font-semibold mb-4">Edit Berita</h3>
-    <form id="editNewsForm" class="space-y-4">
-      <input type="hidden" name="news_id" id="edit_news_id">
-      
-      <div>
-        <label class="block text-sm font-medium mb-2">Judul Berita</label>
-        <input type="text" name="title" id="edit_title" required class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium mb-2">Gambar URL (opsional)</label>
-        <input type="url" name="image_url" id="edit_image_url" class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="https://example.com/image.jpg">
-      </div>
-      
-      <div>
-        <label class="block text-sm font-medium mb-2">Konten Berita</label>
-        <textarea name="content" id="edit_content" required rows="10" class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-vertical"></textarea>
-      </div>
-      
-      <div class="flex items-center gap-2">
-        <input type="checkbox" name="is_published" id="edit_is_published" class="rounded border-border">
-        <label for="edit_is_published" class="text-sm">Publikasikan</label>
-      </div>
-      
-      <div class="flex gap-3 pt-4">
-        <button type="submit" class="flex-1 bg-primary text-primary-foreground py-2 rounded-lg hover:bg-primary/90 transition-colors">
-          Perbarui Berita
-        </button>
-        <button type="button" onclick="closeEditNewsModal()" class="flex-1 bg-secondary py-2 rounded-lg hover:bg-secondary/80 transition-colors">
-          Batal
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+    <div id="addNewsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden transition-opacity opacity-0">
+        <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i data-lucide="file-plus" class="w-5 h-5 text-primary"></i> Buat Berita Baru
+                </h3>
+                <button onclick="closeAddNewsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="addNewsForm" class="space-y-5" enctype="multipart/form-data">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Judul Berita</label>
+                    <input type="text" name="title" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-600" placeholder="Judul menarik...">
+                </div>
+                
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Gambar Berita</label>
+                        <div class="flex bg-gray-100 dark:bg-black/30 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
+                            <button type="button" onclick="toggleInputType('add', 'url')" id="btn_add_url" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-white bg-primary shadow-sm">Link URL</button>
+                            <button type="button" onclick="toggleInputType('add', 'file')" id="btn_add_file" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Upload</button>
+                        </div>
+                    </div>
+                    
+                    <div id="input_add_url">
+                        <input type="url" name="image_url" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-600" placeholder="https://example.com/image.jpg">
+                    </div>
 
-<!-- Toggle Publish Confirmation Modal -->
-<div id="togglePublishModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
-  <div class="bg-card rounded-lg p-6 w-full max-w-md border border-border">
-    <h3 class="text-lg font-semibold mb-4" id="togglePublishTitle">Konfirmasi</h3>
-    <p class="text-muted-foreground mb-6" id="togglePublishMessage"></p>
-    <div class="flex gap-3">
-      <button onclick="confirmTogglePublish()" class="flex-1 bg-primary text-primary-foreground py-2 rounded-lg hover:bg-primary/90 transition-colors" id="togglePublishConfirm">
-        Ya
-      </button>
-      <button onclick="closeTogglePublishModal()" class="flex-1 bg-secondary py-2 rounded-lg hover:bg-secondary/80 transition-colors">
-        Batal
-      </button>
+                    <div id="input_add_file" class="hidden">
+                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-50 dark:bg-black/30 hover:bg-gray-100 dark:hover:bg-black/50 transition-colors">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-400"></i>
+                                <p class="text-xs text-gray-500 dark:text-gray-400"><span class="font-semibold">Klik untuk upload</span></p>
+                                <p class="text-[10px] text-gray-400">PNG, JPG, GIF (MAX. 2MB)</p>
+                            </div>
+                            <input type="file" name="image_file" class="hidden" accept="image/*" />
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Konten Berita</label>
+                    <textarea name="content" required rows="5" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-600 leading-relaxed resize-y" placeholder="Tulis isi berita di sini..."></textarea>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <input type="checkbox" name="is_published" id="is_published" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-800">
+                    <label for="is_published" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                        Publikasikan Langsung (Tampil di halaman depan)
+                    </label>
+                </div>
+                
+                <div class="flex gap-3 pt-4 mt-2">
+                    <button type="button" onclick="closeAddNewsModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition-all">
+                        Simpan Berita
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-  </div>
-</div>
+
+    <div id="editNewsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden transition-opacity opacity-0">
+        <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-5 h-5 text-primary"></i> Edit Berita
+                </h3>
+                <button onclick="closeEditNewsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="editNewsForm" class="space-y-5" enctype="multipart/form-data">
+                <input type="hidden" name="news_id" id="edit_news_id">
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Judul Berita</label>
+                    <input type="text" name="title" id="edit_title" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                </div>
+                
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Gambar Berita</label>
+                        <div class="flex bg-gray-100 dark:bg-black/30 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
+                            <button type="button" onclick="toggleInputType('edit', 'url')" id="btn_edit_url" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-white bg-primary shadow-sm">Link URL</button>
+                            <button type="button" onclick="toggleInputType('edit', 'file')" id="btn_edit_file" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Upload</button>
+                        </div>
+                    </div>
+                    
+                    <div id="input_edit_url">
+                        <input type="url" name="image_url" id="edit_image_url" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                    </div>
+
+                    <div id="input_edit_file" class="hidden">
+                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-50 dark:bg-black/30 hover:bg-gray-100 dark:hover:bg-black/50 transition-colors">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-400"></i>
+                                <p class="text-xs text-gray-500 dark:text-gray-400"><span class="font-semibold">Ganti gambar (Upload)</span></p>
+                                <p class="text-[10px] text-gray-400">PNG, JPG, GIF (MAX. 2MB)</p>
+                            </div>
+                            <input type="file" name="image_file" class="hidden" accept="image/*" />
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Konten Berita</label>
+                    <textarea name="content" id="edit_content" required rows="5" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all leading-relaxed resize-y"></textarea>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <input type="checkbox" name="is_published" id="edit_is_published" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-800">
+                    <label for="edit_is_published" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                        Status Publikasi (Centang untuk publish)
+                    </label>
+                </div>
+                
+                <div class="flex gap-3 pt-4 mt-2">
+                    <button type="button" onclick="closeEditNewsModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition-all">
+                        Perbarui Berita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="togglePublishModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden transition-opacity opacity-0">
+        <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-sm border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform text-center">
+            <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
+                <i data-lucide="alert-circle" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2" id="togglePublishTitle">Konfirmasi</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm leading-relaxed" id="togglePublishMessage"></p>
+            <div class="flex gap-3">
+                <button onclick="closeTogglePublishModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-colors">
+                    Batal
+                </button>
+                <button onclick="confirmTogglePublish()" class="flex-1 px-4 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition-all" id="togglePublishConfirm">
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// news.html - UPDATED SCRIPTS
+// --- Toggle Input Function (URL vs File) ---
+function toggleInputType(mode, type) {
+    const btnUrl = document.getElementById(`btn_${mode}_url`);
+    const btnFile = document.getElementById(`btn_${mode}_file`);
+    const inputUrl = document.getElementById(`input_${mode}_url`);
+    const inputFile = document.getElementById(`input_${mode}_file`);
+    
+    if (type === 'url') {
+        btnUrl.classList.add('bg-primary', 'text-white', 'shadow-sm');
+        btnUrl.classList.remove('text-gray-500', 'hover:text-gray-900', 'dark:text-gray-400', 'dark:hover:text-white');
+        
+        btnFile.classList.remove('bg-primary', 'text-white', 'shadow-sm');
+        btnFile.classList.add('text-gray-500', 'hover:text-gray-900', 'dark:text-gray-400', 'dark:hover:text-white');
+        
+        inputUrl.classList.remove('hidden');
+        inputFile.classList.add('hidden');
+        
+        // Clear file input if switching to URL
+        inputFile.querySelector('input').value = '';
+    } else {
+        btnFile.classList.add('bg-primary', 'text-white', 'shadow-sm');
+        btnFile.classList.remove('text-gray-500', 'hover:text-gray-900', 'dark:text-gray-400', 'dark:hover:text-white');
+        
+        btnUrl.classList.remove('bg-primary', 'text-white', 'shadow-sm');
+        btnUrl.classList.add('text-gray-500', 'hover:text-gray-900', 'dark:text-gray-400', 'dark:hover:text-white');
+        
+        inputFile.classList.remove('hidden');
+        inputUrl.classList.add('hidden');
+        
+        // Clear URL input if switching to file
+        inputUrl.querySelector('input').value = '';
+    }
+}
+
+// --- Animation Helper ---
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.classList.remove('hidden');
+    void modal.offsetWidth; // Trigger reflow
+    modal.classList.remove('opacity-0');
+    modal.firstElementChild.classList.remove('scale-95');
+    modal.firstElementChild.classList.add('scale-100');
+}
+
+function hideModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.classList.add('opacity-0');
+    modal.firstElementChild.classList.remove('scale-100');
+    modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+}
+
+// --- State ---
 let currentNewsId = null;
 
-// Add News Modal Functions
-function openAddNewsModal() {
-  document.getElementById('addNewsModal').classList.remove('hidden');
+// --- Modal Functions ---
+function openAddNewsModal() { 
+    showModal('addNewsModal'); 
+    // Default to URL on open
+    toggleInputType('add', 'url');
+}
+function closeAddNewsModal() { 
+    hideModal('addNewsModal'); 
+    document.getElementById('addNewsForm').reset(); 
 }
 
-function closeAddNewsModal() {
-  document.getElementById('addNewsModal').classList.add('hidden');
-  document.getElementById('addNewsForm').reset();
+function openEditNewsModal() { showModal('editNewsModal'); }
+function closeEditNewsModal() { 
+    hideModal('editNewsModal'); 
+    document.getElementById('editNewsForm').reset(); 
+    currentNewsId = null; 
 }
 
-// Edit News Modal Functions
-function openEditNewsModal() {
-  document.getElementById('editNewsModal').classList.remove('hidden');
+function openTogglePublishModal() { showModal('togglePublishModal'); }
+function closeTogglePublishModal() { 
+    hideModal('togglePublishModal'); 
+    currentNewsId = null; 
 }
 
-function closeEditNewsModal() {
-  document.getElementById('editNewsModal').classList.add('hidden');
-  document.getElementById('editNewsForm').reset();
-  currentNewsId = null;
-}
+// --- CRUD Logic ---
 
-// Toggle Publish Modal Functions
-function openTogglePublishModal() {
-  document.getElementById('togglePublishModal').classList.remove('hidden');
-}
-
-function closeTogglePublishModal() {
-  document.getElementById('togglePublishModal').classList.add('hidden');
-  currentNewsId = null;
-}
-
-// Handle form submission for creating news
+// Create
 document.getElementById('addNewsForm').addEventListener('submit', function(e) {
   e.preventDefault();
-  
   const formData = new FormData(this);
   
-  fetch('/eggmin/api/news/create', {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => response.json())
+  fetch('/eggmin/api/news/create', { method: 'POST', body: formData })
+  .then(res => res.json())
   .then(data => {
     if (data.success) {
       alert('Berita berhasil dibuat!');
@@ -341,13 +380,100 @@ document.getElementById('addNewsForm').addEventListener('submit', function(e) {
       alert('Error: ' + data.error);
     }
   })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat membuat berita');
-  });
+  .catch(err => console.error(err));
 });
 
-// Filter Logic
+// Edit
+function editNews(newsId) {
+  currentNewsId = newsId;
+  fetch(`/eggmin/api/news/${newsId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const news = data.news;
+        document.getElementById('edit_news_id').value = news.id;
+        document.getElementById('edit_title').value = news.title;
+        document.getElementById('edit_image_url').value = news.image_url || '';
+        document.getElementById('edit_content').value = news.content;
+        document.getElementById('edit_is_published').checked = news.is_published;
+        
+        // Default view: If URL exists, show URL tab. If not (or if we support file fetch), prioritize URL for now.
+        toggleInputType('edit', 'url');
+        
+        openEditNewsModal();
+      } else {
+        alert('Error: ' + data.error);
+      }
+    })
+    .catch(err => console.error(err));
+}
+
+document.getElementById('editNewsForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!currentNewsId) return;
+  
+  const formData = new FormData(this);
+  fetch(`/eggmin/api/news/update/${currentNewsId}`, { method: 'POST', body: formData })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Berita berhasil diperbarui!');
+      closeEditNewsModal();
+      location.reload();
+    } else {
+      alert('Error: ' + data.error);
+    }
+  })
+  .catch(err => console.error(err));
+});
+
+// Toggle Publish
+function togglePublish(newsId) {
+  currentNewsId = newsId;
+  fetch(`/eggmin/api/news/${newsId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const isPub = data.news.is_published;
+        document.getElementById('togglePublishTitle').textContent = isPub ? 'Unpublish Berita?' : 'Publish Berita?';
+        document.getElementById('togglePublishMessage').textContent = isPub 
+            ? 'Berita ini akan disembunyikan dari halaman publik.'
+            : 'Berita ini akan langsung tampil di halaman publik.';
+        openTogglePublishModal();
+      }
+    });
+}
+
+function confirmTogglePublish() {
+  if (!currentNewsId) return;
+  fetch(`/eggmin/api/news/toggle-publish/${currentNewsId}`, { method: 'POST' })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      closeTogglePublishModal();
+      location.reload();
+    } else {
+      alert('Error: ' + data.error);
+    }
+  });
+}
+
+// Delete
+function deleteNews(newsId) {
+  if (!confirm('Hapus berita ini secara permanen?')) return;
+  fetch(`/eggmin/api/news/delete/${newsId}`, { method: 'POST' })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Berita dihapus');
+      location.reload();
+    } else {
+      alert('Error: ' + data.error);
+    }
+  });
+}
+
+// --- Filter Logic ---
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
@@ -363,240 +489,40 @@ document.addEventListener('DOMContentLoaded', function() {
         newsItems.forEach(item => {
             const title = item.dataset.title;
             const status = item.dataset.status;
-
             const matchesSearch = title.includes(searchTerm);
             const matchesStatus = statusValue === 'all' || status === statusValue;
 
             if (matchesSearch && matchesStatus) {
-                item.style.display = ''; // Show
-                // Add a nice fade-in animation
-                item.classList.add('animate-in', 'fade-in', 'zoom-in-95'); 
+                item.style.display = '';
                 visibleCount++;
             } else {
-                item.style.display = 'none'; // Hide
-                item.classList.remove('animate-in', 'fade-in', 'zoom-in-95');
+                item.style.display = 'none';
             }
         });
 
-        // Show empty state if no items match filter
         if (visibleCount === 0 && newsItems.length > 0) {
             newsGrid.classList.add('hidden');
             emptyState.classList.remove('hidden');
+            emptyState.style.display = 'flex';
         } else {
             newsGrid.classList.remove('hidden');
             emptyState.classList.add('hidden');
+            emptyState.style.display = 'none';
         }
     }
 
-    if(searchInput && statusFilter) {
-        searchInput.addEventListener('input', filterNews);
-        statusFilter.addEventListener('change', filterNews);
-    }
+    searchInput.addEventListener('input', filterNews);
+    statusFilter.addEventListener('change', filterNews);
 });
 
-// Handle form submission for editing news
-document.getElementById('editNewsForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  
-  if (!currentNewsId) {
-    alert('News ID tidak valid');
-    return;
-  }
-  
-  const formData = new FormData(this);
-  
-  fetch(`/eggmin/api/news/update/${currentNewsId}`, {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert('Berita berhasil diperbarui!');
-      closeEditNewsModal();
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat memperbarui berita');
-  });
-});
-
-// Edit News Function
-function editNews(newsId) {
-  console.log('Editing news ID:', newsId);
-  currentNewsId = newsId;
-  
-  // Show loading state
-  const editButton = event.target.closest('button');
-  const originalHTML = editButton.innerHTML;
-  editButton.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>';
-  
-  // Fetch news data from API
-  fetch(`/eggmin/api/news/${newsId}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      // Restore button
-      editButton.innerHTML = originalHTML;
-      
-      if (data.success) {
-        const news = data.news;
-        console.log('News data:', news);
-        
-        // Populate form fields
-        document.getElementById('edit_news_id').value = news.id;
-        document.getElementById('edit_title').value = news.title;
-        document.getElementById('edit_image_url').value = news.image_url || '';
-        document.getElementById('edit_content').value = news.content;
-        document.getElementById('edit_is_published').checked = news.is_published;
-        
-        // Open edit modal
-        openEditNewsModal();
-      } else {
-        alert('Error: ' + data.error);
-      }
-    })
-    .catch(error => {
-      // Restore button
-      editButton.innerHTML = originalHTML;
-      console.error('Error details:', error);
-      alert('Terjadi kesalahan saat mengambil data berita: ' + error.message);
-    });
-}
-
-// Toggle Publish Function
-function togglePublish(newsId) {
-  console.log('Toggling publish for news ID:', newsId);
-  currentNewsId = newsId;
-  
-  // Show loading state
-  const toggleButton = event.target.closest('button');
-  const originalHTML = toggleButton.innerHTML;
-  toggleButton.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>';
-  
-  // Fetch current news status to show appropriate confirmation message
-  fetch(`/eggmin/api/news/${newsId}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      // Restore button
-      toggleButton.innerHTML = originalHTML;
-      
-      if (data.success) {
-        const news = data.news;
-        const isPublished = news.is_published;
-        
-        // Set modal content based on current status
-        document.getElementById('togglePublishTitle').textContent = 
-          isPublished ? 'Unpublish Berita' : 'Publish Berita';
-        document.getElementById('togglePublishMessage').textContent = 
-          isPublished 
-            ? 'Apakah Anda yakin ingin menyimpan berita ini sebagai draft? Berita tidak akan tampil di halaman publik.'
-            : 'Apakah Anda yakin ingin mempublikasikan berita ini? Berita akan tampil di halaman publik.';
-        document.getElementById('togglePublishConfirm').textContent = 
-          isPublished ? 'Ya, Simpan sebagai Draft' : 'Ya, Publikasikan';
-        
-        openTogglePublishModal();
-      } else {
-        alert('Error: ' + data.error);
-      }
-    })
-    .catch(error => {
-      // Restore button
-      toggleButton.innerHTML = originalHTML;
-      console.error('Error details:', error);
-      alert('Terjadi kesalahan saat mengambil data berita: ' + error.message);
-    });
-}
-
-// Confirm Toggle Publish
-function confirmTogglePublish() {
-  if (!currentNewsId) return;
-  
-  fetch(`/eggmin/api/news/toggle-publish/${currentNewsId}`, {
-    method: 'POST'
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert(data.message);
-      closeTogglePublishModal();
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat mengubah status publikasi');
-  });
-}
-
-// Delete News Function
-function deleteNews(newsId) {
-  if (!confirm('Apakah Anda yakin ingin menghapus berita ini? Tindakan ini tidak dapat dibatalkan.')) return;
-  
-  fetch(`/eggmin/api/news/delete/${newsId}`, {
-    method: 'POST'
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert('Berita berhasil dihapus!');
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Terjadi kesalahan saat menghapus berita');
-  });
-}
-
-// Close modals when clicking outside
-document.getElementById('addNewsModal').addEventListener('click', function(e) {
-  if (e.target === this) closeAddNewsModal();
-});
-
-document.getElementById('editNewsModal').addEventListener('click', function(e) {
-  if (e.target === this) closeEditNewsModal();
-});
-
-document.getElementById('togglePublishModal').addEventListener('click', function(e) {
-  if (e.target === this) closeTogglePublishModal();
-});
+// Close on outside click
+document.getElementById('addNewsModal').addEventListener('click', function(e) { if (e.target === this) closeAddNewsModal(); });
+document.getElementById('editNewsModal').addEventListener('click', function(e) { if (e.target === this) closeEditNewsModal(); });
+document.getElementById('togglePublishModal').addEventListener('click', function(e) { if (e.target === this) closeTogglePublishModal(); });
 </script>
 
 <style>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-clamp: 2;
-  box-orient: vertical;
-  overflow: hidden;
-}
-
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  line-clamp: 3;
-  box-orient: vertical;
-  overflow: hidden;
-}
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 </style>
 {% endblock %}

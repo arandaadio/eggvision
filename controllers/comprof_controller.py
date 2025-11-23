@@ -68,19 +68,17 @@ def comprof_kontak():
     """Contact page - accessible by everyone"""
     return render_template('comprof/kontak.html')
 
-# --- CHAT ROUTES ---
+# --- CHAT ROUTES (SESSION BASED) ---
 
 @comprof_controller.route('/api/chat/send', methods=['POST'])
 def comprof_send_chat():
     data = request.get_json()
     message = data.get('message')
     
-    # Initialize variables
     user_id = None
     guest_name = None
     guest_email = None
     
-    # Determine if user is logged in or guest
     if current_user.is_authenticated:
         user_id = current_user.id
         message_type = 'user_to_admin'
@@ -97,15 +95,40 @@ def comprof_send_chat():
         return jsonify({'success': False, 'error': 'Database error'})
 
     try:
-        cur = conn.cursor()
+        cur = conn.cursor(dictionary=True)
         
-        # FIX: Changed 'is_read' to 'status' and value FALSE to 'unread'
-        query = """
+        # 1. Cek apakah sudah ada SESSION aktif untuk user/guest ini
+        session_id = None
+        if user_id:
+            cur.execute("SELECT id FROM chat_sessions WHERE user_id = %s LIMIT 1", (user_id,))
+        else:
+            cur.execute("SELECT id FROM chat_sessions WHERE guest_email = %s LIMIT 1", (guest_email,))
+            
+        existing_session = cur.fetchone()
+        
+        if existing_session:
+            # Update sesi yang ada
+            session_id = existing_session['id']
+            cur.execute("""
+                UPDATE chat_sessions 
+                SET last_message = %s, last_message_at = NOW(), status = 'active'
+                WHERE id = %s
+            """, (message, session_id))
+        else:
+            # Buat sesi baru
+            cur.execute("""
+                INSERT INTO chat_sessions (user_id, guest_email, guest_name, last_message, last_message_at, status)
+                VALUES (%s, %s, %s, %s, NOW(), 'active')
+            """, (user_id, guest_email, guest_name, message))
+            session_id = cur.lastrowid
+
+        # 2. Masukkan pesan ke tabel messages dengan session_id
+        cur.execute("""
             INSERT INTO chat_messages 
-            (user_id, guest_name, guest_email, message, message_type, created_at, status) 
-            VALUES (%s, %s, %s, %s, %s, NOW(), 'unread')
-        """
-        cur.execute(query, (user_id, guest_name, guest_email, message, message_type))
+            (session_id, user_id, guest_name, guest_email, message, message_type, created_at, status) 
+            VALUES (%s, %s, %s, %s, %s, %s, NOW(), 'unread')
+        """, (session_id, user_id, guest_name, guest_email, message, message_type))
+        
         conn.commit()
         cur.close()
         
@@ -119,7 +142,6 @@ def comprof_send_chat():
 
 @comprof_controller.route('/api/chat/history', methods=['GET'])
 def comprof_get_chat_history():
-    # Determine who we are fetching history for
     user_id = None
     guest_email = None
     
@@ -128,7 +150,7 @@ def comprof_get_chat_history():
     else:
         guest_email = request.args.get('guest_email')
         if not guest_email:
-            return jsonify({'success': True, 'messages': []}) # No email, no history
+            return jsonify({'success': True, 'messages': []})
 
     conn = get_db_connection()
     if not conn:
@@ -138,63 +160,31 @@ def comprof_get_chat_history():
     try:
         cur = conn.cursor(dictionary=True)
         
-        if user_id:
-            # Fetch for logged-in user
-            query = """
-                SELECT message, message_type, created_at 
-                FROM chat_messages 
-                WHERE user_id = %s 
-                ORDER BY created_at ASC
-            """
-            cur.execute(query, (user_id,))
-        else:
-            # Fetch for guest by email
-            query = """
-                SELECT message, message_type, created_at 
-                FROM chat_messages 
-                WHERE guest_email = %s 
-                ORDER BY created_at ASC
-            """
-            cur.execute(query, (guest_email,))
-            
-        messages = cur.fetchall()
-        cur.close()
-        
-    except mysql.connector.Error as e:
-        print(f"Error fetching chat history: {e}")
-    finally:
-        conn.close()
-
-    return jsonify({'success': True, 'messages': messages})
-
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({'success': False, 'error': 'Database connection failed'})
-
-    messages = []
-    try:
-        cur = conn.cursor(dictionary=True)
+        # Cari Session ID dulu
+        session_query = ""
+        session_param = ()
         
         if user_id:
-            # Fetch for logged-in user
-            query = """
-                SELECT message, message_type, created_at 
-                FROM chat_messages 
-                WHERE user_id = %s 
-                ORDER BY created_at ASC
-            """
-            cur.execute(query, (user_id,))
+            session_query = "SELECT id FROM chat_sessions WHERE user_id = %s LIMIT 1"
+            session_param = (user_id,)
         else:
-            # Fetch for guest by email
-            query = """
+            session_query = "SELECT id FROM chat_sessions WHERE guest_email = %s LIMIT 1"
+            session_param = (guest_email,)
+            
+        cur.execute(session_query, session_param)
+        session_data = cur.fetchone()
+        
+        if session_data:
+            session_id = session_data['id']
+            # Ambil pesan berdasarkan Session ID
+            cur.execute("""
                 SELECT message, message_type, created_at 
                 FROM chat_messages 
-                WHERE guest_email = %s 
+                WHERE session_id = %s 
                 ORDER BY created_at ASC
-            """
-            cur.execute(query, (guest_email,))
+            """, (session_id,))
+            messages = cur.fetchall()
             
-        messages = cur.fetchall()
         cur.close()
         
     except mysql.connector.Error as e:
