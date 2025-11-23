@@ -1,10 +1,8 @@
-Aku ngedit:
-- app.py, kyknya ada bbrp hal yg diminta salah satu file kamu dan diapus
-- requirements.txt
-- file path eggmonitormu
+EggVision
 
-Aku nambahin:
-- authentication
+Platform all-in-one untuk marketplace dan grading telur ayam konsumsi otomatis yang terjangkau
+
+authentication
     Admin: eggmin@eggvision.com / eggmin123
     Pembeli Dummy: pembeli@eggvision.com / pembeli123
     Pengusaha Dummy: pengusaha@eggvision.com / pengusaha123

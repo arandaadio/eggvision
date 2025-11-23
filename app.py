@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_login import LoginManager
+from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import os
 
@@ -21,15 +22,16 @@ app.config['MIDTRANS_IS_PRODUCTION'] = (
 # (opsional, kalau mau dipakai nanti)
 app.config['MIDTRANS_MERCHANT_ID'] = os.getenv('MIDTRANS_MERCHANT_ID')
 
-# # --- Mail Configuration ---
-# app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-# app.config['MAIL_PORT'] = 587
-# app.config['MAIL_USE_TLS'] = True
-# app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-# app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-# app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+# --- Mail Configuration ---
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 
-# mail = Mail(app)
+mail = Mail(app)
 
 # Flask-Login setup
 login_manager = LoginManager()

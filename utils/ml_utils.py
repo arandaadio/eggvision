@@ -5,8 +5,9 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
 # ====== MODEL & LABELS ======
 # Sesuaikan path ini dengan path di server/dev-mu
-model_keutuhan = load_model('/home/arandadio/Dio Aranda/[0] Perkuliahan/Semester 5/Rekayasa Perangkat Lunak (1 - 2)/Proyek Akhir (PBL)/eggvision-flask/static/model_keutuhan.keras')
-model_color    = load_model('/home/arandadio/Dio Aranda/[0] Perkuliahan/Semester 5/Rekayasa Perangkat Lunak (1 - 2)/Proyek Akhir (PBL)/eggvision-flask/static/cangkang-cnn.keras')
+model_keutuhan = model_keutuhan = load_model("static/model_keutuhan.keras")
+model_color    = load_model("static/cangkang-cnn.keras")
+
 
 # Label untuk masing-masing model
 CLASS_NAMES_KEUTUHAN = ["Retak", "Utuh"]

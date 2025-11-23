@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
+import os
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
 from utils.database import get_db_connection
 from datetime import datetime
@@ -17,41 +19,61 @@ def eggmin():
     
     # Get stats for admin dashboard
     conn = get_db_connection()
-    stats = {}
-    recent_users = []
+    stats = {
+        'system_status': 'Operational',
+        'uptime': '99.9%', # Placeholder (requires server start time tracking to be real)
+        'latency': '24ms'
+    }
+    
+    last_registered_user = None
+    recent_chats = []
     
     if conn:
         try:
             cur = conn.cursor(dictionary=True)
             
-            # Get user counts
+            # --- 1. USER STATS ---
+            # Total Users
             cur.execute("SELECT COUNT(*) as count FROM users")
             stats['total_users'] = cur.fetchone()['count']
             
-            cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'pembeli'")
-            stats['pembeli_count'] = cur.fetchone()['count']
+            # Last Registered User
+            cur.execute("SELECT name, created_at FROM users ORDER BY created_at DESC LIMIT 1")
+            last_registered_user = cur.fetchone()
             
-            cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'pengusaha'")
-            stats['pengusaha_count'] = cur.fetchone()['count']
+            # Note: 'Last Login' requires a 'last_login' column in your users table. 
+            # Since we don't have it yet, we'll leave this as None or mock it.
+            stats['last_login_user'] = "Data tidak tersedia" 
+            stats['last_login_time'] = None
+
+            # --- 2. NEWS STATS ---
+            # Published Count
+            cur.execute("SELECT COUNT(*) as count FROM news WHERE is_published = 1")
+            stats['news_published'] = cur.fetchone()['count']
             
-            cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'admin'")
-            stats['admin_count'] = cur.fetchone()['count']
+            # Draft Count
+            cur.execute("SELECT COUNT(*) as count FROM news WHERE is_published = 0")
+            stats['news_draft'] = cur.fetchone()['count']
             
-            # Get product counts
-            cur.execute("SELECT COUNT(*) as count FROM products")
-            stats['total_products'] = cur.fetchone()['count']
+            # Last Published Date
+            cur.execute("SELECT published_at FROM news WHERE is_published = 1 ORDER BY published_at DESC LIMIT 1")
+            res_last_pub = cur.fetchone()
+            stats['last_news_publish'] = res_last_pub['published_at'] if res_last_pub else None
             
-            # Get news counts
-            cur.execute("SELECT COUNT(*) as count FROM news")
-            stats['total_news'] = cur.fetchone()['count']
-            
-            # Get unread chat count
+            # --- 3. CHAT STATS ---
+            # Unread Count
             cur.execute("SELECT COUNT(*) as count FROM chat_messages WHERE status = 'unread'")
             stats['unread_chats'] = cur.fetchone()['count']
             
-            # Get recent users
-            cur.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT 5")
-            recent_users = cur.fetchall()
+            # 3 Recent Chats to Admin (incoming)
+            cur.execute("""
+                SELECT message, created_at, 
+                       COALESCE(guest_name, 'User') as sender_name 
+                FROM chat_messages 
+                WHERE message_type IN ('user_to_admin', 'guest_to_admin') 
+                ORDER BY created_at DESC LIMIT 3
+            """)
+            recent_chats = cur.fetchall()
             
             cur.close()
         except mysql.connector.Error as e:
@@ -61,10 +83,11 @@ def eggmin():
                 conn.close()
     
     return render_template('eggmin/index.html', 
-                         stats=stats, 
-                         recent_users=recent_users,
-                         active_menu='dashboard',
-                         now=datetime.now())
+                           stats=stats, 
+                           last_registered_user=last_registered_user,
+                           recent_chats=recent_chats,
+                           active_menu='dashboard',
+                           now=datetime.now())
 
 @eggmin_controller.route('/users')
 @login_required
@@ -124,77 +147,234 @@ def eggmin_news():
                          active_menu='news',
                          now=datetime.now())
 
-@eggmin_controller.route('/products')
-@login_required
-def eggmin_products():
-    """Product management page - Admin only"""
-    if current_user.role != 'admin':
-        flash('Hanya Admin yang dapat mengakses halaman produk.', 'error')
-        return redirect(url_for('comprof_controller.comprof_beranda'))
-    
-    # Get all products with user info
-    conn = get_db_connection()
-    products = []
-    
-    if conn:
-        try:
-            cur = conn.cursor(dictionary=True)
-            cur.execute('''
-                SELECT p.*, u.name as seller_name, u.email as seller_email
-                FROM products p 
-                LEFT JOIN users u ON p.user_id = u.id
-                ORDER BY p.created_at DESC
-            ''')
-            products = cur.fetchall()
-            cur.close()
-        except mysql.connector.Error as e:
-            print(f"Error fetching products: {e}")
-        finally:
-            if conn:
-                conn.close()
-    
-    return render_template('eggmin/products.html', 
-                         products=products,
-                         active_menu='products',
-                         now=datetime.now())
-
 @eggmin_controller.route('/chats')
 @login_required
 def eggmin_chats():
-    """Chat management page - Admin only"""
+    """Chat management page with filters"""
     if current_user.role != 'admin':
         flash('Hanya Admin yang dapat mengakses halaman chat.', 'error')
         return redirect(url_for('comprof_controller.comprof_beranda'))
     
-    # Get all chat messages with user info
+    # Ambil parameter filter dari URL
+    filter_role = request.args.get('role', 'all')     # all, pembeli, pengusaha, guest
+    filter_status = request.args.get('status', 'all') # all, unread, archived
+    search_query = request.args.get('q', '').strip()
+
     conn = get_db_connection()
-    chat_messages = []
+    conversations = []
     
     if conn:
         try:
             cur = conn.cursor(dictionary=True)
-            cur.execute('''
-                SELECT cm.*, 
-                       COALESCE(u.name, cm.guest_name) as sender_name,
-                       COALESCE(u.email, cm.guest_email) as sender_email,
-                       COALESCE(u.role, 'guest') as sender_role
-                FROM chat_messages cm
-                LEFT JOIN users u ON cm.user_id = u.id
-                ORDER BY cm.created_at DESC
-                LIMIT 100
-            ''')
-            chat_messages = cur.fetchall()
+            
+            # Base Query
+            query = '''
+                SELECT cs.id as conversation_id, 
+                       COALESCE(u.name, cs.guest_name) as name,
+                       COALESCE(u.email, cs.guest_email) as email,
+                       CASE WHEN cs.user_id IS NOT NULL THEN u.role ELSE 'guest' END as role,
+                       cs.last_message,
+                       cs.last_message_at as last_message_time,
+                       cs.is_pinned,
+                       cs.is_archived,
+                       (
+                           SELECT COUNT(*) FROM chat_messages cm 
+                           WHERE cm.session_id = cs.id 
+                           AND cm.status = 'unread' 
+                           AND cm.message_type != 'admin_to_user'
+                       ) as unread_count
+                FROM chat_sessions cs
+                LEFT JOIN users u ON cs.user_id = u.id
+                WHERE 1=1
+            '''
+            params = []
+
+            # Filter by Role
+            if filter_role != 'all':
+                if filter_role == 'guest':
+                    query += " AND cs.user_id IS NULL"
+                else:
+                    query += " AND u.role = %s"
+                    params.append(filter_role)
+
+            # Filter by Status (Archived vs Active)
+            if filter_status == 'archived':
+                query += " AND cs.is_archived = TRUE"
+            else:
+                query += " AND cs.is_archived = FALSE" # Default tampilkan yang tidak di-archive
+
+            # Filter by Search (Name or Email)
+            if search_query:
+                query += " AND (COALESCE(u.name, cs.guest_name) LIKE %s OR COALESCE(u.email, cs.guest_email) LIKE %s)"
+                params.extend([f"%{search_query}%", f"%{search_query}%"])
+
+            # Filter Unread Only (Logika di having atau subquery, tapi untuk simpel kita filter di Python atau tambah kondisi unread > 0)
+            # Jika filter_status == 'unread', kita tambahkan kondisi di bawah.
+            
+            # Sorting: Pinned first, then Unread messages, then Most Recent
+            query += '''
+                ORDER BY 
+                cs.is_pinned DESC, 
+                last_message_time DESC
+            '''
+
+            cur.execute(query, tuple(params))
+            all_rows = cur.fetchall()
+            
+            # Manual filtering for 'unread' status if requested (karena unread_count adalah subquery)
+            if filter_status == 'unread':
+                conversations = [c for c in all_rows if c['unread_count'] > 0]
+            else:
+                conversations = all_rows
+
             cur.close()
         except mysql.connector.Error as e:
-            print(f"Error fetching chat messages: {e}")
+            print(f"Error fetching chats: {e}")
         finally:
-            if conn:
-                conn.close()
+            conn.close()
     
     return render_template('eggmin/chats.html', 
-                         chat_messages=chat_messages,
-                         active_menu='chats',
-                         now=datetime.now())
+                           conversations=conversations,
+                           active_menu='chats',
+                           current_filters={
+                               'role': filter_role,
+                               'status': filter_status,
+                               'q': search_query
+                           },
+                           now=datetime.now())
+
+# ==================== API ROUTES UNTUK CHAT ADMIN ====================
+
+@eggmin_controller.route('/api/chats/action/<string:action>/<int:session_id>', methods=['POST'])
+@login_required
+def eggmin_api_chat_action(action, session_id):
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'DB Error'}), 500
+
+    try:
+        cur = conn.cursor()
+        
+        if action == 'pin':
+            # Toggle Pin
+            cur.execute("UPDATE chat_sessions SET is_pinned = NOT is_pinned WHERE id = %s", (session_id,))
+            msg = "Status Pin diperbarui"
+            
+        elif action == 'archive':
+            # Toggle Archive
+            cur.execute("UPDATE chat_sessions SET is_archived = NOT is_archived WHERE id = %s", (session_id,))
+            msg = "Status Arsip diperbarui"
+            
+        elif action == 'delete':
+            # Delete session and all related messages
+            cur.execute("DELETE FROM chat_messages WHERE session_id = %s", (session_id,))
+            cur.execute("DELETE FROM chat_sessions WHERE id = %s", (session_id,))
+            msg = "Percakapan berhasil dihapus"
+            
+        else:
+            return jsonify({'success': False, 'error': 'Invalid action'}), 400
+
+        conn.commit()
+        cur.close()
+        return jsonify({'success': True, 'message': msg})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@eggmin_controller.route('/api/chats/history/<int:session_id>', methods=['GET'])
+@login_required
+def eggmin_api_chat_history(session_id):
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    conn = get_db_connection()
+    messages = []
+    try:
+        cur = conn.cursor(dictionary=True)
+        
+        # Ambil pesan berdasarkan session_id
+        cur.execute("""
+            SELECT id, message, message_type, created_at, status 
+            FROM chat_messages 
+            WHERE session_id = %s 
+            ORDER BY created_at ASC
+        """, (session_id,))
+        
+        raw_messages = cur.fetchall()
+        
+        # Format waktu dan masukkan ke list
+        for msg in raw_messages:
+            if msg['created_at']:
+                msg['created_at'] = msg['created_at'].strftime('%d %b %Y %H:%M')
+            messages.append(msg)
+            
+        # Tandai semua pesan user/guest di sesi ini sebagai 'read'
+        cur.execute("""
+            UPDATE chat_messages 
+            SET status='read' 
+            WHERE session_id=%s AND message_type != 'admin_to_user'
+        """, (session_id,))
+        
+        conn.commit()
+        cur.close()
+        
+        return jsonify({'success': True, 'messages': messages})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@eggmin_controller.route('/api/chats/reply/<int:session_id>', methods=['POST'])
+@login_required
+def eggmin_api_chat_reply(session_id):
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    message_text = request.form.get('message')
+    if not message_text:
+        return jsonify({'success': False, 'error': 'Pesan kosong'}), 400
+
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor(dictionary=True)
+        
+        # Ambil info user/guest dari sesi untuk mengisi kolom redundan di chat_messages (jika perlu)
+        cur.execute("SELECT user_id, guest_email, guest_name FROM chat_sessions WHERE id = %s", (session_id,))
+        session_data = cur.fetchone()
+        
+        if not session_data:
+            return jsonify({'success': False, 'error': 'Sesi tidak ditemukan'}), 404
+
+        # Insert balasan Admin
+        cur.execute("""
+            INSERT INTO chat_messages 
+            (session_id, user_id, guest_name, guest_email, message, message_type, created_at, status)
+            VALUES (%s, %s, %s, %s, %s, 'admin_to_user', NOW(), 'read')
+        """, (session_id, session_data['user_id'], session_data['guest_name'], session_data['guest_email'], message_text))
+        
+        # Update last message di tabel sesi
+        cur.execute("""
+            UPDATE chat_sessions 
+            SET last_message = %s, last_message_at = NOW() 
+            WHERE id = %s
+        """, (message_text, session_id))
+        
+        conn.commit()
+        cur.close()
+        
+        return jsonify({'success': True})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 # ==================== EGGMIN API ROUTES ====================
 
@@ -386,10 +566,27 @@ def eggmin_api_news_create():
         image_url = request.form.get('image_url')
         is_published = request.form.get('is_published') == 'on'
         
+        # Handle File Upload
+        if 'image_file' in request.files:
+            file = request.files['image_file']
+            if file and file.filename != '':
+                filename = secure_filename(file.filename)
+                # Generate timestamp to avoid dupes
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                new_filename = f"{timestamp}_{filename}"
+                
+                # Ensure dir exists
+                save_path = os.path.join(current_app.root_path, 'static', 'uploads', 'news')
+                os.makedirs(save_path, exist_ok=True)
+                
+                file.save(os.path.join(save_path, new_filename))
+                image_url = url_for('static', filename=f'uploads/news/{new_filename}')
+
         if not title or not content:
             return jsonify({'success': False, 'error': 'Title and content are required'}), 400
         
         conn = get_db_connection()
+        # ... (sisa kode sama seperti sebelumnya: koneksi DB, insert ke DB, commit) ...
         if not conn:
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
         
@@ -406,13 +603,11 @@ def eggmin_api_news_create():
             cur.close()
             
             return jsonify({'success': True, 'message': 'News created successfully', 'news_id': news_id})
-            
         except mysql.connector.Error as e:
-            print(f"Database error in news create: {e}")
+            print(f"Database error: {e}")
             return jsonify({'success': False, 'error': 'Database error'}), 500
         finally:
-            if conn:
-                conn.close()
+            if conn: conn.close()
                 
     except Exception as e:
         print(f"Error in news create: {e}")
@@ -461,25 +656,39 @@ def eggmin_api_news_update(news_id):
     try:
         title = request.form.get('title')
         content = request.form.get('content')
-        image_url = request.form.get('image_url')
+        image_url = request.form.get('image_url') # Gets the URL text input
         is_published = request.form.get('is_published') == 'on'
+        
+        # Handle File Upload (Priority over URL input)
+        if 'image_file' in request.files:
+            file = request.files['image_file']
+            if file and file.filename != '':
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                new_filename = f"{timestamp}_{filename}"
+                
+                save_path = os.path.join(current_app.root_path, 'static', 'uploads', 'news')
+                os.makedirs(save_path, exist_ok=True)
+                
+                file.save(os.path.join(save_path, new_filename))
+                image_url = url_for('static', filename=f'uploads/news/{new_filename}')
         
         if not title or not content:
             return jsonify({'success': False, 'error': 'Judul dan konten berita harus diisi'}), 400
         
         conn = get_db_connection()
+        # ... (sisa kode update database sama seperti sebelumnya) ...
         if not conn:
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
         
         try:
             cur = conn.cursor()
-            
-            # Check if news exists
+            # Check existing...
             cur.execute("SELECT * FROM news WHERE id = %s", (news_id,))
             if not cur.fetchone():
                 return jsonify({'success': False, 'error': 'Berita tidak ditemukan'}), 404
             
-            # Get current published status
+            # Update Status Logic...
             cur.execute("SELECT is_published, published_at FROM news WHERE id = %s", (news_id,))
             current_data = cur.fetchone()
             current_status = current_data[0]
@@ -487,12 +696,11 @@ def eggmin_api_news_update(news_id):
             
             published_at = current_published_at
             if is_published and not current_status:
-                # If changing from draft to published, set published_at to now
                 published_at = datetime.now()
             elif not is_published:
-                # If unpublishing, set published_at to None
                 published_at = None
             
+            # Update Query
             cur.execute(
                 "UPDATE news SET title = %s, content = %s, image_url = %s, is_published = %s, published_at = %s WHERE id = %s",
                 (title, content, image_url, is_published, published_at, news_id)
@@ -504,12 +712,11 @@ def eggmin_api_news_update(news_id):
             return jsonify({'success': True, 'message': 'Berita berhasil diperbarui'})
             
         except mysql.connector.Error as e:
-            print(f"Database error in news update: {e}")
+            print(f"Database error: {e}")
             return jsonify({'success': False, 'error': 'Database error'}), 500
         finally:
-            if conn:
-                conn.close()
-                
+            if conn: conn.close()
+
     except Exception as e:
         print(f"Error in news update: {e}")
         return jsonify({'success': False, 'error': 'Internal server error'}), 500
