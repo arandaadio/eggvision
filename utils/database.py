@@ -196,6 +196,7 @@ def init_db():
                 title VARCHAR(255) NOT NULL,
                 content TEXT NOT NULL,
                 image_url VARCHAR(500),
+                tags TEXT NULL,
                 is_published BOOLEAN DEFAULT FALSE,
                 published_at TIMESTAMP NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
