@@ -1,6 +1,7 @@
 {% extends "comprof/base.html" %}
+{% from 'comprof/components/buttons.html' import egg_cta %}
 
-{% block title %}Berita - EggVision{% endblock %}
+{% block title %}Berita · EggVision{% endblock %}
 
 {% block head %}
 <style>
@@ -10,7 +11,7 @@
     }
 
     .hero-bg {
-        background-image: url("{{ url_for('static', filename='img/news-hero.jpg') }}");
+        background-image: url("{{ url_for('static', filename='img/eggnews.jpg') }}");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -19,12 +20,12 @@
     
     /* Default (Light Mode) Overlay */
     .hero-overlay {
-        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 1) 100%);
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 10%, rgba(255, 255, 255, 1) 100%);
     }
 
     /* Dark Mode Overlay */
     .dark .hero-overlay {
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 40%, rgba(0, 0, 0, 1) 100%);
+        background: linear-gradient(to bottom, rgba(26, 26, 26, 0.65) 40%, rgba(26, 26, 26, 1) 100%);
     }
     
     .hero-section {
@@ -66,7 +67,7 @@
     <div class="hero-overlay absolute inset-0 z-0"></div>
 
     <div class="relative z-10 p-6 max-w-6xl mx-auto">
-        <h1 class="font-title text-6xl md:text-8xl font-bold mb-6 text-gray-900 dark:text-pure-white">
+        <h1 class="font-title text-6xl md:text-8xl mb-6 text-gray-900 dark:text-pure-white">
             Berita & Update
         </h1>
         <p class="font-sans text-xl md:text-2xl max-w-2xl mx-auto mb-8 text-gray-700 dark:text-gray-300">
@@ -78,7 +79,7 @@
 <!-- Berita Section -->
 <section id="berita" class="section-anchor py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
+        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
             Berita Terkini
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -116,7 +117,7 @@
 <!-- Pencapaian Kami Section -->
 <section id="pencapaian" class="section-anchor py-24 bg-gray-100 dark:bg-dark-gray text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
+        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
             Pencapaian Kami
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -162,7 +163,7 @@
 <!-- Event dan Webinar Section -->
 <section id="event" class="section-anchor py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl font-bold text-center mb-16 text-gray-800 dark:text-pure-white">
+        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
             Event dan Webinar
         </h2>
         <div class="max-w-4xl mx-auto space-y-8">

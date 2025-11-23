@@ -6,6 +6,8 @@ charset-normalizer==3.4.4
 click==8.1.8
 Flask==3.0.3
 Flask-Login==0.6.3
+Flask-Mail==0.9.1
+mysql-connector-python==9.0.0
 Flask-WTF==1.2.1
 flatbuffers==25.9.23
 gast==0.6.0
@@ -25,7 +27,7 @@ mdurl==0.1.2
 ml_dtypes==0.5.3
 mysql-connector-python==9.0.0
 namex==0.1.0
-numpy==2.0.2
+numpy==2.3.5
 opt_einsum==3.4.0
 optree==0.17.0
 packaging==25.0

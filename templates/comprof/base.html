@@ -5,40 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}EggVision - Platform Grading Telur Otomatis{% endblock %}</title>
 
-  <!-- Tailwind CDN -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logoegg.png') }}">
+
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Custom Colors & Fonts -->
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            'primary-black': '#000000',
+            'primary-black': '#1a1a1a',
             'pure-white': '#FFFFFF',
             'premium-gold': '#FFD700',
-            'dark-gray': '#1a1a1a',
+            'dark-gray': '#262626',
             'light-gray': '#f8f9fa'
           },
           fontFamily: {
             'canela': ['Canela Bold', 'serif'],
             'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          animation: {
+            'progress': 'progress 5s linear forwards',
+          },
+          keyframes: {
+            progress: {
+              '0%': { width: '100%' },
+              '100%': { width: '0%' },
+            }
           }
         }
       }
     }
   </script>
 
-  <!-- Custom Fonts CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
 
-  <!-- Plus Jakarta Sans Google Fonts CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
@@ -92,35 +98,110 @@
   
   {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-white dark:bg-primary-black theme-transition font-jakarta">
-  <!-- Navigation -->
+<body class="min-h-screen bg-white dark:bg-primary-black theme-transition font-jakarta selection:bg-premium-gold/50 selection:text-primary-black">
   {% include 'comprof/navbar.html' %}
 
-  <!-- Main Content -->
   <main class="theme-transition">
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Footer -->
   {% include 'comprof/footer.html' %}
 
-  <!-- Flash Messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-          <div class="fixed top-20 right-4 z-50 space-y-2">
+          <div class="fixed top-20 sm:top-28 right-4 sm:right-6 z-[1100] flex flex-col gap-4 w-full max-w-[90vw] sm:max-w-md pointer-events-none" id="flash-messages">
               {% for category, message in messages %}
-                  <div class="px-6 py-3 rounded-lg shadow-lg border-l-4 
-                              {% if category == 'error' %}bg-red-100 border-red-500 text-red-700 dark:bg-red-900 dark:border-red-400 dark:text-red-300
-                              {% elif category == 'success' %}bg-green-100 border-green-500 text-green-700 dark:bg-green-900 dark:border-green-400 dark:text-green-300
-                              {% else %}bg-blue-100 border-blue-500 text-blue-700 dark:bg-blue-900 dark:border-blue-400 dark:text-blue-300{% endif %}">
-                      {{ message }}
+                  {% set bg_color = 'bg-white/95 dark:bg-[#1a1a1a]/95' %}
+                  
+                  {% if category == 'success' %}
+                      {% set border_color = 'border-green-500' %}
+                      {% set icon_color = 'text-green-500' %}
+                      {% set progress_color = 'bg-green-500' %}
+                      {% set icon_path = 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' %}
+                  {% elif category == 'error' %}
+                      {% set border_color = 'border-red-500' %}
+                      {% set icon_color = 'text-red-500' %}
+                      {% set progress_color = 'bg-red-500' %}
+                      {% set icon_path = 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z' %}
+                  {% else %}
+                      {% set border_color = 'border-premium-gold' %}
+                      {% set icon_color = 'text-premium-gold' %}
+                      {% set progress_color = 'bg-premium-gold' %}
+                      {% set icon_path = 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' %}
+                  {% endif %}
+                  
+                  <div class="flash-message relative pointer-events-auto overflow-hidden rounded-xl shadow-2xl {{ bg_color }} backdrop-blur-md transform transition-all duration-500 ease-out translate-x-full opacity-0 border border-gray-100 dark:border-gray-800"
+                       data-index="{{ loop.index0 }}">
+                      
+                      <div class="flex items-start p-4 pr-10">
+                          <div class="flex-shrink-0">
+                              <svg class="h-6 w-6 {{ icon_color }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon_path }}" />
+                              </svg>
+                          </div>
+
+                          <div class="ml-3 w-0 flex-1 pt-0.5">
+                              <p class="text-sm font-semibold text-gray-900 dark:text-pure-white mb-1">
+                                  {% if category == 'success' %}Berhasil!
+                                  {% elif category == 'error' %}Terjadi Kesalahan
+                                  {% else %}Informasi{% endif %}
+                              </p>
+                              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                                  {{ message }}
+                              </p>
+                          </div>
+                      </div>
+
+                      <button onclick="closeFlashMessage(this.closest('.flash-message'))" 
+                              class="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                          <span class="sr-only">Close</span>
+                          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                          </svg>
+                      </button>
+
+                      <div class="h-1 w-full bg-gray-100 dark:bg-gray-800">
+                        <div class="h-full {{ progress_color }} animate-progress origin-left"></div>
+                      </div>
                   </div>
               {% endfor %}
           </div>
+
+          <script>
+              function closeFlashMessage(element) {
+                  // Slide out animation
+                  element.style.transform = 'translateX(120%)';
+                  element.style.opacity = '0';
+                  
+                  // Remove from DOM after animation
+                  setTimeout(() => {
+                      if (element && element.parentNode) {
+                        element.remove();
+                      }
+                  }, 500);
+              }
+
+              document.addEventListener('DOMContentLoaded', function() {
+                  const messages = document.querySelectorAll('.flash-message');
+                  
+                  messages.forEach((msg, index) => {
+                      // Staggered entrance animation
+                      setTimeout(() => {
+                          msg.classList.remove('translate-x-full', 'opacity-0');
+                      }, index * 150); 
+
+                      // Auto dismiss matches CSS animation time (5s)
+                      setTimeout(() => {
+                          if (document.body.contains(msg)) {
+                              closeFlashMessage(msg);
+                          }
+                      }, 5000 + (index * 150));
+                  });
+              });
+          </script>
       {% endif %}
   {% endwith %}
 
-  <!-- Chat Widget -->
   {% include 'comprof/components/chat_widget.html' %}
 
   <script>
