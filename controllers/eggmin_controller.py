@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -118,34 +119,60 @@ def eggmin_users():
                          active_menu='users',
                          now=datetime.now())
 
+def get_all_unique_tags():
+    conn = get_db_connection()
+    tags_set = set()
+    if conn:
+        try:
+            cur = conn.cursor()
+            # Ambil kolom tags
+            cur.execute("SELECT tags FROM news WHERE tags IS NOT NULL AND tags != ''")
+            rows = cur.fetchall()
+            for row in rows:
+                # row[0] format: "teknologi, ayam, pakan"
+                if row[0]:
+                    # Split string by comma, strip whitespace, add to set
+                    current_tags = [t.strip().lower() for t in row[0].split(',')]
+                    tags_set.update(current_tags)
+            cur.close()
+        finally:
+            conn.close()
+    # Return sorted list
+    return sorted(list(tags_set))
+
 @eggmin_controller.route('/news')
 @login_required
 def eggmin_news():
-    """News management page - Admin only"""
+    """News management page"""
     if current_user.role != 'admin':
         flash('Hanya Admin yang dapat mengakses halaman berita.', 'error')
         return redirect(url_for('comprof_controller.comprof_beranda'))
     
-    # Get all news from database
     conn = get_db_connection()
     news_list = []
+    existing_tags = []
     
     if conn:
         try:
             cur = conn.cursor(dictionary=True)
+            # Ambil semua berita
             cur.execute("SELECT * FROM news ORDER BY created_at DESC")
             news_list = cur.fetchall()
             cur.close()
+            
+            # Ambil daftar tag unik untuk filter
+            existing_tags = get_all_unique_tags()
+            
         except mysql.connector.Error as e:
             print(f"Error fetching news: {e}")
         finally:
-            if conn:
-                conn.close()
+            if conn: conn.close()
     
     return render_template('eggmin/news.html', 
-                         news_list=news_list,
-                         active_menu='news',
-                         now=datetime.now())
+                           news_list=news_list,
+                           existing_tags=existing_tags, 
+                           active_menu='news',
+                           now=datetime.now())
 
 @eggmin_controller.route('/chats')
 @login_required
@@ -557,61 +584,53 @@ def eggmin_api_users_delete(user_id):
 @eggmin_controller.route('/api/news/create', methods=['POST'])
 @login_required
 def eggmin_api_news_create():
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    if current_user.role != 'admin': return jsonify({'success': False}), 403
     
     try:
         title = request.form.get('title')
         content = request.form.get('content')
         image_url = request.form.get('image_url')
+        tags = request.form.get('tags') # String: "tag1,tag2,tag3"
         is_published = request.form.get('is_published') == 'on'
         
-        # Handle File Upload
+        # Upload Logic (Tetap Sama)
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename != '':
                 filename = secure_filename(file.filename)
-                # Generate timestamp to avoid dupes
                 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                 new_filename = f"{timestamp}_{filename}"
-                
-                # Ensure dir exists
                 save_path = os.path.join(current_app.root_path, 'static', 'uploads', 'news')
                 os.makedirs(save_path, exist_ok=True)
-                
                 file.save(os.path.join(save_path, new_filename))
                 image_url = url_for('static', filename=f'uploads/news/{new_filename}')
 
         if not title or not content:
-            return jsonify({'success': False, 'error': 'Title and content are required'}), 400
+            return jsonify({'success': False, 'error': 'Title & Content required'}), 400
         
         conn = get_db_connection()
-        # ... (sisa kode sama seperti sebelumnya: koneksi DB, insert ke DB, commit) ...
-        if not conn:
-            return jsonify({'success': False, 'error': 'Database connection failed'}), 500
+        if not conn: return jsonify({'success': False}), 500
         
         try:
             cur = conn.cursor()
             published_at = datetime.now() if is_published else None
             
+            # Insert langsung string tags ke database
             cur.execute(
-                "INSERT INTO news (title, content, image_url, is_published, published_at) VALUES (%s, %s, %s, %s, %s)",
-                (title, content, image_url, is_published, published_at)
+                "INSERT INTO news (title, content, image_url, tags, is_published, published_at) VALUES (%s, %s, %s, %s, %s, %s)",
+                (title, content, image_url, tags, is_published, published_at)
             )
             conn.commit()
             news_id = cur.lastrowid
             cur.close()
-            
-            return jsonify({'success': True, 'message': 'News created successfully', 'news_id': news_id})
-        except mysql.connector.Error as e:
-            print(f"Database error: {e}")
-            return jsonify({'success': False, 'error': 'Database error'}), 500
+            return jsonify({'success': True, 'message': 'News created', 'news_id': news_id})
+        except Exception as e:
+            print(e)
+            return jsonify({'success': False, 'error': str(e)}), 500
         finally:
             if conn: conn.close()
-                
     except Exception as e:
-        print(f"Error in news create: {e}")
-        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @eggmin_controller.route('/api/news/<int:news_id>', methods=['GET'])
 @login_required
@@ -650,76 +669,53 @@ def eggmin_api_news_get(news_id):
 @eggmin_controller.route('/api/news/update/<int:news_id>', methods=['POST'])
 @login_required
 def eggmin_api_news_update(news_id):
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    if current_user.role != 'admin': return jsonify({'success': False}), 403
     
     try:
         title = request.form.get('title')
         content = request.form.get('content')
-        image_url = request.form.get('image_url') # Gets the URL text input
+        image_url = request.form.get('image_url')
+        tags = request.form.get('tags') # String: "tag1,tag2,tag3"
         is_published = request.form.get('is_published') == 'on'
         
-        # Handle File Upload (Priority over URL input)
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename != '':
                 filename = secure_filename(file.filename)
                 timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
                 new_filename = f"{timestamp}_{filename}"
-                
                 save_path = os.path.join(current_app.root_path, 'static', 'uploads', 'news')
                 os.makedirs(save_path, exist_ok=True)
-                
                 file.save(os.path.join(save_path, new_filename))
                 image_url = url_for('static', filename=f'uploads/news/{new_filename}')
         
-        if not title or not content:
-            return jsonify({'success': False, 'error': 'Judul dan konten berita harus diisi'}), 400
-        
         conn = get_db_connection()
-        # ... (sisa kode update database sama seperti sebelumnya) ...
-        if not conn:
-            return jsonify({'success': False, 'error': 'Database connection failed'}), 500
-        
         try:
             cur = conn.cursor()
-            # Check existing...
-            cur.execute("SELECT * FROM news WHERE id = %s", (news_id,))
-            if not cur.fetchone():
-                return jsonify({'success': False, 'error': 'Berita tidak ditemukan'}), 404
-            
-            # Update Status Logic...
             cur.execute("SELECT is_published, published_at FROM news WHERE id = %s", (news_id,))
-            current_data = cur.fetchone()
-            current_status = current_data[0]
-            current_published_at = current_data[1]
+            row = cur.fetchone()
+            if not row: return jsonify({'success': False, 'error': 'Not Found'}), 404
             
-            published_at = current_published_at
-            if is_published and not current_status:
-                published_at = datetime.now()
-            elif not is_published:
-                published_at = None
+            curr_status, curr_pub_at = row
+            published_at = curr_pub_at
+            if is_published and not curr_status: published_at = datetime.now()
+            elif not is_published: published_at = None
             
-            # Update Query
+            # Update tags column directly
             cur.execute(
-                "UPDATE news SET title = %s, content = %s, image_url = %s, is_published = %s, published_at = %s WHERE id = %s",
-                (title, content, image_url, is_published, published_at, news_id)
+                "UPDATE news SET title=%s, content=%s, image_url=%s, tags=%s, is_published=%s, published_at=%s WHERE id=%s",
+                (title, content, image_url, tags, is_published, published_at, news_id)
             )
-                
             conn.commit()
             cur.close()
-            
-            return jsonify({'success': True, 'message': 'Berita berhasil diperbarui'})
-            
-        except mysql.connector.Error as e:
-            print(f"Database error: {e}")
-            return jsonify({'success': False, 'error': 'Database error'}), 500
+            return jsonify({'success': True, 'message': 'Updated'})
+        except Exception as e:
+            print(e)
+            return jsonify({'success': False, 'error': str(e)}), 500
         finally:
             if conn: conn.close()
-
     except Exception as e:
-        print(f"Error in news update: {e}")
-        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @eggmin_controller.route('/api/news/toggle-publish/<int:news_id>', methods=['POST'])
 @login_required
@@ -792,3 +788,74 @@ def eggmin_api_news_delete(news_id):
     finally:
         if conn:
             conn.close()
+
+@eggmin_controller.route('/api/tags/list', methods=['GET'])
+@login_required
+def eggmin_api_tags_list():
+    """API untuk mengambil semua tag unik untuk dropdown"""
+    tags = get_all_unique_tags() # Fungsi helper yang sudah ada di kode Anda
+    return jsonify({'success': True, 'tags': tags})
+
+@eggmin_controller.route('/api/tags/manage', methods=['POST'])
+@login_required
+def eggmin_api_tags_manage():
+    """
+    Fitur Canggih: Mengedit atau Menghapus tag secara global dari semua berita.
+    Action: 'rename' atau 'delete'
+    """
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    try:
+        data = request.get_json()
+        action = data.get('action')
+        old_tag = data.get('old_tag', '').strip().lower()
+        new_tag = data.get('new_tag', '').strip().lower()
+
+        if not old_tag:
+            return jsonify({'success': False, 'error': 'Tag lama diperlukan'}), 400
+
+        conn = get_db_connection()
+        if not conn: return jsonify({'success': False, 'error': 'DB Error'}), 500
+        
+        cur = conn.cursor(dictionary=True)
+        
+        # 1. Ambil semua berita yang mengandung tag tersebut
+        # Kita gunakan LIKE untuk mencari kandidat, lalu filter detail di Python
+        cur.execute("SELECT id, tags FROM news WHERE tags LIKE %s", (f"%{old_tag}%",))
+        rows = cur.fetchall()
+        
+        affected_count = 0
+        
+        for row in rows:
+            if not row['tags']: continue
+            
+            # Convert string "tech, food" -> list ["tech", "food"]
+            current_tags = [t.strip().lower() for t in row['tags'].split(',')]
+            
+            if old_tag in current_tags:
+                if action == 'delete':
+                    current_tags.remove(old_tag)
+                    affected_count += 1
+                elif action == 'rename':
+                    # Ganti old_tag dengan new_tag
+                    # Gunakan list comprehension untuk rename sambil menjaga urutan
+                    current_tags = [new_tag if t == old_tag else t for t in current_tags]
+                    # Hapus duplikat jika new_tag sudah ada sebelumnya di artikel itu
+                    current_tags = list(dict.fromkeys(current_tags)) 
+                    affected_count += 1
+                
+                # Simpan kembali ke database
+                new_tags_str = ",".join(current_tags)
+                cur.execute("UPDATE news SET tags = %s WHERE id = %s", (new_tags_str, row['id']))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        msg = f"Tag '{old_tag}' berhasil dihapus dari {affected_count} artikel." if action == 'delete' else f"Tag '{old_tag}' diubah menjadi '{new_tag}' pada {affected_count} artikel."
+        return jsonify({'success': True, 'message': msg})
+
+    except Exception as e:
+        print(e)
+        return jsonify({'success': False, 'error': str(e)}), 500

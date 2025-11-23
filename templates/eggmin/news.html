@@ -1,27 +1,46 @@
 {% extends "eggmin/base.html" %}
+
 {% block title %}Berita · EggMin{% endblock %}
 
 {% block header_title %}Manajemen Berita{% endblock %}
 {% block header_subtitle %}Kelola artikel, update publikasi, dan konten edukasi.{% endblock %}
 
 {% block content %}
-    <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-8">
         
-        <div class="flex items-center gap-3 w-full md:w-auto bg-white dark:bg-[#161616] p-1 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
-            <div class="relative flex-1 md:w-72">
+        <div class="flex flex-col md:flex-row items-start md:items-center gap-3 w-full xl:w-auto">
+            
+            <div class="relative w-full md:w-64">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="Cari judul berita..." 
-                       class="w-full pl-9 pr-4 py-2 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none placeholder-gray-500">
+                <input type="text" id="searchInput" placeholder="Cari judul..." 
+                       class="w-full pl-9 pr-4 py-2 bg-white dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
             </div>
-            <div class="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
-            <select id="statusFilter" class="bg-transparent text-sm text-gray-600 dark:text-gray-300 px-3 py-2 focus:outline-none cursor-pointer hover:text-primary transition-colors dark:[&>option]:bg-[#161616] dark:[&>option]:text-gray-300">
-                <option value="all">Semua Status</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-            </select>
+
+            <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                <select id="statusFilter" class="bg-white dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none cursor-pointer dark:text-white">
+                    <option value="all">Semua Status</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                </select>
+
+                <select id="dateFilter" class="bg-white dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none cursor-pointer dark:text-white">
+                    <option value="all">Semua Tanggal</option>
+                    <option value="today">Hari Ini</option>
+                    <option value="yesterday">Kemarin</option>
+                    <option value="week">7 Hari Terakhir</option>
+                    <option value="month">30 Hari Terakhir</option>
+                </select>
+
+                <select id="tagFilter" class="bg-white dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none cursor-pointer dark:text-white max-w-[150px]">
+                    <option value="all">Semua Tag</option>
+                    {% for tag in existing_tags %}
+                    <option value="{{ tag }}">{{ tag }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
 
-        <button onclick="openAddNewsModal()" class="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground font-bold rounded-xl shadow-lg shadow-yellow-500/20 transition-all duration-200 transform hover:scale-105">
+        <button onclick="openAddNewsModal()" class="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground font-bold rounded-xl shadow-lg shadow-yellow-500/20 transition-all duration-200 transform hover:scale-105">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span>Buat Berita</span>
         </button>
@@ -31,7 +50,9 @@
         {% for news in news_list %}
         <div class="news-item group flex flex-col bg-white dark:bg-[#161616] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300"
              data-title="{{ news.title|lower }}"
-             data-status="{{ 'published' if news.is_published else 'draft' }}">
+             data-status="{{ 'published' if news.is_published else 'draft' }}"
+             data-tags="{{ news.tags|default('')|lower }}"
+             data-date="{{ news.created_at }}">
             
             <div class="relative h-52 overflow-hidden bg-gray-100 dark:bg-gray-900">
                 {% if news.image_url %}
@@ -63,6 +84,19 @@
                 <h3 class="font-bold text-lg mb-2 text-gray-900 dark:text-white line-clamp-2 leading-snug group-hover:text-primary transition-colors">
                     {{ news.title }}
                 </h3>
+                
+                <div class="flex flex-wrap gap-1.5 mb-3">
+                    {% if news.tags %}
+                        {% for tag in news.tags.split(',') %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                            #{{ tag.strip() }}
+                        </span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-[10px] text-gray-400 italic">Tanpa tag</span>
+                    {% endif %}
+                </div>
+
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 line-clamp-3 flex-grow">
                     {{ news.content }}
                 </p>
@@ -79,22 +113,13 @@
                     </div>
                     
                     <div class="flex items-center gap-1">
-                        <button onclick="editNews('{{ news.id }}')" 
-                                class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" 
-                                title="Edit">
+                        <button onclick="editNews('{{ news.id }}')" class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Edit">
                             <i data-lucide="edit-3" class="w-4 h-4"></i>
                         </button>
-                        
-                        <button onclick="togglePublish('{{ news.id }}')" 
-                                class="p-2 rounded-lg transition-colors
-                                       {{ 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' if not news.is_published else 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' }}"
-                                title="{{ 'Publish' if not news.is_published else 'Unpublish' }}">
+                        <button onclick="togglePublish('{{ news.id }}')" class="p-2 rounded-lg transition-colors {{ 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' if not news.is_published else 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' }}" title="Toggle Publish">
                             <i data-lucide="{{ 'upload-cloud' if not news.is_published else 'eye-off' }}" class="w-4 h-4"></i>
                         </button>
-                        
-                        <button onclick="deleteNews('{{ news.id }}')" 
-                                class="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" 
-                                title="Hapus">
+                        <button onclick="deleteNews('{{ news.id }}')" class="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Hapus">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -109,16 +134,15 @@
             <i data-lucide="search-x" class="w-10 h-10 text-gray-400"></i>
         </div>
         <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Tidak ada berita ditemukan</h3>
-        <p class="text-gray-500 dark:text-gray-400">Coba ubah kata kunci atau filter pencarian Anda.</p>
+        <p class="text-gray-500 dark:text-gray-400">Coba ubah filter pencarian Anda.</p>
     </div>
 
     {% if not news_list %}
-    <div class="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+    <div id="initialEmptyState" class="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
         <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
             <i data-lucide="newspaper" class="w-10 h-10 text-primary"></i>
         </div>
         <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Belum ada berita</h3>
-        <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md">Berita yang Anda buat akan muncul di halaman Comprof.</p>
         <button onclick="openAddNewsModal()" class="px-6 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition-all flex items-center gap-2">
             <i data-lucide="plus-circle" class="w-5 h-5"></i>
             Buat Berita Pertama
@@ -126,142 +150,136 @@
     </div>
     {% endif %}
 
-    <div id="addNewsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden transition-opacity opacity-0">
-        <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform max-h-[90vh] overflow-y-auto">
+    <div id="addNewsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] hidden transition-opacity opacity-0">
+        <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform max-h-[90vh] overflow-y-auto relative">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <i data-lucide="file-plus" class="w-5 h-5 text-primary"></i> Buat Berita Baru
                 </h3>
-                <button onclick="closeAddNewsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <button onclick="closeAddNewsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             
             <form id="addNewsForm" class="space-y-5" enctype="multipart/form-data">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Judul Berita</label>
-                    <input type="text" name="title" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-600" placeholder="Judul menarik...">
+                    <input type="text" name="title" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all">
+                </div>
+
+                <div class="relative">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 flex justify-between">
+                        <span>Tags</span>
+                        <span class="text-[10px] normal-case text-primary cursor-pointer hover:underline" onclick="refreshGlobalTags()">Refresh List</span>
+                    </label>
+                    
+                    <div class="w-full px-2 py-2 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-wrap gap-2 items-center focus-within:ring-2 focus-within:ring-primary relative">
+                        <div id="add_tags_selected" class="flex flex-wrap gap-2"></div>
+                        <input type="text" id="add_tag_input" class="flex-1 bg-transparent text-sm text-gray-900 dark:text-white outline-none min-w-[120px] py-1" placeholder="Pilih atau buat tag baru..." autocomplete="off">
+                        <input type="hidden" name="tags" id="add_tags_hidden">
+                    </div>
+
+                    <div id="add_tag_dropdown" class="hidden absolute top-full left-0 w-full mt-1 bg-white dark:bg-[#262626] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
+                        </div>
+                    <p class="text-[10px] text-gray-400 mt-1">Tekan <b>Enter</b> untuk membuat tag baru. Klik ikon <i data-lucide="edit-2" class="w-3 h-3 inline"></i> untuk mengedit tag global.</p>
                 </div>
                 
                 <div>
                     <div class="flex items-center justify-between mb-2">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Gambar Berita</label>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Gambar</label>
                         <div class="flex bg-gray-100 dark:bg-black/30 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
                             <button type="button" onclick="toggleInputType('add', 'url')" id="btn_add_url" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-white bg-primary shadow-sm">Link URL</button>
                             <button type="button" onclick="toggleInputType('add', 'file')" id="btn_add_file" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Upload</button>
                         </div>
                     </div>
-                    
                     <div id="input_add_url">
-                        <input type="url" name="image_url" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-600" placeholder="https://example.com/image.jpg">
+                        <input type="text" name="image_url" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all" placeholder="https://... atau /static/...">
                     </div>
-
                     <div id="input_add_file" class="hidden">
-                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-50 dark:bg-black/30 hover:bg-gray-100 dark:hover:bg-black/50 transition-colors">
-                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-400"></i>
-                                <p class="text-xs text-gray-500 dark:text-gray-400"><span class="font-semibold">Klik untuk upload</span></p>
-                                <p class="text-[10px] text-gray-400">PNG, JPG, GIF (MAX. 2MB)</p>
-                            </div>
-                            <input type="file" name="image_file" class="hidden" accept="image/*" />
-                        </label>
+                        <input type="file" name="image_file" class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"/>
                     </div>
                 </div>
                 
                 <div>
                     <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Konten Berita</label>
-                    <textarea name="content" required rows="5" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-600 leading-relaxed resize-y" placeholder="Tulis isi berita di sini..."></textarea>
+                    <textarea name="content" required rows="6" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary resize-y"></textarea>
                 </div>
                 
                 <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-gray-700">
                     <input type="checkbox" name="is_published" id="is_published" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-800">
-                    <label for="is_published" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-                        Publikasikan Langsung (Tampil di halaman depan)
-                    </label>
+                    <label for="is_published" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">Publikasikan Langsung</label>
                 </div>
                 
-                <div class="flex gap-3 pt-4 mt-2">
-                    <button type="button" onclick="closeAddNewsModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition-all">
-                        Simpan Berita
-                    </button>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeAddNewsModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="editNewsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden transition-opacity opacity-0">
-        <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform max-h-[90vh] overflow-y-auto">
+    <div id="editNewsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] hidden transition-opacity opacity-0">
+        <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform max-h-[90vh] overflow-y-auto relative">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i data-lucide="edit-3" class="w-5 h-5 text-primary"></i> Edit Berita
-                </h3>
-                <button onclick="closeEditNewsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><i data-lucide="edit-3" class="w-5 h-5 text-primary"></i> Edit Berita</h3>
+                <button onclick="closeEditNewsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            
             <form id="editNewsForm" class="space-y-5" enctype="multipart/form-data">
                 <input type="hidden" name="news_id" id="edit_news_id">
-                
                 <div>
                     <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Judul Berita</label>
-                    <input type="text" name="title" id="edit_title" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                    <input type="text" name="title" id="edit_title" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
                 </div>
                 
+                <div class="relative">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Tags</label>
+                    <div class="w-full px-2 py-2 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-wrap gap-2 items-center focus-within:ring-2 focus-within:ring-primary relative">
+                        <div id="edit_tags_selected" class="flex flex-wrap gap-2"></div>
+                        <input type="text" id="edit_tag_input" class="flex-1 bg-transparent text-sm text-gray-900 dark:text-white outline-none min-w-[120px] py-1" placeholder="Tambah tag..." autocomplete="off">
+                        <input type="hidden" name="tags" id="edit_tags_hidden">
+                    </div>
+                    <div id="edit_tag_dropdown" class="hidden absolute top-full left-0 w-full mt-1 bg-white dark:bg-[#262626] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto"></div>
+                </div>
+
                 <div>
                     <div class="flex items-center justify-between mb-2">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Gambar Berita</label>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Gambar</label>
                         <div class="flex bg-gray-100 dark:bg-black/30 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
-                            <button type="button" onclick="toggleInputType('edit', 'url')" id="btn_edit_url" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-white bg-primary shadow-sm">Link URL</button>
-                            <button type="button" onclick="toggleInputType('edit', 'file')" id="btn_edit_file" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Upload</button>
+                            <button type="button" onclick="toggleInputType('edit', 'url')" id="btn_edit_url" class="px-3 py-1 text-xs font-bold rounded-md text-white bg-primary shadow-sm">Link URL</button>
+                            <button type="button" onclick="toggleInputType('edit', 'file')" id="btn_edit_file" class="px-3 py-1 text-xs font-bold rounded-md text-gray-500 dark:text-gray-400">Upload</button>
                         </div>
                     </div>
-                    
-                    <div id="input_edit_url">
-                        <input type="url" name="image_url" id="edit_image_url" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
-                    </div>
-
-                    <div id="input_edit_file" class="hidden">
-                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-50 dark:bg-black/30 hover:bg-gray-100 dark:hover:bg-black/50 transition-colors">
-                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-400"></i>
-                                <p class="text-xs text-gray-500 dark:text-gray-400"><span class="font-semibold">Ganti gambar (Upload)</span></p>
-                                <p class="text-[10px] text-gray-400">PNG, JPG, GIF (MAX. 2MB)</p>
-                            </div>
-                            <input type="file" name="image_file" class="hidden" accept="image/*" />
-                        </label>
-                    </div>
+                    <div id="input_edit_url"><input type="text" name="image_url" id="edit_image_url" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"></div>
+                    <div id="input_edit_file" class="hidden"><input type="file" name="image_file" class="w-full text-sm text-gray-500 dark:text-gray-400"/></div>
                 </div>
-                
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Konten Berita</label>
-                    <textarea name="content" id="edit_content" required rows="5" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all leading-relaxed resize-y"></textarea>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Konten</label>
+                    <textarea name="content" id="edit_content" required rows="6" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
                 </div>
-                
                 <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-gray-700">
                     <input type="checkbox" name="is_published" id="edit_is_published" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary bg-white dark:bg-gray-800">
-                    <label for="edit_is_published" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-                        Status Publikasi (Centang untuk publish)
-                    </label>
+                    <label for="edit_is_published" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">Status Publikasi</label>
                 </div>
-                
-                <div class="flex gap-3 pt-4 mt-2">
-                    <button type="button" onclick="closeEditNewsModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition-all">
-                        Perbarui Berita
-                    </button>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeEditNewsModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-primary hover:bg-yellow-500 text-primary-foreground rounded-xl font-bold shadow-lg shadow-yellow-500/20">Perbarui</button>
                 </div>
             </form>
         </div>
     </div>
-
-    <div id="togglePublishModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] hidden transition-opacity opacity-0">
-        <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-sm border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform text-center">
+    
+    <div id="renameTagModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[110] hidden">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-[#1e1e1e] rounded-xl p-5 w-80 border border-gray-200 dark:border-gray-700 shadow-2xl text-center">
+            <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Edit Tag Global</h4>
+            <input type="hidden" id="rename_old_tag">
+            <input type="text" id="rename_new_tag" class="w-full px-3 py-2 bg-gray-50 dark:bg-black/30 border rounded-lg mb-4 text-center dark:text-white" placeholder="Nama baru...">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('renameTagModal').classList.add('hidden')" class="flex-1 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-bold transition-colors">Batal</button>
+                <button onclick="submitRenameTag()" class="flex-1 py-2 bg-primary hover:bg-yellow-500 text-black rounded-lg text-sm font-bold transition-colors">Simpan</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="togglePublishModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] hidden transition-opacity opacity-0">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-[#1e1e1e] rounded-2xl p-6 w-full max-w-sm border border-gray-200 dark:border-gray-700 shadow-2xl transform scale-95 transition-transform text-center relative">
             <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
                 <i data-lucide="alert-circle" class="w-8 h-8"></i>
             </div>
@@ -281,248 +299,425 @@
 
 {% block scripts %}
 <script>
-// --- Toggle Input Function (URL vs File) ---
-function toggleInputType(mode, type) {
-    const btnUrl = document.getElementById(`btn_${mode}_url`);
-    const btnFile = document.getElementById(`btn_${mode}_file`);
-    const inputUrl = document.getElementById(`input_${mode}_url`);
-    const inputFile = document.getElementById(`input_${mode}_file`);
+    // --- 1. GLOBAL TAGS & CLASS TAG MANAGER ---
+    let globalTags = [];
     
-    if (type === 'url') {
-        btnUrl.classList.add('bg-primary', 'text-white', 'shadow-sm');
-        btnUrl.classList.remove('text-gray-500', 'hover:text-gray-900', 'dark:text-gray-400', 'dark:hover:text-white');
-        
-        btnFile.classList.remove('bg-primary', 'text-white', 'shadow-sm');
-        btnFile.classList.add('text-gray-500', 'hover:text-gray-900', 'dark:text-gray-400', 'dark:hover:text-white');
-        
-        inputUrl.classList.remove('hidden');
-        inputFile.classList.add('hidden');
-        
-        // Clear file input if switching to URL
-        inputFile.querySelector('input').value = '';
-    } else {
-        btnFile.classList.add('bg-primary', 'text-white', 'shadow-sm');
-        btnFile.classList.remove('text-gray-500', 'hover:text-gray-900', 'dark:text-gray-400', 'dark:hover:text-white');
-        
-        btnUrl.classList.remove('bg-primary', 'text-white', 'shadow-sm');
-        btnUrl.classList.add('text-gray-500', 'hover:text-gray-900', 'dark:text-gray-400', 'dark:hover:text-white');
-        
-        inputFile.classList.remove('hidden');
-        inputUrl.classList.add('hidden');
-        
-        // Clear URL input if switching to file
-        inputUrl.querySelector('input').value = '';
+    // Ambil tag terbaru dari server (untuk autocomplete)
+    function refreshGlobalTags() {
+        fetch('/eggmin/api/tags/list')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    globalTags = data.tags;
+                }
+            });
     }
-}
-
-// --- Animation Helper ---
-function showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.classList.remove('hidden');
-    void modal.offsetWidth; // Trigger reflow
-    modal.classList.remove('opacity-0');
-    modal.firstElementChild.classList.remove('scale-95');
-    modal.firstElementChild.classList.add('scale-100');
-}
-
-function hideModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.classList.add('opacity-0');
-    modal.firstElementChild.classList.remove('scale-100');
-    modal.firstElementChild.classList.add('scale-95');
-    setTimeout(() => {
-        modal.classList.add('hidden');
-    }, 200);
-}
-
-// --- State ---
-let currentNewsId = null;
-
-// --- Modal Functions ---
-function openAddNewsModal() { 
-    showModal('addNewsModal'); 
-    // Default to URL on open
-    toggleInputType('add', 'url');
-}
-function closeAddNewsModal() { 
-    hideModal('addNewsModal'); 
-    document.getElementById('addNewsForm').reset(); 
-}
-
-function openEditNewsModal() { showModal('editNewsModal'); }
-function closeEditNewsModal() { 
-    hideModal('editNewsModal'); 
-    document.getElementById('editNewsForm').reset(); 
-    currentNewsId = null; 
-}
-
-function openTogglePublishModal() { showModal('togglePublishModal'); }
-function closeTogglePublishModal() { 
-    hideModal('togglePublishModal'); 
-    currentNewsId = null; 
-}
-
-// --- CRUD Logic ---
-
-// Create
-document.getElementById('addNewsForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const formData = new FormData(this);
-  
-  fetch('/eggmin/api/news/create', { method: 'POST', body: formData })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert('Berita berhasil dibuat!');
-      closeAddNewsModal();
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(err => console.error(err));
-});
-
-// Edit
-function editNews(newsId) {
-  currentNewsId = newsId;
-  fetch(`/eggmin/api/news/${newsId}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        const news = data.news;
-        document.getElementById('edit_news_id').value = news.id;
-        document.getElementById('edit_title').value = news.title;
-        document.getElementById('edit_image_url').value = news.image_url || '';
-        document.getElementById('edit_content').value = news.content;
-        document.getElementById('edit_is_published').checked = news.is_published;
+    
+    document.addEventListener('DOMContentLoaded', refreshGlobalTags);
+    
+    class TagManager {
+        constructor(prefix) {
+            this.prefix = prefix;
+            this.container = document.getElementById(`${prefix}_tags_selected`);
+            this.input = document.getElementById(`${prefix}_tag_input`);
+            this.hiddenInput = document.getElementById(`${prefix}_tags_hidden`);
+            this.dropdown = document.getElementById(`${prefix}_tag_dropdown`);
+            this.tags = [];
+            this.init();
+        }
+    
+        init() {
+            // Typing Event
+            this.input.addEventListener('input', () => this.showDropdown());
+            this.input.addEventListener('focus', () => this.showDropdown());
+            
+            // Key Events
+            this.input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.addTag(this.input.value);
+                    this.input.value = '';
+                    this.showDropdown();
+                } else if (e.key === 'Backspace' && this.input.value === '' && this.tags.length > 0) {
+                    this.removeTag(this.tags.length - 1);
+                }
+            });
+    
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!this.input.contains(e.target) && !this.dropdown.contains(e.target)) {
+                    this.hideDropdown();
+                }
+            });
+        }
         
-        // Default view: If URL exists, show URL tab. If not (or if we support file fetch), prioritize URL for now.
-        toggleInputType('edit', 'url');
-        
-        openEditNewsModal();
-      } else {
-        alert('Error: ' + data.error);
-      }
-    })
-    .catch(err => console.error(err));
-}
-
-document.getElementById('editNewsForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  if (!currentNewsId) return;
-  
-  const formData = new FormData(this);
-  fetch(`/eggmin/api/news/update/${currentNewsId}`, { method: 'POST', body: formData })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert('Berita berhasil diperbarui!');
-      closeEditNewsModal();
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  })
-  .catch(err => console.error(err));
-});
-
-// Toggle Publish
-function togglePublish(newsId) {
-  currentNewsId = newsId;
-  fetch(`/eggmin/api/news/${newsId}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        const isPub = data.news.is_published;
-        document.getElementById('togglePublishTitle').textContent = isPub ? 'Unpublish Berita?' : 'Publish Berita?';
-        document.getElementById('togglePublishMessage').textContent = isPub 
-            ? 'Berita ini akan disembunyikan dari halaman publik.'
-            : 'Berita ini akan langsung tampil di halaman publik.';
-        openTogglePublishModal();
-      }
-    });
-}
-
-function confirmTogglePublish() {
-  if (!currentNewsId) return;
-  fetch(`/eggmin/api/news/toggle-publish/${currentNewsId}`, { method: 'POST' })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      closeTogglePublishModal();
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  });
-}
-
-// Delete
-function deleteNews(newsId) {
-  if (!confirm('Hapus berita ini secara permanen?')) return;
-  fetch(`/eggmin/api/news/delete/${newsId}`, { method: 'POST' })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert('Berita dihapus');
-      location.reload();
-    } else {
-      alert('Error: ' + data.error);
-    }
-  });
-}
-
-// --- Filter Logic ---
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const newsGrid = document.getElementById('newsGrid');
-    const emptyState = document.getElementById('emptyState');
-    const newsItems = document.querySelectorAll('.news-item');
-
-    function filterNews() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const statusValue = statusFilter.value;
-        let visibleCount = 0;
-
-        newsItems.forEach(item => {
-            const title = item.dataset.title;
-            const status = item.dataset.status;
-            const matchesSearch = title.includes(searchTerm);
-            const matchesStatus = statusValue === 'all' || status === statusValue;
-
-            if (matchesSearch && matchesStatus) {
-                item.style.display = '';
-                visibleCount++;
-            } else {
-                item.style.display = 'none';
+        showDropdown() {
+            const val = this.input.value.toLowerCase().trim();
+            this.dropdown.innerHTML = '';
+            this.dropdown.classList.remove('hidden');
+    
+            // Filter global tags yang belum dipilih
+            const currentTagsLower = this.tags.map(t => t.toLowerCase());
+            
+            // ✅ PERBAIKAN: Menambahkan kurung tutup )) yang hilang
+            const suggestions = globalTags.filter(t => t.toLowerCase().includes(val) && !currentTagsLower.includes(t.toLowerCase()));
+    
+            // Logic tampilan dropdown
+            if (suggestions.length === 0 && val !== '') {
+                const div = document.createElement('div');
+                div.className = 'px-4 py-2 text-sm text-gray-500 dark:text-gray-400 italic border-b border-gray-100 dark:border-gray-800';
+                div.textContent = `Tekan Enter untuk membuat "${this.input.value}"`;
+                this.dropdown.appendChild(div);
+            } else if (suggestions.length === 0) {
+                 const div = document.createElement('div');
+                 div.className = 'px-4 py-2 text-sm text-gray-500 text-center';
+                 div.textContent = 'Tidak ada saran tag';
+                 this.dropdown.appendChild(div);
             }
-        });
-
-        if (visibleCount === 0 && newsItems.length > 0) {
-            newsGrid.classList.add('hidden');
-            emptyState.classList.remove('hidden');
-            emptyState.style.display = 'flex';
-        } else {
-            newsGrid.classList.remove('hidden');
-            emptyState.classList.add('hidden');
-            emptyState.style.display = 'none';
+    
+            suggestions.forEach(tag => {
+                const item = document.createElement('div');
+                item.className = 'px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer flex justify-between items-center group';
+                
+                // Nama Tag
+                const span = document.createElement('span');
+                span.textContent = tag;
+                span.className = 'flex-1';
+                span.onclick = () => {
+                    this.addTag(tag);
+                    this.input.value = '';
+                    this.input.focus();
+                    this.showDropdown();
+                };
+    
+                // Action Buttons (Edit & Delete Global)
+                const actions = document.createElement('div');
+                actions.className = 'flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity';
+                
+                const btnEdit = document.createElement('button');
+                btnEdit.innerHTML = '<i data-lucide="edit-2" class="w-3 h-3 text-blue-500"></i>';
+                btnEdit.type = 'button';
+                btnEdit.onclick = (e) => { e.stopPropagation(); openRenameTagModal(tag); };
+                
+                const btnDel = document.createElement('button');
+                btnDel.innerHTML = '<i data-lucide="trash" class="w-3 h-3 text-red-500"></i>';
+                btnDel.type = 'button';
+                btnDel.onclick = (e) => { e.stopPropagation(); deleteTagGlobal(tag); };
+    
+                actions.appendChild(btnEdit);
+                actions.appendChild(btnDel);
+                item.appendChild(span);
+                item.appendChild(actions);
+                
+                this.dropdown.appendChild(item);
+            });
+            
+            if (window.lucide) lucide.createIcons();
+        }
+    
+        hideDropdown() {
+            setTimeout(() => this.dropdown.classList.add('hidden'), 200);
+        }
+    
+        addTag(text) {
+            const tag = text.trim();
+            if (tag && !this.tags.map(t => t.toLowerCase()).includes(tag.toLowerCase())) {
+                this.tags.push(tag);
+                this.render();
+            }
+        }
+    
+        removeTag(index) {
+            this.tags.splice(index, 1);
+            this.render();
+            if (document.activeElement === this.input) {
+            this.showDropdown();
+          }
+        }
+        
+        setTags(tagsString) {
+            this.tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : [];
+            this.render();
+        }
+        
+        clear() {
+            this.tags = [];
+            this.render();
+        }
+        
+        render() {
+            this.container.innerHTML = '';
+            this.tags.forEach((tag, index) => {
+                const tagEl = document.createElement('div');
+                tagEl.className = 'bg-primary text-black font-bold text-xs px-2 py-1 rounded-md flex items-center gap-1 shadow-sm';
+                tagEl.innerHTML = `<span>${tag}</span><button type="button" class="hover:text-white transition-colors"><i data-lucide="x" class="w-3 h-3"></i></button>`;
+                tagEl.querySelector('button').addEventListener('click', () => this.removeTag(index));
+                this.container.appendChild(tagEl);
+            });
+            // Update hidden input untuk dikirim ke server
+            this.hiddenInput.value = this.tags.join(',');
+            if (window.lucide) lucide.createIcons();
         }
     }
+    
+    // Init Managers
+    const addTagManager = new TagManager('add');
+    const editTagManager = new TagManager('edit');
+    
+    // --- 2. GLOBAL TAG MANAGEMENT (Delete & Rename) ---
+    function deleteTagGlobal(tag) {
+        if(!confirm(`HAPUS TAG GLOBAL?\n\nTag "${tag}" akan dihapus dari SEMUA berita yang menggunakannya.\nTindakan ini tidak bisa dibatalkan.`)) return;
+    
+        fetch('/eggmin/api/tags/manage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', old_tag: tag })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert(data.message);
+                refreshGlobalTags();
+                location.reload(); 
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+    
+    function openRenameTagModal(tag) {
+        document.getElementById('rename_old_tag').value = tag;
+        document.getElementById('rename_new_tag').value = tag;
+        document.getElementById('renameTagModal').classList.remove('hidden');
+    }
+    
+    function submitRenameTag() {
+        const oldTag = document.getElementById('rename_old_tag').value;
+        const newTag = document.getElementById('rename_new_tag').value;
+        
+        if(!newTag || newTag === oldTag) return;
+    
+        fetch('/eggmin/api/tags/manage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'rename', old_tag: oldTag, new_tag: newTag })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert(data.message);
+                document.getElementById('renameTagModal').classList.add('hidden');
+                refreshGlobalTags();
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+    
+    // --- 3. FILTER LOGIC (CLIENT SIDE) ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const dateFilter = document.getElementById('dateFilter');
+        const tagFilter = document.getElementById('tagFilter');
+        const newsGrid = document.getElementById('newsGrid');
+        const emptyState = document.getElementById('emptyState');
+        const newsItems = document.querySelectorAll('.news-item');
 
-    searchInput.addEventListener('input', filterNews);
-    statusFilter.addEventListener('change', filterNews);
-});
+        function filterNews() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value;
+            const dateValue = dateFilter.value;
+            const tagValue = tagFilter.value.toLowerCase();
+            let visibleCount = 0;
+            
+            const now = new Date();
+            const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+            const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+            const monthAgo = new Date(now); monthAgo.setDate(monthAgo.getDate() - 30);
 
-// Close on outside click
-document.getElementById('addNewsModal').addEventListener('click', function(e) { if (e.target === this) closeAddNewsModal(); });
-document.getElementById('editNewsModal').addEventListener('click', function(e) { if (e.target === this) closeEditNewsModal(); });
-document.getElementById('togglePublishModal').addEventListener('click', function(e) { if (e.target === this) closeTogglePublishModal(); });
+            newsItems.forEach(item => {
+                const title = item.dataset.title;
+                const status = item.dataset.status;
+                const tags = item.dataset.tags;
+                const dateStr = item.dataset.date; 
+                const itemDate = new Date(dateStr);
+
+                const matchesSearch = title.includes(searchTerm);
+                const matchesStatus = statusValue === 'all' || status === statusValue;
+                const matchesTag = tagValue === 'all' || tags.includes(tagValue);
+                
+                let matchesDate = true;
+                if (dateValue === 'today') matchesDate = itemDate.toDateString() === now.toDateString();
+                else if (dateValue === 'yesterday') matchesDate = itemDate.toDateString() === yesterday.toDateString();
+                else if (dateValue === 'week') matchesDate = itemDate >= weekAgo;
+                else if (dateValue === 'month') matchesDate = itemDate >= monthAgo;
+
+                if (matchesSearch && matchesStatus && matchesTag && matchesDate) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0 && newsItems.length > 0) {
+                newsGrid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.style.display = 'flex';
+            } else {
+                newsGrid.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                emptyState.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', filterNews);
+        statusFilter.addEventListener('change', filterNews);
+        dateFilter.addEventListener('change', filterNews);
+        tagFilter.addEventListener('change', filterNews);
+    });
+
+    // --- 4. MODAL HELPERS ---
+    function showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.remove('hidden');
+        void modal.offsetWidth; 
+        modal.classList.remove('opacity-0');
+        if(modal.firstElementChild) {
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+        }
+    }
+    
+    function hideModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.add('opacity-0');
+        if(modal.firstElementChild) {
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+        }
+        setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+    
+    function toggleInputType(mode, type) {
+        const btnUrl = document.getElementById(`btn_${mode}_url`);
+        const btnFile = document.getElementById(`btn_${mode}_file`);
+        const inputUrl = document.getElementById(`input_${mode}_url`);
+        const inputFile = document.getElementById(`input_${mode}_file`);
+        
+        if (type === 'url') {
+            btnUrl.classList.replace('text-gray-500', 'text-white'); btnUrl.classList.replace('bg-transparent', 'bg-primary');
+            btnFile.classList.replace('text-white', 'text-gray-500'); btnFile.classList.replace('bg-primary', 'bg-transparent');
+            inputUrl.classList.remove('hidden'); inputFile.classList.add('hidden');
+            if(inputFile.querySelector('input')) inputFile.querySelector('input').value = '';
+        } else {
+            btnFile.classList.replace('text-gray-500', 'text-white'); btnFile.classList.replace('bg-transparent', 'bg-primary');
+            btnUrl.classList.replace('text-white', 'text-gray-500'); btnUrl.classList.replace('bg-primary', 'bg-transparent');
+            inputFile.classList.remove('hidden'); inputUrl.classList.add('hidden');
+        }
+    }
+    
+    // --- 5. CRUD FUNCTIONS ---
+    function openAddNewsModal() { showModal('addNewsModal'); toggleInputType('add', 'url'); addTagManager.clear(); }
+    function closeAddNewsModal() { hideModal('addNewsModal'); document.getElementById('addNewsForm').reset(); }
+    
+    function openEditNewsModal() { showModal('editNewsModal'); }
+    function closeEditNewsModal() { hideModal('editNewsModal'); document.getElementById('editNewsForm').reset(); editTagManager.clear(); currentNewsId = null; }
+    
+    // Submit Add
+    document.getElementById('addNewsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch('/eggmin/api/news/create', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) { alert('Berita berhasil dibuat!'); closeAddNewsModal(); location.reload(); }
+                else alert('Error: ' + data.error);
+            });
+    });
+    
+    // Submit Edit
+    document.getElementById('editNewsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!currentNewsId) return;
+        const formData = new FormData(this);
+        fetch(`/eggmin/api/news/update/${currentNewsId}`, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) { alert('Berita berhasil diperbarui!'); closeEditNewsModal(); location.reload(); }
+                else alert('Error: ' + data.error);
+            });
+    });
+    
+    // Load Data for Edit
+    let currentNewsId = null;
+    function editNews(newsId) {
+        currentNewsId = newsId;
+        fetch(`/eggmin/api/news/${newsId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const news = data.news;
+                    document.getElementById('edit_news_id').value = news.id;
+                    document.getElementById('edit_title').value = news.title;
+                    document.getElementById('edit_image_url').value = news.image_url || '';
+                    document.getElementById('edit_content').value = news.content;
+                    document.getElementById('edit_is_published').checked = news.is_published;
+                    
+                    // Populate Tags
+                    editTagManager.setTags(news.tags || '');
+                    
+                    toggleInputType('edit', 'url');
+                    openEditNewsModal();
+                } else alert('Error: ' + data.error);
+            });
+    }
+    
+    // Toggle Publish
+    function openTogglePublishModal() { showModal('togglePublishModal'); }
+    function closeTogglePublishModal() { hideModal('togglePublishModal'); currentNewsId = null; }
+    
+    function togglePublish(newsId) {
+        currentNewsId = newsId;
+        fetch(`/eggmin/api/news/${newsId}`).then(res => res.json()).then(data => {
+            if (data.success) {
+                const isPub = data.news.is_published;
+                document.getElementById('togglePublishTitle').textContent = isPub ? 'Unpublish?' : 'Publish?';
+                document.getElementById('togglePublishMessage').textContent = isPub 
+                    ? 'Sembunyikan berita ini dari publik?' : 'Tampilkan berita ini ke publik?';
+                openTogglePublishModal();
+            }
+        });
+    }
+    
+    function confirmTogglePublish() {
+        if (!currentNewsId) return;
+        fetch(`/eggmin/api/news/toggle-publish/${currentNewsId}`, { method: 'POST' })
+        .then(res => res.json()).then(data => {
+            if (data.success) { closeTogglePublishModal(); location.reload(); }
+            else alert(data.error);
+        });
+    }
+    
+    function deleteNews(newsId) {
+        if (!confirm('Hapus berita ini secara permanen?')) return;
+        fetch(`/eggmin/api/news/delete/${newsId}`, { method: 'POST' })
+        .then(res => res.json()).then(data => {
+            if (data.success) { alert('Berita dihapus'); location.reload(); }
+            else alert(data.error);
+        });
+    }
+    
+    // Close Modals on Click Outside
+    document.getElementById('addNewsModal').addEventListener('click', function(e) { if(e.target === this) closeAddNewsModal(); });
+    document.getElementById('editNewsModal').addEventListener('click', function(e) { if(e.target === this) closeEditNewsModal(); });
+    document.getElementById('togglePublishModal').addEventListener('click', function(e) { if(e.target === this) closeTogglePublishModal(); });
 </script>
 
 <style>
-.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 </style>
 {% endblock %}
