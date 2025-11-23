@@ -203,24 +203,33 @@ def init_db():
         ''')
 
         # ==========================
-        # 7. CHAT_SESSIONS
+        # 7. CHAT_SESSIONS (UPDATED)
         # ==========================
+        # Ditambahkan: last_message, is_pinned, is_archived
         cur.execute('''
             CREATE TABLE IF NOT EXISTS chat_sessions (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NULL,
                 guest_email VARCHAR(100) NULL,
                 guest_name VARCHAR(100) NULL,
-                status ENUM('active', 'closed', 'pending') DEFAULT 'active',
+                
+                last_message TEXT,
                 last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                
+                status ENUM('active', 'closed', 'pending') DEFAULT 'active',
+                
+                is_pinned BOOLEAN DEFAULT FALSE,
+                is_archived BOOLEAN DEFAULT FALSE,
+                
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             )
         ''')
 
         # ==========================
-        # 8. CHAT_MESSAGES
+        # 8. CHAT_MESSAGES (UPDATED)
         # ==========================
+        # Pastikan ada kolom session_id
         cur.execute('''
             CREATE TABLE IF NOT EXISTS chat_messages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -238,12 +247,12 @@ def init_db():
                 status ENUM('unread', 'read', 'replied') DEFAULT 'unread',
                 parent_message_id INT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                
                 FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
                 FOREIGN KEY (parent_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL
             )
         ''')
-
 
         # ===========================================
         # 9. SEED DATA AWAL (admin, 1 pengusaha, 1 pembeli)
