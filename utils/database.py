@@ -81,7 +81,7 @@ def init_db():
             )
         ''')
         
-                # =====================================
+        # =====================================
         # 2b. EGG_LISTINGS (stok siap jual per grade per seller)
         # =====================================
         cur.execute('''
@@ -202,7 +202,7 @@ def init_db():
             )
         ''')
 
-               # ==========================
+        # ==========================
         # 8. CHAT_MESSAGES
         # ==========================
         cur.execute('''
@@ -240,10 +240,10 @@ def init_db():
             eggmin_pwd = generate_password_hash('eggmin123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('Admin EggMin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
+                ('Sandbox EggMin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
             )
 
-            # Pengusaha (punya farm)
+            # Pengusaha
             pengusaha_pwd = generate_password_hash('pengusaha123', method='pbkdf2:sha256')
             cur.execute(
                 '''
@@ -253,14 +253,14 @@ def init_db():
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ''',
                 (
-                    'Peternakan Sejahtera',
+                    'Sandbox EggMonitor',
                     'pengusaha@eggvision.com',
                     pengusaha_pwd,
                     'pengusaha',
-                    'Peternakan Sejahtera',
-                    'PS',
+                    'Sandbox EggMonitor',
+                    'SE',
                     'Bogor, Jawa Barat',
-                    'Telur ayam kampung & layer berkualitas.'
+                    'Telur ayam konsumsi berkualitas.'
                 )
             )
 
@@ -268,7 +268,7 @@ def init_db():
             pembeli_pwd = generate_password_hash('pembeli123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('Pembeli Contoh', 'pembeli@eggvision.com', pembeli_pwd, 'pembeli')
+                ('Sandbox EggMart', 'pembeli@eggvision.com', pembeli_pwd, 'pembeli')
             )
 
         conn.commit()

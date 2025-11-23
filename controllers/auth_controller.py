@@ -9,8 +9,16 @@ auth_controller = Blueprint('auth_controller', __name__)
 
 @auth_controller.route('/login', methods=['GET', 'POST'])
 def auth_login():
+    # Redirect if already logged in
     if current_user.is_authenticated:
-        return redirect(url_for('eggmonitor_controller.eggmonitor'))
+        if current_user.role == 'admin':
+            return redirect(url_for('eggmin_controller.eggmin'))
+        elif current_user.role == 'pengusaha':
+            return redirect(url_for('eggmonitor_controller.eggmonitor'))
+        elif current_user.role == 'pembeli':
+            return redirect(url_for('eggmart_controller.eggmart'))
+        else:
+            return redirect(url_for('comprof_controller.comprof_beranda'))
     
     if request.method == 'POST':
         email = request.form.get('email')
@@ -22,12 +30,12 @@ def auth_login():
         if user and check_password_hash(user.password, password):
             login_user(user, remember=remember)
             next_page = request.args.get('next')
-            if current_user.role=='pengusaha':
+            if current_user=='pengusaha':
                 return redirect(next_page or url_for('eggmonitor_controller.eggmonitor'))
-            elif current_user.role=='pembeli':
+            elif current_user=='pembeli':
                 return redirect(next_page or url_for('eggmart_controller.eggmart'))
             else:
-                return redirect(next_page or url_for('eggmonitor_controller.eggmonitor'))
+                return redirect(next_page or url_for('eggmin_controller.eggmin'))
         else:
             flash('Email atau password salah!', 'error')
     
@@ -70,7 +78,8 @@ def auth_register():
             if new_user:
                 login_user(new_user)
                 flash('Registrasi berhasil! Selamat datang di EggVision.', 'success')
-                return redirect(url_for('eggmonitor_controller.eggmonitor'))
+                # Redirect new users (pembeli) to EggMart, not EggMonitor
+                return redirect(url_for('eggmart_controller.eggmart'))
             else:
                 flash('Error creating user account.', 'error')
                 
@@ -99,6 +108,7 @@ def dashboard():
     elif current_user.role == 'pengusaha':
         return redirect(url_for('eggmonitor_controller.eggmonitor'))
     elif current_user.role == 'pembeli':
-        return redirect(url_for('eggmort_controller.eggmart'))
+        # FIX: Fixed typo 'eggmort' to 'eggmart'
+        return redirect(url_for('eggmart_controller.eggmart'))
     else:
         return redirect(url_for('comprof_controller.comprof_beranda'))

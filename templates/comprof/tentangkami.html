@@ -1,6 +1,7 @@
 {% extends "comprof/base.html" %}
+{% from 'comprof/components/buttons.html' import egg_cta %}
 
-{% block title %}EggVision · Tentang Kami{% endblock %}
+{% block title %}Tentang Kami · EggVision{% endblock %}
 
 {% block head %}
 <style>
@@ -229,7 +230,7 @@
             <!-- Team Member 4 -->
             <div class="team-card bg-gray-50 dark:bg-dark-gray rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
                 <div class="h-64 overflow-hidden">
-                    <img src="{{ url_for('static', filename='img/dzaky.jpg') }}" 
+                    <img src="{{ url_for('static', filename='img/dzaky.png') }}" 
                          alt="COO" 
                          class="w-full h-full object-cover"
                          onerror="this.src='https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=1000&q=80'">
