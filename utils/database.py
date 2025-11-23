@@ -264,7 +264,7 @@ def init_db():
                 )
             )
 
-            # Pembeli contoh
+            # Pembeli
             pembeli_pwd = generate_password_hash('pembeli123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
