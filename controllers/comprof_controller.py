@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, session
 from flask_login import current_user
 import datetime
+from datetime import timedelta
 from utils.database import get_db_connection
 import mysql.connector
 
@@ -19,34 +20,86 @@ def comprof_beranda():
             cur.execute("SELECT * FROM news WHERE is_published = TRUE ORDER BY published_at DESC LIMIT 10")
             news_list = cur.fetchall()
             cur.close()
-        except mysql.connector.Error as e:
-            print(f"Error fetching news: {e}")
         finally:
-            if conn:
-                conn.close()
-    
+            conn.close()
     return render_template('comprof/beranda.html', news_list=news_list)
 
 @comprof_controller.route('/berita')
 def comprof_berita():
-    """News page - accessible by everyone"""
-    # Get published news from database
+    """News page with Search, Tag Filter, and Date Sort"""
     conn = get_db_connection()
     news_list = []
+    unique_tags = set()
     
+    # Get Filter Parameters
+    search_query = request.args.get('q', '').strip()
+    tag_filter = request.args.get('tag', '').strip()
+    time_filter = request.args.get('time', 'all') # recent, yesterday, week, month
+
     if conn:
         try:
             cur = conn.cursor(dictionary=True)
-            cur.execute("SELECT * FROM news WHERE is_published = TRUE ORDER BY published_at DESC LIMIT 10")
+            
+            # 1. Base Query
+            sql = "SELECT * FROM news WHERE is_published = TRUE"
+            params = []
+
+            # 2. Apply Search
+            if search_query:
+                sql += " AND (title LIKE %s OR content LIKE %s)"
+                params.extend([f"%{search_query}%", f"%{search_query}%"])
+
+            # 3. Apply Tag Filter
+            if tag_filter:
+                # Simple LIKE check for comma separated tags
+                sql += " AND tags LIKE %s"
+                params.append(f"%{tag_filter}%")
+
+            # 4. Apply Time Filter
+            now = datetime.datetime.now()
+            if time_filter == 'yesterday':
+                yesterday = now - timedelta(days=1)
+                sql += " AND published_at >= %s"
+                params.append(yesterday.strftime('%Y-%m-%d 00:00:00'))
+            elif time_filter == 'week':
+                week_ago = now - timedelta(days=7)
+                sql += " AND published_at >= %s"
+                params.append(week_ago.strftime('%Y-%m-%d 00:00:00'))
+            elif time_filter == 'month':
+                month_ago = now - timedelta(days=30)
+                sql += " AND published_at >= %s"
+                params.append(month_ago.strftime('%Y-%m-%d 00:00:00'))
+
+            # 5. Order By
+            sql += " ORDER BY published_at DESC"
+
+            cur.execute(sql, tuple(params))
             news_list = cur.fetchall()
+
+            # 6. Fetch All Tags for the Navbar
+            # We fetch all published news to collect unique tags
+            cur.execute("SELECT tags FROM news WHERE is_published = TRUE")
+            all_tags_rows = cur.fetchall()
+            for row in all_tags_rows:
+                if row['tags']:
+                    # Split comma separated string and clean whitespace
+                    tags = [t.strip() for t in row['tags'].split(',')]
+                    unique_tags.update(tags)
+            
             cur.close()
         except mysql.connector.Error as e:
             print(f"Error fetching news: {e}")
         finally:
-            if conn:
-                conn.close()
+            conn.close()
     
-    return render_template('comprof/berita.html', news_list=news_list)
+    return render_template('comprof/berita.html', 
+                           news_list=news_list, 
+                           tags=sorted(list(unique_tags)),
+                           active_filters={
+                               'q': search_query,
+                               'tag': tag_filter,
+                               'time': time_filter
+                           })
 
 @comprof_controller.route('/layanan')
 def comprof_layanan():

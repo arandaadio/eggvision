@@ -89,15 +89,15 @@
                 </div>
                 {% endif %}
 
-                <button @click="open = !open" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-premium-gold hover:text-pure-white focus:outline-none">
+                <button @click="open = !open" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-premium-gold font-sans font-bold hover:text-pure-white focus:outline-none">
                     <span class="sr-only">Buka menu</span>
                     <span x-show="!open" class="text-sm sm:text-lg">Menu</span>
-                    <span x-show="open" class="text-sm sm:text-lg">Close</span>
-                    <svg x-show="!open" class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <span x-show="open" class="text-sm sm:text-lg">Menu</span>
+                    <svg x-show="!open" class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
-                    <svg x-show="open" class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    <svg x-show="open" class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
                 </button>
             </div>
@@ -117,16 +117,16 @@
         @click.away="open = false" 
     >
         <div class="container mx-auto h-full flex flex-col max-w-7xl px-2 sm:px-4 lg:px-8">
-            <div class="flex items-center justify-between h-16 sm:h-20 lg:h-24 -mt-2 sm:-mt-3 lg:-mt-4">
+            <div class="flex items-center justify-between h-16 sm:h-20 lg:h-24">
                 <div class="flex-shrink-0">
                     <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="text-xl font-bold text-premium-gold logo-text">
                         <img src="{{ url_for('static', filename='/img/logo.png') }}" alt="EggVision" class="h-10 sm:h-12 lg:h-16 w-auto" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <span style="display: none;">🥚 EggVision</span>
                     </a>
                 </div>
-                <button @click="open = false" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-premium-gold hover:text-pure-white focus:outline-none">
+                <button @click="open = false" type="button" class="inline-flex items-center justify-center p-2 rounded-md font-sans font-bold text-premium-gold hover:text-pure-white focus:outline-none">
                     <span class="text-sm sm:text-lg">Close</span>
-                    <svg class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <svg class="ml-1 sm:ml-2 h-4 w-4 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>

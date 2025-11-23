@@ -5,11 +5,11 @@
 {% block header_subtitle %}Kelola percakapan dan bantuan langsung dengan pengguna.{% endblock %}
 
 {% block content %}
-    <div class="flex flex-col lg:flex-row h-[calc(100vh-13rem)] bg-white dark:bg-[#161616] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+    <div class="flex flex-col lg:flex-row h-[calc(100vh-13rem)] bg-white dark:bg-[#161616] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden relative">
         
-        <div class="w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 flex flex-col bg-gray-50/50 dark:bg-[#1a1a1a]">
+        <div id="chat-sidebar" class="w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 flex flex-col bg-gray-50/50 dark:bg-[#1a1a1a] h-full transition-all duration-300">
             
-            <div class="p-3 border-b border-gray-200 dark:border-gray-800 space-y-3">
+            <div class="p-3 border-b border-gray-200 dark:border-gray-800 space-y-3 flex-shrink-0">
                 <div class="relative">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                     <input type="text" id="searchInput" placeholder="Cari nama/email..." 
@@ -58,26 +58,21 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-baseline mb-1">
                                     <h4 class="font-bold text-sm truncate text-gray-900 dark:text-white">{{ chat.name }}</h4>
-                                    </div>
-                                
+                                </div>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors line-clamp-1 pr-6">
                                     {{ chat.last_message }}
                                 </p>
-                                
                                 <div class="flex items-center gap-2 mt-2">
                                     <span class="text-[10px] font-mono text-gray-500 dark:text-gray-400">
                                         {{ chat.last_message_time.strftime('%H:%M') }}
                                     </span>
-                            
                                     <span class="text-[10px] text-gray-300 dark:text-gray-600">•</span>
-                            
                                     <span class="text-[10px] px-2 py-0.5 rounded-md border capitalize font-medium
                                         {{ 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900' if chat.role == 'pembeli' else 
                                            'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900' if chat.role == 'pengusaha' else 
                                            'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700' }}">
                                         {{ chat.role }}
                                     </span>
-                                    
                                     {% if chat.unread_count > 0 %}
                                     <span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 min-w-[1.25rem] h-5 rounded-full flex items-center justify-center shadow-sm">
                                         {{ chat.unread_count }}
@@ -85,8 +80,8 @@
                                     {% endif %}
                                 </div>
                             </div>
-
-                            <div class="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity z-20" onclick="event.stopPropagation()">
+                            
+                            <div class="absolute right-2 top-3 lg:opacity-0 group-hover:opacity-100 transition-opacity z-20" onclick="event.stopPropagation()">
                                 <div class="relative" x-data="{ open: false }">
                                     <button @click="open = !open" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500">
                                         <i data-lucide="more-vertical" class="w-4 h-4"></i>
@@ -121,7 +116,7 @@
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col bg-white dark:bg-[#161616] relative">
+        <div id="main-chat-area" class="flex-1 flex-col bg-white dark:bg-[#161616] relative h-full hidden lg:flex">
             
             <div id="chat-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10 bg-white dark:bg-[#161616]">
                 <div class="w-24 h-24 bg-gray-50 dark:bg-[#1a1a1a] rounded-full flex items-center justify-center mb-6 animate-pulse border border-gray-100 dark:border-gray-800">
@@ -129,34 +124,39 @@
                 </div>
                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white font-canela">EggVision Chat Admin</h3>
                 <p class="text-gray-500 dark:text-gray-400 mt-2 max-w-md">
-                    Pilih percakapan dari daftar di sebelah kiri untuk melihat detail.
+                    Pilih percakapan dari daftar untuk melihat detail.
                 </p>
             </div>
 
             <div id="active-chat-container" class="flex-1 flex flex-col h-full hidden opacity-0 transition-opacity duration-300">
-                <div class="h-16 px-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white/80 dark:bg-[#161616]/80 backdrop-blur-sm sticky top-0 z-20">
-                    <div class="flex items-center gap-3">
-                        <img id="header-avatar" src="" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 object-cover border border-gray-200 dark:border-gray-700">
-                        <div>
-                            <h3 id="header-name" class="font-bold text-gray-900 dark:text-white leading-tight">User Name</h3>
-                            <p id="header-email" class="text-xs text-gray-500 dark:text-gray-400 font-mono">user@email.com</p>
-                        </div>
+                
+                <div class="h-16 px-4 lg:px-6 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 bg-white/80 dark:bg-[#161616]/80 backdrop-blur-sm sticky top-0 z-20">
+                    <button onclick="closeChat()" class="lg:hidden p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300">
+                        <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                    </button>
+
+                    <img id="header-avatar" src="" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 object-cover border border-gray-200 dark:border-gray-700">
+                    
+                    <div class="flex-1 min-w-0">
+                        <h3 id="header-name" class="font-bold text-gray-900 dark:text-white leading-tight truncate">User Name</h3>
+                        <p id="header-email" class="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">user@email.com</p>
                     </div>
-                    <div class="flex items-center gap-2">
+
+                    <div class="flex items-center gap-1">
                         <button onclick="chatAction('archive', currentConversationId)" class="p-2 hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors" title="Arsipkan">
                             <i data-lucide="archive" class="w-5 h-5"></i>
                         </button>
                     </div>
                 </div>
 
-                <div id="messages-area" class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/30 dark:bg-black/20"></div>
+                <div id="messages-area" class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 bg-gray-50/30 dark:bg-black/20 scroll-smooth"></div>
 
                 <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#161616]">
                     <form id="reply-form" onsubmit="submitReply(event)" class="flex items-end gap-2 max-w-4xl mx-auto">
                         <div class="flex-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-2xl border border-transparent focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 transition-all">
                             <textarea id="reply-input" rows="1" 
                                       class="w-full bg-transparent px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none resize-none max-h-32 placeholder-gray-500"
-                                      placeholder="Tulis balasan... (Shift+Enter untuk baris baru)"
+                                      placeholder="Tulis balasan..."
                                       oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
                         </div>
                         <button type="submit" class="bg-primary hover:bg-yellow-500 text-black p-3 rounded-full shadow-lg shadow-yellow-500/20 transition-transform hover:scale-105 active:scale-95 flex-shrink-0">
@@ -175,13 +175,38 @@
   let lastMessageId = null;
   let adminPollingInterval = null;
 
-  // --- FILTERING LOGIC ---
+  // --- MOBILE VIEW LOGIC ---
+  function showChatMobile() {
+      // Hide sidebar list, show main chat
+      document.getElementById('chat-sidebar').classList.add('hidden', 'lg:flex');
+      document.getElementById('main-chat-area').classList.remove('hidden');
+      document.getElementById('main-chat-area').classList.add('flex');
+  }
+
+  function closeChat() {
+      // Show sidebar list, hide main chat
+      document.getElementById('chat-sidebar').classList.remove('hidden', 'lg:flex');
+      document.getElementById('main-chat-area').classList.add('hidden');
+      document.getElementById('main-chat-area').classList.remove('flex');
+      
+      // Reset state
+      currentConversationId = null;
+      if (adminPollingInterval) clearInterval(adminPollingInterval);
+      
+      // Reset highlighting in desktop view
+      document.querySelectorAll('.conversation-item').forEach(el => {
+          el.classList.remove('bg-white', 'dark:bg-[#1a1a1a]', 'shadow-sm');
+          el.classList.add('hover:bg-white');
+          const indicator = el.querySelector('.active-indicator');
+          if(indicator) indicator.classList.add('hidden');
+      });
+  }
+
+  // --- FILTERING & ACTIONS (Same as before) ---
   function applyFilters() {
       const role = document.getElementById('roleFilter').value;
       const status = document.getElementById('statusFilter').value;
       const query = document.getElementById('searchInput').value;
-      
-      // Reload page with query params
       const url = new URL(window.location.href);
       url.searchParams.set('role', role);
       url.searchParams.set('status', status);
@@ -189,41 +214,39 @@
       window.location.href = url.toString();
   }
 
-  function handleSearch(e) {
-      if (e.key === 'Enter') applyFilters();
-  }
+  function handleSearch(e) { if (e.key === 'Enter') applyFilters(); }
 
-  // --- ACTION LOGIC (Pin, Archive, Delete) ---
   function chatAction(action, id) {
       if (action === 'delete' && !confirm("Hapus percakapan ini secara permanen?")) return;
-      
       fetch(`/eggmin/api/chats/action/${action}/${id}`, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
-            if(data.success) {
-                // Refresh page to show new order/status
-                window.location.reload();
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(err => console.error(err));
+            if(data.success) window.location.reload();
+            else alert('Error: ' + data.error);
+        });
   }
 
-  // --- EXISTING CHAT LOGIC (Load, Fetch, Reply) ---
+  // --- LOAD CHAT ---
   function loadChat(convId, name, email, role) {
       currentConversationId = convId;
+
+      // Handle UI transitions
+      if (window.innerWidth < 1024) {
+          showChatMobile(); // Mobile specific transition
+      }
       
+      // General UI cleanup
       document.getElementById('chat-placeholder').classList.add('hidden');
       const chatContainer = document.getElementById('active-chat-container');
       chatContainer.classList.remove('hidden');
       setTimeout(() => chatContainer.classList.remove('opacity-0'), 50);
 
+      // Set Header Info
       document.getElementById('header-name').textContent = name;
       document.getElementById('header-email').textContent = email;
       document.getElementById('header-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.toLowerCase().replace(' ', '')}`;
 
-      // Highlight Active
+      // Highlight Active Item (Desktop Visuals)
       document.querySelectorAll('.conversation-item').forEach(el => {
           const indicator = el.querySelector('.active-indicator');
           if(el.dataset.id === convId) {
@@ -237,11 +260,13 @@
           }
       });
 
+      // Polling Logic
       if (adminPollingInterval) clearInterval(adminPollingInterval);
       fetchMessages(convId, true);
       adminPollingInterval = setInterval(() => fetchMessages(convId, false), 3000);
   }
 
+  // --- FETCH & RENDER MESSAGES ---
   function fetchMessages(convId, showLoading=true) {
       const messagesArea = document.getElementById('messages-area');
       if(showLoading) messagesArea.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>';
@@ -259,7 +284,6 @@
   function renderMessages(messages, isFirstLoad) {
       const container = document.getElementById('messages-area');
       const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-      
       container.innerHTML = ''; 
       let lastDate = null;
 
@@ -280,7 +304,7 @@
 
           const html = `
               <div class="flex ${alignment} mb-4 group animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div class="max-w-[75%]">
+                  <div class="max-w-[85%] lg:max-w-[75%]">
                       <div class="${bubbleColor} px-5 py-3 rounded-2xl relative">
                           <p class="text-sm leading-relaxed whitespace-pre-wrap">${msg.message}</p>
                           <div class="flex items-center justify-end gap-1.5 mt-1.5">

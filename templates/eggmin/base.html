@@ -25,16 +25,11 @@
         extend: {
           fontFamily: {
             'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
-            'canela': ['Canela Bold', 'serif'], /* Added Canela */
+            'canela': ['Canela Bold', 'serif'],
           },
           colors: {
-            // --- CONTRAST FIX ---
-            // Use darker gold for Light Mode text so it's readable on white
-            primary: '#B48E00', 
-            
-            // Use bright gold for Dark Mode text/accents
-            'primary-bright': '#FFD700',
-            
+            primary: '#bead66', 
+            'primary-bright': '#bead66', 
             'primary-foreground': '#000000',
             
             // Light Mode Defaults
@@ -46,7 +41,7 @@
             
             sidebar: '#ffffff',
             'sidebar-foreground': '#64748b',
-            'sidebar-accent': '#F0F0F0', // Lighter grey for hover in light mode
+            'sidebar-accent': '#bead66',
             'sidebar-border': '#e2e8f0',
             
             // Dark Mode Specifics
@@ -173,7 +168,7 @@
 
       <div class="flex items-center gap-4 md:gap-6 self-end md:self-auto">
         
-        <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none">
+        <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-primary hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none">
             <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
             <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
         </button>

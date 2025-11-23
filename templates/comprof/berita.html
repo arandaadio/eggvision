@@ -1,7 +1,6 @@
 {% extends "comprof/base.html" %}
-{% from 'comprof/components/buttons.html' import egg_cta %}
 
-{% block title %}Berita · EggVision{% endblock %}
+{% block title %}Berita & Wawasan · EggVision{% endblock %}
 
 {% block head %}
 <style>
@@ -25,7 +24,7 @@
 
     /* Dark Mode Overlay */
     .dark .hero-overlay {
-        background: linear-gradient(to bottom, rgba(26, 26, 26, 0.65) 40%, rgba(26, 26, 26, 1) 100%);
+        background: linear-gradient(to bottom, rgba(26, 26, 26, 0.65) 40%, rgba(26, 26, 26, 0.75) 60%, rgba(26, 26, 26, 1) 90%);
     }
     
     .hero-section {
@@ -58,165 +57,269 @@
         transform: translateY(-5px);
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     }
+
+    /* Newspaper Text Styling for Modal */
+    .newspaper-content {
+        font-family: 'Georgia', 'Times New Roman', serif;
+        line-height: 1.8;
+        font-size: 1.125rem;
+        text-align: justify;
+    }
+    
+    .newspaper-content p {
+        margin-bottom: 1.5rem;
+    }
+
+    .drop-cap::first-letter {
+        font-size: 3.5rem;
+        float: left;
+        line-height: 0.8;
+        margin-right: 0.5rem;
+        font-weight: bold;
+        color: #FFD700; /* Premium Gold */
+    }
+
+    /* Hide scrollbar for horizontal nav */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero-section relative flex items-center justify-center text-center text-pure-white overflow-hidden hero-bg">
-    <div class="hero-overlay absolute inset-0 z-0"></div>
+<div x-data="{ 
+    readModalOpen: false, 
+    activeNews: { title: '', date: '', content: '', image: '', tags: '' },
+    toggleUI(isOpen) {
+        this.readModalOpen = isOpen;
+        const nav = document.getElementById('mainNav');
+        const chat = document.getElementById('chat-widget-container');
+        if(isOpen) {
+            if(nav) nav.style.display = 'none';
+            if(chat) chat.style.display = 'none';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        } else {
+            if(nav) nav.style.display = '';
+            if(chat) chat.style.display = '';
+            document.body.style.overflow = '';
+        }
+    }
+}">
 
-    <div class="relative z-10 p-6 max-w-6xl mx-auto">
-        <h1 class="font-title text-6xl md:text-8xl mb-6 text-gray-900 dark:text-pure-white">
-            Berita & Update
-        </h1>
-        <p class="font-sans text-xl md:text-2xl max-w-2xl mx-auto mb-8 text-gray-700 dark:text-gray-300">
-            Tetap terinformasi dengan perkembangan terbaru, pencapaian, dan acara dari EggVision.
-        </p>
-    </div>
-</section>
+    <section class="hero-section relative flex items-center justify-center text-center text-pure-white overflow-hidden hero-bg">
+        <div class="hero-overlay absolute inset-0 z-0"></div>
 
-<!-- Berita Section -->
-<section id="berita" class="section-anchor py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
-    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
-            Berita Terkini
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {% for news_item in news_list %}
-            <div class="news-card bg-gray-50 dark:bg-dark-gray rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
-                <div class="h-48 overflow-hidden">
-                    {% if news_item.image_url %}
-                    <img src="{{ news_item.image_url }}" alt="{{ news_item.title }}" class="w-full h-full object-cover">
-                    {% else %}
-                    <img src="{{ url_for('static', filename='img/news-placeholder.jpg') }}" alt="News Image" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
-                    {% endif %}
+        <div class="relative z-10 p-6 max-w-6xl mx-auto">
+            <h1 class="font-title text-6xl md:text-8xl mb-6 text-gray-900 dark:text-pure-white">
+                Berita & Update
+            </h1>
+            <p class="font-sans text-xl md:text-2xl max-w-2xl mx-auto mb-8 text-gray-700 dark:text-gray-300">
+                Tetap terinformasi dengan perkembangan terbaru, pencapaian, dan acara dari EggVision.
+            </p>
+        </div>
+    </section>
+
+    <section id="news-feed" class="bg-[#f8f9fa] dark:bg-[#1a1a1a] min-h-screen pb-24 relative z-20 -mt-4">
+        <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+            
+            <div class="sticky top-0 z-30 bg-[#f8f9fa]/95 dark:bg-[#1a1a1a]/95 backdrop-blur-md border-b-2 border-premium-gold mb-12 py-4 transition-colors duration-300">
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                    
+                    <nav class="w-full lg:w-auto overflow-x-auto no-scrollbar">
+                        <ul class="flex items-center gap-6 text-xs md:text-base tracking-widest uppercase whitespace-nowrap text-gray-600 dark:text-gray-400 font-canela font-bold">
+                            <li>
+                                <a href="{{ url_for('comprof_controller.comprof_berita') }}" 
+                                   class="{{ 'text-premium-gold' if not active_filters.tag else 'hover:text-premium-gold' }} transition-colors font-canela">
+                                    All News
+                                </a>
+                            </li>
+                            <li class="text-gray-300 dark:text-gray-700">|</li>
+                            {% for tag in tags %}
+                            <li>
+                                <a href="{{ url_for('comprof_controller.comprof_berita', tag=tag, q=active_filters.q, time=active_filters.time) }}" 
+                                   class="{{ 'text-premium-gold' if active_filters.tag == tag else 'hover:text-premium-gold' }} transition-colors font-canela">
+                                    {{ tag }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </nav>
+
+                    <div class="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-3">
+                        <form action="{{ url_for('comprof_controller.comprof_berita') }}" method="GET" class="flex gap-3 w-full sm:w-auto">
+                            <input type="hidden" name="q" value="{{ active_filters.q }}">
+                            <input type="hidden" name="tag" value="{{ active_filters.tag }}">
+                            <select name="time" onchange="this.form.submit()" 
+                                    class="bg-white dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none cursor-pointer dark:text-white">
+                                <option value="all" {% if active_filters.time == 'all' %}selected{% endif %}>Most Recent</option>
+                                <option value="yesterday" {% if active_filters.time == 'yesterday' %}selected{% endif %}>Last 24 Hours</option>
+                                <option value="week" {% if active_filters.time == 'week' %}selected{% endif %}>Last 7 Days</option>
+                                <option value="month" {% if active_filters.time == 'month' %}selected{% endif %}>Last 30 Days</option>
+                            </select>
+                        </form>
+
+                        <form action="{{ url_for('comprof_controller.comprof_berita') }}" method="GET" class="relative w-full sm:w-48">
+                            <input type="hidden" name="tag" value="{{ active_filters.tag }}">
+                            <input type="hidden" name="time" value="{{ active_filters.time }}">
+                            <input type="text" name="q" value="{{ active_filters.q }}" placeholder="Cari berita dari kami" 
+                                   class="w-full bg-transparent border-b border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-base py-2 pr-8 focus:outline-none focus:border-premium-gold placeholder-gray-400">
+                            <button type="submit" class="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-premium-gold">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <div class="p-6">
-                    <span class="text-sm text-premium-gold font-semibold">{{ news_item.published_at.strftime('%d %b %Y') if news_item.published_at else 'Coming Soon' }}</span>
-                    <h3 class="font-sans text-xl font-semibold mb-3 text-gray-800 dark:text-pure-white mt-2">{{ news_item.title }}</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                        {{ news_item.content[:120] }}...
-                    </p>
-                    <a href="#" class="text-premium-gold hover:text-yellow-300 font-semibold text-sm">Baca Selengkapnya →</a>
-                </div>
+            </div>
+
+            {% if news_list %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-12">
+                {% for news in news_list %}
+                
+                {# 1. Prepare the data object cleanly using Jinja #}
+                {% set news_payload = {
+                    'title': news.title,
+                    'date': news.published_at.strftime('%d %B %Y') if news.published_at else '',
+                    'content': news.content | replace('\n', '<br><br>'),
+                    'image': news.image_url or url_for('static', filename='img/news-placeholder.jpg'),
+                    'tags': (news.tags or 'GENERAL').split(',')[0]
+                } %}
+
+                {# 2. Store data in 'data-payload' and parse it on click #}
+                <article class="group flex flex-col h-full cursor-pointer"
+                         data-payload="{{ news_payload | tojson | forceescape }}"
+                         @click="
+                            toggleUI(true);
+                            activeNews = JSON.parse($el.dataset.payload);
+                         ">
+                    
+                    <div class="w-full aspect-[3/2] overflow-hidden mb-4 bg-gray-200 dark:bg-gray-800">
+                        {% if news.image_url %}
+                            <img src="{{ news.image_url }}" alt="{{ news.title }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                <i data-lucide="image" class="w-12 h-12"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex flex-col flex-grow border-t-4 border-transparent group-hover:border-premium-gold transition-all duration-300 pt-2">
+                        <div class="mb-2">
+                            <span class="text-[10px] font-bold tracking-widest uppercase text-premium-gold">
+                                {% if news.tags %}
+                                    {{ news.tags.split(',')[0] }}
+                                {% else %}
+                                    NEWS
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <h2 class="font-canela text-2xl md:text-3xl leading-tight text-gray-900 dark:text-white mb-3 group-hover:underline decoration-1 underline-offset-4">
+                            {{ news.title }}
+                        </h2>
+
+                        <p class="font-jakarta text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
+                            {{ news.content }}
+                        </p>
+
+                        <div class="mt-auto">
+                            <span class="inline-flex items-center text-xs font-bold uppercase tracking-widest text-gray-900 dark:text-white group-hover:text-premium-gold transition-colors">
+                                Read More <i data-lucide="arrow-up-right" class="w-3 h-3 ml-1"></i>
+                            </span>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
             </div>
             {% else %}
-            <div class="col-span-3 text-center py-12">
-                <div class="w-32 h-32 rounded-full bg-gray-300 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
-                    <span class="text-4xl text-gray-500">📰</span>
+            <div class="flex flex-col items-center justify-center py-24 text-center">
+                <div class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                    <i data-lucide="newspaper" class="w-8 h-8 text-gray-400"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Belum ada berita</h3>
-                <p class="text-gray-500 dark:text-gray-500">Berita akan segera tersedia</p>
+                <h3 class="font-canela text-2xl text-gray-900 dark:text-white">Belum ada berita ditemukan</h3>
+                <p class="text-gray-500 mt-2">Coba sesuaikan filter atau kata kunci pencarian Anda.</p>
+                <a href="{{ url_for('comprof_controller.comprof_berita') }}" class="mt-6 text-premium-gold font-bold text-sm hover:underline">Reset Filter</a>
             </div>
-            {% endfor %}
+            {% endif %}
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- Pencapaian Kami Section -->
-<section id="pencapaian" class="section-anchor py-24 bg-gray-100 dark:bg-dark-gray text-gray-900 dark:text-pure-white">
-    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
-            Pencapaian Kami
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <!-- Achievement 1 -->
-            <div class="text-center p-6">
-                <div class="w-20 h-20 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span class="text-2xl">🏆</span>
-                </div>
-                <h3 class="font-sans text-xl font-semibold mb-3 text-gray-800 dark:text-pure-white">Inovasi Terbaik 2024</h3>
-                <p class="text-gray-600 dark:text-gray-400">Penghargaan untuk teknologi grading telur otomatis berbasis AI</p>
-            </div>
-            
-            <!-- Achievement 2 -->
-            <div class="text-center p-6">
-                <div class="w-20 h-20 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span class="text-2xl">⭐</span>
-                </div>
-                <h3 class="font-sans text-xl font-semibold mb-3 text-gray-800 dark:text-pure-white">Sertifikasi SNI</h3>
-                <p class="text-gray-600 dark:text-gray-400">Sistem grading sesuai standar SNI 3926:2023</p>
-            </div>
-            
-            <!-- Achievement 3 -->
-            <div class="text-center p-6">
-                <div class="w-20 h-20 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span class="text-2xl">🚀</span>
-                </div>
-                <h3 class="font-sans text-xl font-semibold mb-3 text-gray-800 dark:text-pure-white">100+ Mitra</h3>
-                <p class="text-gray-600 dark:text-gray-400">Lebih dari 100 peternak telah bergabung dengan platform kami</p>
-            </div>
-            
-            <!-- Achievement 4 -->
-            <div class="text-center p-6">
-                <div class="w-20 h-20 bg-premium-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span class="text-2xl">💡</span>
-                </div>
-                <h3 class="font-sans text-xl font-semibold mb-3 text-gray-800 dark:text-pure-white">Patente</h3>
-                <p class="text-gray-600 dark:text-gray-400">Teknologi machine learning terdaftar paten</p>
-            </div>
-        </div>
-    </div>
-</section>
+    <!-- POPUP MODAL (Newspaper Style with Dark Mode) -->
+    <div x-show="readModalOpen" 
+         class="fixed inset-0 z-[9999] flex items-center justify-center p-0 sm:p-4"
+         style="display: none;">
+        
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity"
+             x-show="readModalOpen"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click="toggleUI(false)"></div>
 
-<!-- Event dan Webinar Section -->
-<section id="event" class="section-anchor py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
-    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
-            Event dan Webinar
-        </h2>
-        <div class="max-w-4xl mx-auto space-y-8">
-            <!-- Event 1 -->
-            <div class="bg-gray-50 dark:bg-dark-gray rounded-lg p-8 border border-gray-200 dark:border-gray-800">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <h3 class="font-sans text-2xl font-semibold mb-2 text-gray-800 dark:text-pure-white">Webinar: Revolusi Industri Peternakan dengan AI</h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-2">📅 15 Desember 2024 | 🕒 14:00 - 16:00 WIB</p>
-                        <p class="text-gray-700 dark:text-gray-300">Pelajari bagaimana teknologi AI dapat meningkatkan efisiensi dan profitabilitas peternakan telur Anda.</p>
-                    </div>
-                    <a href="#" class="bg-premium-gold text-primary-black font-bold py-3 px-6 rounded-full hover:bg-yellow-300 transition duration-300 whitespace-nowrap">
-                        Daftar Sekarang
-                    </a>
-                </div>
-            </div>
+        <!-- Modal Card -->
+        <div class="relative w-full h-full sm:h-auto sm:max-h-[95vh] max-w-5xl bg-[#fdfbf7] dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 shadow-2xl overflow-hidden flex flex-col transition-all transform"
+             x-show="readModalOpen"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-8 scale-95">
             
-            <!-- Event 2 -->
-            <div class="bg-gray-50 dark:bg-dark-gray rounded-lg p-8 border border-gray-200 dark:border-gray-800">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <h3 class="font-sans text-2xl font-semibold mb-2 text-gray-800 dark:text-pure-white">Workshop: Optimalisasi EggMonitor</h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-2">📅 20 Januari 2025 | 🕒 09:00 - 12:00 WIB</p>
-                        <p class="text-gray-700 dark:text-gray-300">Pelatihan intensif untuk memaksimalkan penggunaan dashboard EggMonitor dalam operasional harian.</p>
+            <button @click="toggleUI(false)" 
+                    class="absolute top-5 right-5 z-[60] flex items-center justify-center w-9 h-12 shadow-2xl hover:scale-110 active:scale-95 transition-transform duration-200 bg-black dark:bg-white border-2 border-white/20 dark:border-black/10"
+                    style="border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;"
+                    title="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-white dark:text-black">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+            </button>
+
+            <div id="modal-content-box" class="overflow-y-auto p-6 md:p-12 lg:p-16 custom-scrollbar bg-[#fdfbf7] dark:bg-[#1a1a1a]">
+                
+                <div class="border-b-2 border-black dark:border-white/20 pb-8 mb-10 text-center max-w-3xl mx-auto">
+                    <div class="flex justify-center items-center gap-2 mb-4">
+                         <span class="px-3 py-1 bg-black dark:bg-white text-[#fdfbf7] dark:text-black text-xs font-bold uppercase tracking-widest" x-text="activeNews.tags"></span>
                     </div>
-                    <a href="#" class="bg-premium-gold text-primary-black font-bold py-3 px-6 rounded-full hover:bg-yellow-300 transition duration-300 whitespace-nowrap">
-                        Daftar Sekarang
-                    </a>
+                    <h2 class="font-canela text-4xl md:text-6xl leading-tight mb-6 text-gray-900 dark:text-white" x-text="activeNews.title"></h2>
+                    <p class="font-jakarta text-sm text-gray-500 dark:text-gray-400 font-bold tracking-wide uppercase flex items-center justify-center gap-2">
+                        <span>Published on</span> <span x-text="activeNews.date" class="text-black dark:text-white"></span>
+                    </p>
                 </div>
-            </div>
-            
-            <!-- Event 3 -->
-            <div class="bg-gray-50 dark:bg-dark-gray rounded-lg p-8 border border-gray-200 dark:border-gray-800">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <h3 class="font-sans text-2xl font-semibold mb-2 text-gray-800 dark:text-pure-white">EggVision Expo 2025</h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-2">📅 1-3 Maret 2025 | 📍 Jakarta Convention Center</p>
-                        <p class="text-gray-700 dark:text-gray-300">Pameran teknologi terbesar untuk industri peternakan telur di Indonesia.</p>
+                
+                <div class="w-full max-w-3xl mx-auto h-64 md:h-[500px] mb-12 overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-lg">
+                    <img :src="activeNews.image" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000" alt="Article Image">
+                </div>
+
+                <div class="max-w-3xl mx-auto">
+                    <div class="newspaper-content drop-cap text-lg leading-relaxed text-gray-800 dark:text-gray-200" x-html="activeNews.content"></div>
+
+                    <div class="mt-16 pt-8 border-t border-gray-300 dark:border-gray-700 text-center">
+                        <div class="flex justify-center gap-4">
+                            <button @click="toggleUI(false)" class="px-8 py-3 bg-black dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-widest hover:bg-premium-gold hover:text-black dark:hover:bg-premium-gold transition-colors">
+                                Close Article
+                            </button>
+                        </div>
                     </div>
-                    <a href="#" class="bg-premium-gold text-primary-black font-bold py-3 px-6 rounded-full hover:bg-yellow-300 transition duration-300 whitespace-nowrap">
-                        Info Lebih Lanjut
-                    </a>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const navbar = document.getElementById('mainNav');
         const heroSection = document.querySelector('.hero-section');
         
+        // Logic: Navbar Transparent on Hero, Solid Black on Scroll
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
