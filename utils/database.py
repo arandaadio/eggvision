@@ -159,6 +159,7 @@ def init_db():
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 seller_id INT NOT NULL,
                 buyer_id INT NULL,
+                buyer_name VARCHAR(100),
                 order_id INT NULL,
 
                 rating TINYINT NOT NULL,
@@ -170,6 +171,21 @@ def init_db():
                 FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
             )
         ''')
+
+        dummy_reviews = [
+            (5, "Telur berkualitas bagus, pengiriman cepat. Recommended!", "Dio Aranda"),
+            (5, "Telur berkualitas bagus, pengiriman sangat cepat. Terima kasih sudah amanah!", "Sarah Aninditya"),
+            (1, "Grade tidak sesuai kualitasnya, penipu!", "Fauzi Luqman"),
+            (1, "Toko tidak amanah. Jangan tergiur dengan harga murahnya!", "Dzaky Az-Zshahir"),
+        ]
+
+        def insert_dummy_reviews(seller_id, cur):
+            for rating, review, buyer_name in dummy_reviews:
+                # buyer_id NULL, order_id NULL, bisa tambahkan kolom buyer_name kalau mau tracking
+                cur.execute(
+                    "INSERT INTO seller_ratings (seller_id, buyer_name, rating, review) VALUES (%s, %s, %s, %s)",
+                    (seller_id, buyer_name, rating, review)
+                )
 
         # ==========================
         # 6. NEWS (opsional)
@@ -263,6 +279,11 @@ def init_db():
                     'Telur ayam konsumsi berkualitas.'
                 )
             )
+
+            seller_id = cur.lastrowid
+
+            # Insert dummy reviews untuk pengusaha
+            insert_dummy_reviews(seller_id, cur)
 
             # Pembeli
             pembeli_pwd = generate_password_hash('pembeli123', method='pbkdf2:sha256')
