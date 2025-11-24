@@ -1,5 +1,6 @@
 # controllers/eggmonitor_controller.py
-from flask import Blueprint, render_template, request, url_for, redirect, flash, current_app, session
+import json
+from flask import Blueprint, render_template, request, url_for, redirect, flash, current_app, session, jsonify
 from flask_login import login_required, current_user
 from utils.dashboard_data import build_dashboard_data
 from utils.report_data import build_report_data
@@ -8,6 +9,7 @@ from utils.ml_utils import predict_image
 from utils.database import get_db_connection
 import os
 import mysql.connector
+import paho.mqtt.client as mqtt
 from werkzeug.utils import secure_filename
 
 eggmonitor_controller = Blueprint('eggmonitor_controller', __name__)
@@ -158,3 +160,79 @@ def eggmonitor_settings():
 
     data = build_user_data()
     return render_template('eggmonitor/settings.html', **data, active_menu="settings")
+
+
+
+
+
+
+MQTT_BROKER   = "broker.emqx.io"
+MQTT_PORT     = 1883
+MQTT_USERNAME = "emqx"
+MQTT_PASSWORD = "public"
+
+MQTT_TOPIC_EGG_COLOR = "emqx/esp32/eggcolor"   # ESP32 subscribe di sini
+MQTT_TOPIC_CONTROL   = "emqx/esp32/control"    # ESP32 subscribe untuk manual LED
+
+mqtt_client = mqtt.Client()
+mqtt_client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+mqtt_client.loop_start()  # jalan di background
+
+# =========================
+# ROUTE HALAMAN DETAIL ALAT
+# =========================
+@eggmonitor_controller.route("/detail")
+def detail_alat():
+    header = {
+        "user_name": "Fauzi",
+        "egg_vision_count": 3,
+        "avatar_seed": "fauzi"
+    }
+    
+    # URL Wokwi kamu
+    wokwi_url = "https://wokwi.com/projects/448296525586142209?embed=1&view=diagram"
+
+    return render_template(
+        "eggmonitor/detail_alat.html",
+        active_menu="detail",
+        header=header,
+        wokwi_url=wokwi_url
+    )
+
+# =========================
+# API: warna telur dari kamera -> MQTT (otomatis)
+# =========================
+@eggmonitor_controller.route("/api/egg-color", methods=["POST"])
+def api_egg_color():
+    data = request.get_json() or {}
+    label = data.get("label")
+
+    if label not in ("lightbrown", "brown", "darkbrown"):
+        return jsonify({"ok": False, "error": "invalid label"}), 400
+
+    mqtt_client.publish(MQTT_TOPIC_EGG_COLOR, label, qos=0, retain=False)
+    print("[MQTT eggcolor] ->", label)
+
+    return jsonify({"ok": True, "label": label})
+
+# =========================
+# API: tombol kontrol LED manual -> MQTT
+# =========================
+@eggmonitor_controller.route("/api/wokwi/control", methods=["POST"])
+def api_wokwi_control():
+    data = request.get_json() or {}
+    device = data.get("device")  # lightbrown / brown / darkbrown
+    state  = data.get("state")   # on / off
+
+    if device not in ("lightbrown", "brown", "darkbrown"):
+        return jsonify({"ok": False, "error": "invalid device"}), 400
+
+    if state not in ("on", "off"):
+        return jsonify({"ok": False, "error": "invalid state"}), 400
+
+    payload = json.dumps({"device": device, "state": state})
+    mqtt_client.publish(MQTT_TOPIC_CONTROL, payload, qos=0, retain=False)
+    print("[MQTT manual-led] ->", payload)
+
+    return jsonify({"ok": True})

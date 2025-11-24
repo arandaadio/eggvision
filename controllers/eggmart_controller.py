@@ -24,70 +24,6 @@ def get_midtrans_snap():
         server_key=current_app.config.get("MIDTRANS_SERVER_KEY"),
         client_key=current_app.config.get("MIDTRANS_CLIENT_KEY"),
     )
-    
-SELLERS = [
-    {
-        "id": 1,
-        "code": "PS",
-        "name": "Peternakan Sejahtera",
-        "location": "Bogor, Jawa Barat",
-        "rating": 4.9,
-        "review_count": 1250,
-        "products": [
-            {
-                "grade": "A",
-                "stock": 500,
-                "price": 28000,
-                "description": "Telur premium dari ayam kampung organik",
-            },
-            {
-                "grade": "B",
-                "stock": 800,
-                "price": 22000,
-                "description": "Telur berkualitas dari ayam layer",
-            },
-        ],
-    },
-    {
-        "id": 2,
-        "code": "TB",
-        "name": "Toko Telur Barokah",
-        "location": "Malang, Jawa Timur",
-        "rating": 4.8,
-        "review_count": 890,
-        "products": [
-            {
-                "grade": "A",
-                "stock": 350,
-                "price": 27000,
-                "description": "Telur segar langsung dari peternakan",
-            },
-            {
-                "grade": "C",
-                "stock": 600,
-                "price": 18000,
-                "description": "Telur ekonomis untuk usaha kuliner",
-            },
-        ],
-    },
-    {
-        "id": 3,
-        "code": "MJ",
-        "name": "CV. Maju Jaya Farm",
-        "location": "Bandung, Jawa Barat",
-        "rating": 4.7,
-        "review_count": 654,
-        "products": [
-            {
-                "grade": "B",
-                "stock": 1000,
-                "price": 23000,
-                "description": "Telur berkualitas harga terjangkau",
-            },
-        ],
-    },
-]
-
 
 @eggmart_controller.route('/transaction', methods=['POST'])
 @login_required
@@ -323,8 +259,6 @@ def create_transaction():
         return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id or 0))
     finally:
         conn.close()
-
-
 
 @eggmart_controller.route('/dashboard')
 @login_required
@@ -1330,3 +1264,5 @@ def seller_chat_thread(session_id):
         return jsonify(success=False, message="Kesalahan database."), 500
     finally:
         conn.close()
+
+
