@@ -77,6 +77,7 @@ eggvision-flask/
 ├── utils/             # Helper functions (Database, ML Prediction)
 ├── app.py             # Entry point aplikasi
 └── requirements.txt   # Daftar dependensi
+```
 
 -----
 
