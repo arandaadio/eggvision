@@ -1,0 +1,409 @@
+{% extends "eggmonitor/base.html" %}
+{% block title %}Detail Alat · EggVision{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+  <!-- Sidebar -->
+  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <!-- Logo -->
+    <div class="p-6 border-b border-sidebar-border">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <div class="text-primary font-bold text-xs">EV</div>
+        </div>
+        <span class="text-primary text-sm font-semibold">EGGVISION</span>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 py-4">
+      {% set menu = [
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/eggmonitor/index"},
+        {"id":"laporan","icon":"database","label":"Laporan","href":"/eggmonitor/laporan"},
+        {"id":"detail","icon":"grid-3x3","label":"Detail Alat","href":"/eggmonitor/detail"},
+        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"/eggmart/dashboard"},
+        {"id":"settings","icon":"settings","label":"Pengaturan","href":"#"}
+      ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
+           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-xs">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <!-- Profile -->
+    <div class="p-4 border-t border-sidebar-border">
+      <a href="/profile" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          <img
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
+            alt="Profile"
+            class="w-full h-full object-cover" />
+        </div>
+        <span class="text-xs">Profil</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="ml-[130px] p-6 md:p-8">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between">
+      <h1 class="text-4xl font-bold text-foreground">Detail Alat</h1>
+
+      <div class="flex-1 mx-8 hidden md:block">
+        <input class="input-dark w-full" placeholder="Cari / filter..." />
+      </div>
+
+      <!-- User info -->
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <div class="text-sm font-semibold text-foreground">{{ header.user_name }}</div>
+          <div class="text-xs text-muted-foreground">{{ header.egg_vision_count }} EggVision</div>
+        </div>
+        <div class="relative">
+          <img class="w-10 h-10 rounded-full object-cover"
+               src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ header.avatar_seed }}"
+               alt="avatar">
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-[#0a0a0a]"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 1: Kamera & Wokwi -->
+    <section class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Kiri: Kamera + deteksi warna telur -->
+      <div class="bg-card border border-border rounded-lg p-4 md:p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-foreground">Kamera Realtime</h3>
+          <button id="btnStartCamera"
+                  class="px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90">
+            Mulai Kamera
+          </button>
+        </div>
+
+        <div class="relative w-full rounded-lg overflow-hidden border border-border bg-black aspect-video">
+          <video id="videoElement"
+                 class="w-full h-full object-cover"
+                 autoplay
+                 playsinline
+                 muted></video>
+          <!-- canvas untuk proses deteksi warna (disembunyikan) -->
+          <canvas id="colorCanvas" class="hidden"></canvas>
+        </div>
+
+        <!-- Info warna -->
+        <div class="mt-4 flex items-center gap-4">
+          <div id="colorPreview" class="w-14 h-14 rounded-md border border-border bg-muted"></div>
+          <div>
+            <div class="text-sm text-muted-foreground">Warna Telur</div>
+            <div id="colorName" class="text-base font-semibold text-foreground">-</div>
+            <div id="colorRgb" class="text-xs text-muted-foreground">RGB: -, -, -</div>
+            <div id="colorHex" class="text-xs text-muted-foreground">HEX: -</div>
+          </div>
+        </div>
+
+        <p class="mt-3 text-xs text-muted-foreground">
+          Sistem akan membaca <span class="font-semibold">area tengah frame</span> sebagai posisi telur,
+          lalu mengklasifikasikan menjadi: <strong>Light Brown</strong>, <strong>Brown</strong>, atau <strong>Dark Brown</strong>,
+          dan mengirim labelnya ke MQTT untuk menyalakan LED di ESP32.
+        </p>
+      </div>
+
+      <!-- Kanan: Wokwi Iframe -->
+      <div class="bg-card border border-border rounded-lg p-4 md:p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-foreground">Simulasi Wokwi</h3>
+          <a href="{{ wokwi_url | replace('?embed=1&view=diagram','') }}"
+             target="_blank"
+             class="text-xs text-primary hover:underline">
+            Buka di tab baru
+          </a>
+        </div>
+
+        <div class="rounded-lg overflow-hidden border border-border aspect-video">
+          <iframe
+            src="{{ wokwi_url }}"
+            class="w-full h-full"
+            style="border:0;"
+            loading="lazy"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 2: Kontrol Manual LED Telur -->
+    <section class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-foreground">Kontrol Manual LED Telur</h3>
+        <span class="text-xs text-muted-foreground">
+          Toggle manual LED untuk kategori <strong>Light Brown</strong>, <strong>Brown</strong>, dan <strong>Dark Brown</strong>.
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- LED Light Brown -->
+        <div class="bg-card border border-border rounded-lg p-4 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold text-foreground">LED Light Brown</div>
+            <div class="text-xs text-muted-foreground">Kontrol manual LED untuk telur Light Brown</div>
+          </div>
+          <button
+            class="led-toggle px-3 py-1.5 text-xs rounded-full border border-border text-muted-foreground hover:bg-secondary"
+            data-color="lightbrown"
+            data-state="off">
+            OFF
+          </button>
+        </div>
+
+        <!-- LED Brown -->
+        <div class="bg-card border border-border rounded-lg p-4 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold text-foreground">LED Brown</div>
+            <div class="text-xs text-muted-foreground">Kontrol manual LED untuk telur Brown</div>
+          </div>
+          <button
+            class="led-toggle px-3 py-1.5 text-xs rounded-full border border-border text-muted-foreground hover:bg-secondary"
+            data-color="brown"
+            data-state="off">
+            OFF
+          </button>
+        </div>
+
+        <!-- LED Dark Brown -->
+        <div class="bg-card border border-border rounded-lg p-4 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold text-foreground">LED Dark Brown</div>
+            <div class="text-xs text-muted-foreground">Kontrol manual LED untuk telur Dark Brown</div>
+          </div>
+          <button
+            class="led-toggle px-3 py-1.5 text-xs rounded-full border border-border text-muted-foreground hover:bg-secondary"
+            data-color="darkbrown"
+            data-state="off">
+            OFF
+          </button>
+        </div>
+      </div>
+
+      <p class="mt-3 text-xs text-muted-foreground">
+        Saat toggle diubah, frontend mengirim <code>POST /eggmonitor/api/wokwi/control</code>
+        dengan body <code>{"device": "lightbrown|brown|darkbrown", "state": "on|off"}</code>.
+        Di ESP32, kamu tinggal subscribe ke topic <code>emqx/esp32/control</code> dan nyalakan LED sesuai nilai <code>device</code> dan <code>state</code>.
+      </p>
+    </section>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // -----------------------------
+  // Webcam + Deteksi Warna Telur
+  // -----------------------------
+  const btnStartCamera = document.getElementById('btnStartCamera');
+  const videoEl        = document.getElementById('videoElement');
+  const canvasEl       = document.getElementById('colorCanvas');
+  const colorPreview   = document.getElementById('colorPreview');
+  const colorNameEl    = document.getElementById('colorName');
+  const colorRgbEl     = document.getElementById('colorRgb');
+  const colorHexEl     = document.getElementById('colorHex');
+
+  let stream = null;
+  let detecting = false;
+
+  let lastLabel = null;
+  let lastSentAt = 0; // ms
+
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      videoEl.srcObject = stream;
+      detecting = true;
+      detectLoop();
+      btnStartCamera.textContent = "Kamera Aktif";
+      btnStartCamera.disabled = true;
+      btnStartCamera.classList.add("opacity-70", "cursor-not-allowed");
+    } catch (err) {
+      console.error(err);
+      alert("Tidak bisa mengakses kamera: " + err.message);
+    }
+  }
+
+  function detectLoop() {
+    if (!detecting) return;
+    if (videoEl.readyState === videoEl.HAVE_ENOUGH_DATA) {
+      const w = 320;
+      const h = 240;
+      canvasEl.width = w;
+      canvasEl.height = h;
+
+      const ctx = canvasEl.getContext('2d');
+      ctx.drawImage(videoEl, 0, 0, w, h);
+
+      // area tengah sebagai posisi telur
+      const roiW = Math.floor(w * 0.35);
+      const roiH = Math.floor(h * 0.35);
+      const roiX = Math.floor((w - roiW) / 2);
+      const roiY = Math.floor((h - roiH) / 2);
+
+      const frame = ctx.getImageData(roiX, roiY, roiW, roiH);
+      const {r, g, b} = averageColor(frame.data);
+      const eggLabel = classifyEggColor(r, g, b); // 'lightbrown' | 'brown' | 'darkbrown' | 'unknown'
+      const hex = rgbToHex(r, g, b);
+
+      // update UI
+      let displayName = "-";
+      if (eggLabel === "lightbrown") displayName = "Light Brown";
+      else if (eggLabel === "brown") displayName = "Brown";
+      else if (eggLabel === "darkbrown") displayName = "Dark Brown";
+      else displayName = "Tidak teridentifikasi";
+
+      colorPreview.style.backgroundColor = hex;
+      colorNameEl.textContent = displayName;
+      colorRgbEl.textContent  = `RGB: ${r}, ${g}, ${b}`;
+      colorHexEl.textContent  = `HEX: ${hex}`;
+
+      // kirim ke backend kalau label valid, berubah, dan ada jeda
+      const now = Date.now();
+      if (
+        eggLabel !== "unknown" &&
+        eggLabel !== null &&
+        eggLabel !== lastLabel &&
+        (now - lastSentAt) > 800
+      ) {
+        lastLabel = eggLabel;
+        lastSentAt = now;
+        sendEggColorToServer(eggLabel);
+      }
+    }
+    requestAnimationFrame(detectLoop);
+  }
+
+  function averageColor(data) {
+    let r = 0, g = 0, b = 0;
+    const step = 4 * 8; // sampling per beberapa pixel biar enteng
+
+    for (let i = 0; i < data.length; i += step) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+    }
+
+    const sampleCount = data.length / step;
+    r = Math.round(r / sampleCount);
+    g = Math.round(g / sampleCount);
+    b = Math.round(b / sampleCount);
+    return { r, g, b };
+  }
+
+  // klasifikasi telur: lightbrown, brown, darkbrown
+  function classifyEggColor(r, g, b) {
+    const hsv = rgbToHsv(r, g, b);
+    const h = hsv.h, s = hsv.s, v = hsv.v;
+
+    // brown ~ orange gelap (hue 10–50), cukup jenuh
+    const isBrownHue = (h >= 10 && h <= 50);
+    const isEnoughSaturation = s >= 0.25;
+
+    if (!isBrownHue || !isEnoughSaturation) {
+      return "unknown";
+    }
+
+    if (v >= 0.65) {
+      return "lightbrown";
+    } else if (v <= 0.40) {
+      return "darkbrown";
+    } else {
+      return "brown";
+    }
+  }
+
+  function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+  }
+
+  function rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const d = max - min;
+    let h = 0;
+
+    if (d === 0) {
+      h = 0;
+    } else if (max === r) {
+      h = 60 * (((g - b) / d) % 6);
+    } else if (max === g) {
+      h = 60 * (((b - r) / d) + 2);
+    } else {
+      h = 60 * (((r - g) / d) + 4);
+    }
+    if (h < 0) h += 360;
+
+    const s = max === 0 ? 0 : d / max;
+    const v = max;
+
+    return { h, s, v };
+  }
+
+  async function sendEggColorToServer(label) {
+    try {
+      await fetch('/eggmonitor/api/egg-color', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label })
+      });
+      console.log("Kirim label telur ke backend:", label);
+    } catch (err) {
+      console.error("Gagal mengirim warna telur:", err);
+    }
+  }
+
+  btnStartCamera?.addEventListener('click', startCamera);
+
+  // -----------------------------
+  // Kontrol Manual LED -> Backend
+  // -----------------------------
+  const ledButtons = document.querySelectorAll('.led-toggle');
+
+  ledButtons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const currentState = btn.getAttribute('data-state');
+      const newState = currentState === 'on' ? 'off' : 'on';
+      const color = btn.getAttribute('data-color'); // lightbrown / brown / darkbrown
+
+      // Update tampilan lokal
+      btn.setAttribute('data-state', newState);
+      if (newState === 'on') {
+        btn.textContent = 'ON';
+        btn.classList.add('bg-primary', 'text-primary-foreground');
+      } else {
+        btn.textContent = 'OFF';
+        btn.classList.remove('bg-primary', 'text-primary-foreground');
+      }
+
+      // Kirim ke backend (backend -> MQTT -> ESP32)
+      try {
+        await fetch('/eggmonitor/api/wokwi/control', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            device: color,
+            state: newState
+          })
+        });
+        console.log('LED manual:', color, newState);
+      } catch (err) {
+        console.error(err);
+        alert("Gagal mengirim perintah ke server");
+      }
+    });
+  });
+</script>
+{% endblock %}
