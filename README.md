@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="static/img/logoegg.png" alt="EggVision Logo" width="120" height="120">
+  <img src="static/img/logo.png" alt="EggVision Logo" width="120" height="120">
 </p>
 
 # 🥚 EggVision
@@ -11,7 +11,6 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-[Demo] • [Dokumentasi] • [Kontribusi]
 
 ---
 
@@ -85,14 +84,14 @@ eggvision-flask/
 
 Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
 
-1.  **Clone Repository**
+1. **Clone Repository**
 
     ```bash
-    git clone [https://github.com/username/EggVision.git](https://github.com/username/EggVision.git)
+    git clone https://github.com/username/EggVision.git
     cd EggVision
     ```
 
-2.  **Buat Virtual Environment**
+2. **Buat Virtual Environment**
 
     ```bash
     python -m venv .venv
@@ -102,13 +101,14 @@ Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
     source .venv/bin/activate
     ```
 
-3.  **Install Dependensi**
+3. **Install Dependensi**
 
     ```bash
     pip install -r requirements.txt
     ```
 
-4.  **Konfigurasi Environment (.env)**
+4. **Konfigurasi Environment (.env)**
+
     Buat file `.env` dan sesuaikan dengan konfigurasi database MySQL:
 
     ```env
@@ -125,7 +125,7 @@ Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
     MIDTRANS_IS_PRODUCTION=false
     ```
 
-5.  **Jalankan Aplikasi**
+5. **Jalankan Aplikasi**
 
     ```bash
     python app.py
@@ -134,11 +134,3 @@ Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
     Buka browser dan akses `http://localhost:5001`
 
 -----
-
-
-Dibuat dengan ❤️ oleh 🥚 Tim EggVision (TDCFives)\</p\>
-2025 EggVision. Hak Cipta Dilindungi.
-
-
-```
-```
