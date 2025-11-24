@@ -1,20 +1,17 @@
-````markdown
-<div align="center">
-
+<p align="center">
   <img src="static/img/logoegg.png" alt="EggVision Logo" width="120" height="120">
+</p>
 
-  # 🥚 EggVision
+# 🥚 EggVision
 
-  **Platform all-in-one untuk marketplace dan grading telur ayam konsumsi otomatis bagi peternak ayam Indonesia**
+**Platform all-in-one untuk marketplace dan grading telur ayam konsumsi otomatis bagi peternak ayam Indonesia**
 
-  [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-  [![Flask](https://img.shields.io/badge/Flask-3.0-green?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-  [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0-green?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-  [Demo] • [Dokumentasi] • [Kontribusi]
-
-</div>
+[Demo] • [Dokumentasi] • [Kontribusi]
 
 ---
 
@@ -81,11 +78,10 @@ eggvision-flask/
 ├── utils/             # Helper functions (Database, ML Prediction)
 ├── app.py             # Entry point aplikasi
 └── requirements.txt   # Daftar dependensi
-````
 
 -----
 
-## ⚡ Cara Menjalankan (Localhost)
+## Cara Menjalankan (Localhost)
 
 Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
 
@@ -127,7 +123,7 @@ Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
     MIDTRANS_CLIENT_KEY=your_client_key
     MIDTRANS_SERVER_KEY=your_server_key
     MIDTRANS_IS_PRODUCTION=false
-        ```
+    ```
 
 5.  **Jalankan Aplikasi**
 
@@ -139,10 +135,10 @@ Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
 
 -----
 
-\<div align="center"\>
-\<p\>Dibuat dengan ❤️ oleh 🥚 Tim EggVision (TDCFives)\</p\>
-\<p\>\&copy; 2025 EggVision. Hak Cipta Dilindungi.\</p\>
-\</div\>
+
+Dibuat dengan ❤️ oleh 🥚 Tim EggVision (TDCFives)\</p\>
+2025 EggVision. Hak Cipta Dilindungi.
+
 
 ```
 ```
