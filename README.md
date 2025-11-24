@@ -88,8 +88,8 @@ Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
 1. **Clone Repository**
 
     ```bash
-    git clone https://github.com/username/EggVision.git
-    cd EggVision
+    git clone https://github.com/arandaadio/eggvision.git
+    cd eggvision
     ```
 
 2. **Buat Virtual Environment**
@@ -135,3 +135,8 @@ Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
     Buka browser dan akses `http://localhost:5001`
 
 -----
+
+<p align="center">
+  <p>Dibuat dengan cinta ❤️ dan 🥚 oleh Tim EggVision</p>
+  <p>&copy; 2025 EggVision. Hak Cipta Dilindungi.</p>
+</p>
