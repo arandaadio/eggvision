@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login · EggVision</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logoegg.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { 'canela': ['Canela Bold', 'serif'], 'jakarta': ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { 'paper': '#FDFBF7', 'ink': '#1a1a1a', 'premium-gold': '#FFD700', 'dark-surface': '#1a1a1a' },
+                    backgroundImage: { 'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')" }
+                }
+            }
+        }
+    </script>
+    <style>
+        .animate-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+        .input-field { display: block; width: 100%; padding: 0.5rem 0; background: transparent; border: none; border-bottom: 1px solid #525252; color: inherit; font-family: 'Plus Jakarta Sans', sans-serif; transition: border-color 0.3s; }
+        .input-field:focus { outline: none; border-bottom-color: #FFD700; }
+        .input-label { position: absolute; top: 0.5rem; left: 0; font-size: 0.875rem; color: #9ca3af; pointer-events: none; transition: 0.3s ease all; }
+        .input-field:focus ~ .input-label, .input-field:not(:placeholder-shown) ~ .input-label { top: -1.2rem; font-size: 0.75rem; color: #FFD700; }
+    </style>
+</head>
+<body class="h-full font-jakarta text-ink dark:text-paper bg-[#111] text-white transition-colors duration-500 overflow-hidden">
+
+    <div class="fixed inset-0 bg-noise opacity-40 pointer-events-none z-0"></div>
+
+    <div class="relative z-10 flex min-h-screen w-full">
+        
+        <div class="hidden lg:flex w-1/2 h-screen p-6 bg-black">
+            <div class="w-full h-full relative overflow-hidden border border-gray-800 bg-[#0a0a0a] animate-up">
+                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center opacity-40 grayscale mix-blend-luminosity"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+
+                <div class="relative z-10 h-full flex flex-col justify-between p-12 text-white">
+                    <div class="flex justify-between items-center text-xs font-bold tracking-[0.2em] uppercase opacity-50">
+                        <span>System Access</span>
+                        <span>Restricted</span>
+                    </div>
+                    <div>
+                        <div class="w-16 h-16 mb-6 bg-white text-black rounded-full flex items-center justify-center text-2xl shadow-lg">🛡️</div>
+                        <h1 class="font-canela text-5xl leading-[1.1] mb-4">
+                            Portal <br> Administrator
+                        </h1>
+                        <p class="text-gray-400 text-sm leading-relaxed max-w-xs border-l-2 border-premium-gold pl-4">
+                            Area terbatas. Hanya personel berwenang yang diizinkan masuk ke sistem manajemen.
+                        </p>
+                    </div>
+                    <div class="text-xs text-gray-600 font-mono">SECURE CONNECTION v2.0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 md:p-16 lg:p-24 bg-black relative z-10">
+            
+            <button onclick="toggleDarkMode()" class="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-800 transition-colors">
+                <i data-lucide="moon" class="w-5 h-5 block dark:hidden text-gray-400"></i>
+                <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-premium-gold"></i>
+            </button>
+
+            <div class="w-full max-w-sm animate-up" style="animation-delay: 0.1s;">
+                <div class="mb-10">
+                    <h2 class="font-canela text-3xl text-white mb-2">Admin Login</h2>
+                    <p class="text-gray-500 text-sm">Verifikasi kredensial Anda.</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="mb-8 space-y-2">
+                            {% for category, message in messages %}
+                                <div class="p-4 text-sm border-l-2 flex items-center gap-3 border-red-500 bg-red-900/20 text-red-400">
+                                    <i data-lucide="alert-circle" class="w-4 h-4"></i> {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('auth_controller.auth_login_admin') }}" method="POST" class="space-y-8">
+                    <div class="relative margin-bottom-6">
+                        <input id="email" name="email" type="email" required class="input-field peer text-white border-gray-700 focus:border-white" placeholder=" " autocomplete="email">
+                        <label for="email" class="absolute top-0.5 left-0 text-sm text-gray-500 transition-all peer-focus:-top-5 peer-focus:text-xs peer-focus:text-white peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-white">Email Admin</label>
+                    </div>
+
+                    <div class="relative margin-bottom-6">
+                        <input id="password" name="password" type="password" required class="input-field peer pr-10 text-white border-gray-700 focus:border-white" placeholder=" " autocomplete="current-password">
+                        <label for="password" class="absolute top-0.5 left-0 text-sm text-gray-500 transition-all peer-focus:-top-5 peer-focus:text-xs peer-focus:text-white peer-not-placeholder-shown:-top-5 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-white">Password</label>
+                        <button type="button" onclick="togglePassword()" class="absolute right-0 top-1 text-gray-500 hover:text-white transition-colors focus:outline-none"><i id="eye-icon" data-lucide="eye" class="w-5 h-5"></i></button>
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center cursor-pointer group">
+                            <input id="remember" name="remember" type="checkbox" class="w-4 h-4 rounded border-gray-600 text-white focus:ring-white bg-transparent">
+                            <span class="ml-2 text-gray-500 group-hover:text-gray-300 transition-colors">Ingat sesi ini</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-full py-4 bg-white hover:bg-gray-200 text-black font-bold tracking-widest uppercase text-xs rounded-none transition-all duration-300 transform active:translate-y-0.5">
+                        Masuk ke Dashboard
+                    </button>
+                </form>
+
+                <div class="mt-12 text-center">
+                     <a href="{{ url_for('auth_controller.auth_login') }}" class="text-xs text-gray-600 hover:text-gray-400 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="arrow-left" class="w-3 h-3"></i> Bukan Admin? Login User
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        function togglePassword() {
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('eye-icon');
+            if (pwd.type === 'password') { pwd.type = 'text'; icon.setAttribute('data-lucide', 'eye-off'); } 
+            else { pwd.type = 'password'; icon.setAttribute('data-lucide', 'eye'); }
+            lucide.createIcons();
+        }
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+        document.documentElement.classList.add('dark'); // Default dark for admin
+    </script>
+</body>
+</html>

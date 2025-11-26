@@ -5,111 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register · EggVision</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logoegg.png') }}">
-    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        'canela': ['Canela Bold', 'serif'],
-                        'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
-                    },
-                    colors: {
-                        'paper': '#FDFBF7',      
-                        'ink': '#1a1a1a',        
-                        'premium-gold': '#FFD700',
-                        'dark-surface': '#0a0a0a'
-                    },
-                    backgroundImage: {
-                        'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')",
-                    }
+                    fontFamily: { 'canela': ['Canela Bold', 'serif'], 'jakarta': ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { 'paper': '#FDFBF7', 'ink': '#1a1a1a', 'premium-gold': '#bead66', 'dark-surface': '#1a1a1a' },
+                    backgroundImage: { 'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')" }
                 }
             }
         }
     </script>
     <style>
-        .animate-enter {
-            opacity: 0;
-            transform: translateY(10px);
-            animation: enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        .animate-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
         
-        /* Sliding Animation: From Left to Right (When coming from Login) */
-        .animate-slide-from-left {
-            animation: slideFromLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        .slide-in-right { animation: slideRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideRight { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 
-        @keyframes enter { to { opacity: 1; transform: translateY(0); } }
-
-        /* Image was on the left (-100%), moves to right (0%) */
-        @keyframes slideFromLeft {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0); }
-        }
-
-        .delay-100 { animation-delay: 0.1s; }
-        
         .input-group { position: relative; margin-bottom: 1.5rem; }
-        .input-field {
-            display: block; width: 100%; padding: 0.5rem 0;
-            background: transparent; border: none;
-            border-bottom: 1px solid #525252;
-            color: inherit; font-family: 'Plus Jakarta Sans', sans-serif;
-            transition: border-color 0.3s;
-        }
+        .input-field { display: block; width: 100%; padding: 0.5rem 0; background: transparent; border: none; border-bottom: 1px solid #525252; color: inherit; font-family: 'Plus Jakarta Sans', sans-serif; transition: border-color 0.3s; }
         .input-field:focus { outline: none; border-bottom-color: #FFD700; }
-        .input-label {
-            position: absolute; top: 0.5rem; left: 0;
-            font-size: 0.875rem; color: #9ca3af;
-            pointer-events: none; transition: 0.3s ease all;
-        }
-        .input-field:focus ~ .input-label,
-        .input-field:not(:placeholder-shown) ~ .input-label {
-            top: -1.2rem; font-size: 0.75rem; color: #FFD700;
-        }
+        .input-label { position: absolute; top: 0.5rem; left: 0; font-size: 0.875rem; color: #9ca3af; pointer-events: none; transition: 0.3s ease all; }
+        .input-field:focus ~ .input-label, .input-field:not(:placeholder-shown) ~ .input-label { top: -1.2rem; font-size: 0.75rem; color: #FFD700; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        .no-scrollbar { scrollbar-width: none; }
+
     </style>
 </head>
-<body class="h-full font-jakarta text-ink dark:text-paper bg-paper dark:bg-black transition-colors duration-500 overflow-hidden">
+<body class="h-full font-jakarta text-ink dark:text-paper bg-paper dark:bg-dark-surface transition-colors duration-500 overflow-hidden">
 
     <div class="fixed inset-0 bg-noise opacity-40 pointer-events-none z-0"></div>
 
     <div class="relative z-10 flex min-h-screen w-full">
         
-        <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 md:p-16 lg:p-24 bg-white dark:bg-black transition-colors duration-500 relative z-10">
-            
-            <button onclick="toggleDarkMode()" class="absolute top-6 right-6 lg:right-auto lg:left-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+        <div class="w-full lg:w-1/2 flex flex-col justify-start items-center p-8 md:p-16 lg:p-24 bg-white dark:bg-black transition-colors duration-500 relative z-10 overflow-y-auto no-scrollbar h-screen">
+                    
+            <button onclick="toggleDarkMode()" class="absolute top-6 left-6 lg:left-auto lg:right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <i data-lucide="moon" class="w-5 h-5 block dark:hidden text-ink"></i>
                 <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-premium-gold"></i>
             </button>
 
-            <div class="w-full max-w-sm animate-enter delay-100">
-                <div class="lg:hidden mb-10 text-center">
-                    <div class="inline-flex w-14 h-14 bg-premium-gold rounded-full items-center justify-center text-2xl shadow-md mb-4">🥚</div>
-                    <h2 class="font-canela text-3xl text-gray-900 dark:text-white">EggVision</h2>
-                </div>
-
-                <div class="mb-10">
+            <div class="w-full max-w-sm animate-up" style="animation-delay: 0.1s;">
+                
+                <div class="mb-8">
                     <h2 class="font-canela text-4xl text-gray-900 dark:text-white mb-2">Buat Akun</h2>
-                    <p class="text-gray-500 dark:text-gray-400">Bergabunglah dengan ekosistem kami.</p>
+                    <p class="text-gray-500 dark:text-gray-400">Bergabung dengan EggVision sebagai Pembeli.</p>
                 </div>
 
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         <div class="mb-8 space-y-2">
                             {% for category, message in messages %}
-                                <div class="p-4 text-sm border-l-2 flex items-center gap-3
-                                    {% if category == 'error' %} border-red-500 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400
-                                    {% else %} border-green-500 bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 {% endif %}">
-                                    {% if category == 'error' %} <i data-lucide="alert-circle" class="w-4 h-4"></i>
-                                    {% else %} <i data-lucide="check-circle" class="w-4 h-4"></i> {% endif %}
+                                <div class="p-4 text-sm border-l-2 flex items-center gap-3 {{ 'border-red-500 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400' if category == 'error' else 'border-green-500 bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400' }}">
                                     {{ message }}
                                 </div>
                             {% endfor %}
@@ -118,134 +73,130 @@
                 {% endwith %}
 
                 <form action="{{ url_for('auth_controller.auth_register') }}" method="POST" class="space-y-6">
-                    
                     <div class="input-group">
                         <input id="name" name="name" type="text" required class="input-field peer" placeholder=" ">
                         <label for="name" class="input-label">Nama Lengkap</label>
                     </div>
-
                     <div class="input-group">
                         <input id="email" name="email" type="email" required class="input-field peer" placeholder=" " autocomplete="email">
                         <label for="email" class="input-label">Alamat Email</label>
                     </div>
-
                     <div class="input-group">
-                        <input id="password" name="password" type="password" required class="input-field peer pr-10" placeholder=" " autocomplete="new-password">
+                        <input id="password" name="password" type="password" required class="input-field peer pr-10" placeholder=" ">
                         <label for="password" class="input-label">Password</label>
-                        <button type="button" onclick="togglePassword()" class="absolute right-0 top-1 text-gray-400 hover:text-premium-gold transition-colors focus:outline-none">
-                            <i id="eye-icon" data-lucide="eye" class="w-5 h-5"></i>
-                        </button>
+                        <button type="button" onclick="togglePassword()" class="absolute right-0 top-1 text-gray-400 hover:text-premium-gold transition-colors focus:outline-none"><i id="eye-icon" data-lucide="eye" class="w-5 h-5"></i></button>
                     </div>
 
-                    <button type="submit" 
-                            class="w-full py-4 bg-premium-gold hover:bg-[#E6C200] text-black font-bold tracking-widest uppercase text-xs rounded-none transition-all duration-300 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,215,0,0.2)] transform active:translate-y-0.5">
+                    <button type="submit" class="w-full py-4 bg-premium-gold hover:bg-[#E6C200] text-black font-bold tracking-widest uppercase text-xs rounded-none transition-all duration-300 hover:shadow-[4px_4px_0px_0px_rgba(255,215,0,0.4)] transform active:translate-y-0.5">
                         Daftar Sekarang
                     </button>
                 </form>
 
-                <div class="mt-10 pt-6 border-t border-gray-200 dark:border-gray-800 text-center">
-                    <p class="text-sm text-gray-500 mb-4">Sudah punya akun?</p>
-                    <a href="{{ url_for('auth_controller.auth_login', from='register') }}" 
-                       class="inline-block text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white hover:text-premium-gold transition-colors border-b border-transparent hover:border-premium-gold pb-0.5">
-                        Masuk ke Akun
+                <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800 text-center">
+                    <p class="text-sm text-gray-500 mb-2">Sudah memiliki akun?</p>
+                    <a href="{{ url_for('auth_controller.auth_login') }}?from=register" class="inline-block text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white hover:text-premium-gold transition-colors border-b border-transparent hover:border-premium-gold pb-0.5">
+                        Login di sini
+                    </a>
+                </div>
+
+                <div class="mt-4 flex justify-center">
+                    <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="group flex items-center gap-4 transition-all">
+                        <div class="relative shrink-0 w-10 h-12 bg-premium-gold text-primary-black group-hover:bg-primary-black group-hover:text-premium-gold dark:group-hover:bg-white rounded-[50%_50%_50%_50%_/_60%_60%_40%_40%] shadow-xl flex items-center justify-center transform -rotate-90 transition-all duration-300 ease-out group-hover:scale-110">
+                            <div class="rotate-90">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="font-sans font-bold text-sm text-primary-black dark:text-pure-white transition-colors duration-300">Kembali ke Beranda</span>
                     </a>
                 </div>
                 
-                <div class="mt-8 text-center">
-                     <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="arrow-left" class="w-3 h-3"></i> Kembali ke Beranda
-                    </a>
+                <div class="mt-10 p-6 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-center">
+                    <p class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Akun EggMonitor memerlukan verifikasi.</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Silakan hubungi admin kami untuk bergabung menjadi pengusaha EggVision.</p>
+                    
+                    <div class="flex justify-center">
+                        <a href="{{ url_for('comprof_controller.comprof_tentang_kami', _anchor='kontak') }}" class="group flex items-center gap-3 transition-all">
+                            <div class="relative shrink-0 w-8 h-10 bg-black dark:bg-white text-white dark:text-black group-hover:bg-premium-gold group-hover:text-black rounded-[50%_50%_50%_50%_/_60%_60%_40%_40%] shadow-md flex items-center justify-center transform rotate-90 transition-all duration-300 ease-out group-hover:scale-110">
+                                <div class="-rotate-90">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="font-sans font-bold text-xs text-gray-900 dark:text-white transition-colors duration-300">Kontak Admin</span>
+                        </a>
+                    </div>
                 </div>
+
             </div>
         </div>
 
-        <div id="image-panel" class="hidden lg:flex w-1/2 h-screen p-6 bg-paper dark:bg-black transition-colors duration-500 z-20">
-            <div class="w-full h-full relative overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800 bg-black">
+        <div id="visual-section" class="hidden lg:flex w-1/2 h-screen p-6 bg-paper dark:bg-black transition-colors duration-500 relative z-20">
+            <div class="w-full h-full relative overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800 bg-black animate-enter">
                 
-                <img src="{{ url_for('static', filename='img/eggnews.jpg') }}" 
-                     class="absolute inset-0 w-full h-full object-cover opacity-60" 
-                     alt="Register Visual">
-                
+                <img src="{{ url_for('static', filename='img/eggnews.jpg') }}" class="absolute inset-0 w-full h-full object-cover opacity-60" alt="Visual">
                 <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/60 to-[#1a1a1a]"></div>
+                
+                <div class="relative z-10 h-full flex flex-col justify-between p-12 text-white text-right">
+                    <div class="flex justify-end items-center text-xs font-bold tracking-[0.2em] uppercase opacity-70">
 
-                <div class="relative z-10 h-full flex flex-col justify-between p-12 text-white">
-                    <div class="flex justify-between items-center text-xs font-bold tracking-[0.2em] uppercase opacity-70">
                     </div>
-
+                    
                     <div>
-                        <div class="mb-6 flex">
-                            <img 
-                                src="{{ url_for('static', filename='/img/logo.png') }}"
-                                alt="EggVision"
-                                class="h-16 w-auto object-contain"
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-                            >
-                            <span class="text-3xl text-black hidden">🥚 EggVision</span>
+                        <div class="flex justify-end mb-6">
+                            <img src="{{ url_for('static', filename='img/logo.png') }}" 
+                                 alt="EggVision Logo" 
+                                 class="h-20 w-auto drop-shadow-xl">
                         </div>
                         <h1 class="font-canela text-6xl leading-[1.1] mb-6">
-                            Join the <br> <span class="italic text-premium-gold">Innovation.</span>
+                            Join the <br> <span class="italic text-premium-gold">Revolution.</span>
                         </h1>
-                        <p class="text-gray-300 text-lg leading-relaxed max-w-md">
-                            Mulai perjalanan digitalisasi peternakan Anda bersama kami hari ini.
+                        <p class="text-gray-300 text-lg leading-relaxed ml-auto max-w-md">
+                            Daftarkan diri Anda untuk membeli telur berkualitas grade terbaik.
                         </p>
                     </div>
+                    
+                    <div class="text-xs text-gray-400 font-mono">
 
-                    <div class="text-xs text-gray-400 font-mono"></div>
+                    </div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <script>
         lucide.createIcons();
 
+        // Check for transition param
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('from') === 'login') {
+            document.getElementById('visual-section').classList.add('slide-in-right');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            document.getElementById('visual-section').classList.add('animate-up');
+        }
+
         function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const eyeIcon = document.getElementById('eye-icon');
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                eyeIcon.setAttribute('data-lucide', 'eye-off');
-            } else {
-                passwordInput.type = 'password';
-                eyeIcon.setAttribute('data-lucide', 'eye');
-            }
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('eye-icon');
+            if (pwd.type === 'password') { pwd.type = 'text'; icon.setAttribute('data-lucide', 'eye-off'); } 
+            else { pwd.type = 'password'; icon.setAttribute('data-lucide', 'eye'); }
             lucide.createIcons();
         }
 
         function toggleDarkMode() {
             const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
+            if (html.classList.contains('dark')) { html.classList.remove('dark'); localStorage.theme = 'light'; } 
+            else { html.classList.add('dark'); localStorage.theme = 'dark'; }
+            lucide.createIcons();
         }
 
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-
-        // --- ANIMATION LOGIC ---
-        document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const fromPage = urlParams.get('from');
-            const imagePanel = document.getElementById('image-panel');
-
-            // Jika datang dari Login, slide gambar dari Kiri ke Posisi Normal (Kanan)
-            if (fromPage === 'login') {
-                imagePanel.classList.add('animate-slide-from-left');
-                
-                urlParams.delete('from');
-                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                window.history.replaceState({}, '', newUrl);
-            } else {
-                imagePanel.classList.add('animate-enter');
-            }
-        });
+        } else { document.documentElement.classList.remove('dark'); }
     </script>
 </body>
 </html>

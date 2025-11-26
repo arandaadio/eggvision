@@ -10,6 +10,19 @@ import mysql.connector
 
 eggmin_controller = Blueprint('eggmin_controller', __name__)
 
+# Intercept /eggmin request
+@eggmin_controller.before_request
+def restrict_eggmin_access():
+    # Jika user belum login, lempar ke Login Admin (bukan Login biasa)
+    if not current_user.is_authenticated:
+        # Simpan halaman yang ingin diakses agar bisa redirect balik setelah login
+        return redirect(url_for('auth_controller.auth_login_admin', next=request.url))
+    
+    # Jika sudah login tapi bukan admin, lempar keluar
+    if current_user.role != 'admin':
+        flash('Hanya Admin yang dapat mengakses halaman ini.', 'error')
+        return redirect(url_for('comprof_controller.comprof_beranda'))
+
 @eggmin_controller.route('/')
 @login_required
 def eggmin():
