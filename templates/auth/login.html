@@ -5,119 +5,250 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login · EggVision</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logoegg.png') }}">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        'canela': ['Canela Bold', 'serif'],
+                        'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+                    },
                     colors: {
-                        'primary-black': '#000000',
-                        'pure-white': '#FFFFFF',
+                        'paper': '#FDFBF7',      
+                        'ink': '#1a1a1a',        
                         'premium-gold': '#FFD700',
-                        'dark-gray': '#1a1a1a',
+                        'dark-surface': '#0a0a0a'
+                    },
+                    backgroundImage: {
+                        'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')",
                     }
                 }
             }
         }
     </script>
+    <style>
+        /* Default Entrance (Fade Up) */
+        .animate-enter {
+            opacity: 0;
+            transform: translateY(10px);
+            animation: enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        /* Sliding Animation: From Right to Left (When coming from Register) */
+        .animate-slide-from-right {
+            animation: slideFromRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes enter { to { opacity: 1; transform: translateY(0); } }
+        
+        /* Image was on the right (100%), moves to left (0%) */
+        @keyframes slideFromRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .delay-100 { animation-delay: 0.1s; }
+        
+        .input-group { position: relative; margin-bottom: 1.5rem; }
+        .input-field {
+            display: block; width: 100%; padding: 0.5rem 0;
+            background: transparent; border: none;
+            border-bottom: 1px solid #525252;
+            color: inherit; font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: border-color 0.3s;
+        }
+        .input-field:focus { outline: none; border-bottom-color: #FFD700; }
+        .input-label {
+            position: absolute; top: 0.5rem; left: 0;
+            font-size: 0.875rem; color: #9ca3af;
+            pointer-events: none; transition: 0.3s ease all;
+        }
+        .input-field:focus ~ .input-label,
+        .input-field:not(:placeholder-shown) ~ .input-label {
+            top: -1.2rem; font-size: 0.75rem; color: #FFD700;
+        }
+    </style>
 </head>
-<body class="h-full bg-primary-black">
-    <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div class="sm:mx-auto sm:w-full sm:max-w-md">
-            <!-- Logo -->
-            <div class="text-center">
-                <div class="text-4xl mb-4">🥚</div>
-                <h2 class="text-3xl font-bold text-premium-gold">EggVision</h2>
-                <p class="mt-2 text-sm text-gray-400">Platform Grading Telur Otomatis</p>
+<body class="h-full font-jakarta text-ink dark:text-paper bg-paper dark:bg-black transition-colors duration-500 overflow-hidden">
+
+    <div class="fixed inset-0 bg-noise opacity-40 pointer-events-none z-0"></div>
+
+    <div class="relative z-10 flex min-h-screen w-full">
+        
+        <div id="image-panel" class="hidden lg:flex w-1/2 h-screen p-6 bg-paper dark:bg-black transition-colors duration-500 z-20">
+            <div class="w-full h-full relative overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800 bg-black">
+                
+                <img src="{{ url_for('static', filename='img/eggnews.jpg') }}" 
+                     class="absolute inset-0 w-full h-full object-cover opacity-60" 
+                     alt="Login Visual">
+                
+                <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/60 to-[#1a1a1a]"></div>
+
+                <div class="relative z-10 h-full flex flex-col justify-between p-12 text-white">
+                    <div class="flex justify-between items-center text-xs font-bold tracking-[0.2em] uppercase opacity-70">
+                    </div>
+
+                    <div>
+                        <div class="mb-6 flex">
+                            <img 
+                                src="{{ url_for('static', filename='/img/logo.png') }}"
+                                alt="EggVision"
+                                class="h-16 w-auto object-contain"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                            >
+                            <span class="text-3xl text-black hidden">🥚 EggVision</span>
+                        </div>
+                        <h1 class="font-canela text-6xl leading-[1.1] mb-6">
+                            The Future of <br> <span class="italic text-premium-gold">Egg Grading.</span>
+                        </h1>
+                        <p class="text-gray-300 text-lg leading-relaxed max-w-md">
+                            Platform all-in-one untuk marketplace dan grading telur ayam konsumsi otomatis.
+                        </p>
+                    </div>
+
+                    <div class="text-xs text-gray-400 font-mono"></div>
+                </div>
             </div>
+        </div>
 
-            <!-- Login Form -->
-            <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div class="bg-dark-gray py-8 px-6 shadow border border-gray-800 rounded-lg sm:px-10">
-                    <form class="space-y-6" action="{{ url_for('auth_controller.auth_login') }}" method="POST">
-                        <!-- Email -->
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
-                                Alamat Email
-                            </label>
-                            <div class="mt-1">
-                                <input id="email" name="email" type="email" autocomplete="email" required 
-                                       class="w-full px-3 py-3 bg-black border border-gray-700 rounded-lg placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-premium-gold focus:border-premium-gold transition duration-200"
-                                       placeholder="email@example.com">
-                            </div>
-                        </div>
+        <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 md:p-16 lg:p-24 bg-white dark:bg-black transition-colors duration-500 relative z-10">
+            
+            <button onclick="toggleDarkMode()" class="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <i data-lucide="moon" class="w-5 h-5 block dark:hidden text-ink"></i>
+                <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-premium-gold"></i>
+            </button>
 
-                        <!-- Password -->
-                        <div>
-                            <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
-                                Password
-                            </label>
-                            <div class="mt-1">
-                                <input id="password" name="password" type="password" autocomplete="current-password" required 
-                                       class="w-full px-3 py-3 bg-black border border-gray-700 rounded-lg placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-premium-gold focus:border-premium-gold transition duration-200"
-                                       placeholder="••••••••">
-                            </div>
-                        </div>
+            <div class="w-full max-w-sm animate-enter delay-100">
+                <div class="lg:hidden mb-10 text-center">
+                    <div class="inline-flex w-14 h-14 bg-premium-gold rounded-full items-center justify-center text-2xl shadow-md mb-4">🥚</div>
+                    <h2 class="font-canela text-3xl text-gray-900 dark:text-white">EggVision</h2>
+                </div>
 
-                        <!-- Remember Me & Forgot Password -->
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <input id="remember" name="remember" type="checkbox" 
-                                       class="h-4 w-4 text-premium-gold focus:ring-premium-gold border-gray-700 rounded bg-black">
-                                <label for="remember" class="ml-2 block text-sm text-gray-400">
-                                    Ingat saya
-                                </label>
-                            </div>
-                        </div>
+                <div class="mb-10">
+                    <h2 class="font-canela text-4xl text-gray-900 dark:text-white mb-2">Selamat datang</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Silakan login dengan akun Anda.</p>
+                </div>
 
-                        <!-- Submit Button -->
-                        <div>
-                            <button type="submit" 
-                                    class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-primary-black bg-premium-gold hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-premium-gold focus:ring-offset-primary-black transition duration-200 font-semibold">
-                                Masuk
-                            </button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="mb-8 space-y-2">
+                            {% for category, message in messages %}
+                                <div class="p-4 text-sm border-l-2 flex items-center gap-3
+                                    {% if category == 'error' %} border-red-500 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400
+                                    {% else %} border-green-500 bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 {% endif %}">
+                                    {% if category == 'error' %} <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                                    {% else %} <i data-lucide="check-circle" class="w-4 h-4"></i> {% endif %}
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
                         </div>
-                    </form>
+                    {% endif %}
+                {% endwith %}
 
-                    <!-- Register Link -->
-                    <div class="mt-6">
-                        <div class="relative">
-                            <div class="absolute inset-0 flex items-center">
-                                <div class="w-full border-t border-gray-700"></div>
-                            </div>
-                            <div class="relative flex justify-center text-sm">
-                                <span class="px-2 bg-dark-gray text-gray-400">
-                                    Belum punya akun?
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 text-center">
-                            <a href="{{ url_for('auth_controller.auth_register') }}" class="text-premium-gold hover:text-yellow-500 transition duration-200 font-medium">
-                                Daftar akun baru
-                            </a>
-                        </div>
+                <form action="{{ url_for('auth_controller.auth_login') }}" method="POST" class="space-y-6">
+                    <div class="input-group">
+                        <input id="email" name="email" type="email" required class="input-field peer" placeholder=" " autocomplete="email">
+                        <label for="email" class="input-label">Alamat Email</label>
                     </div>
 
-                    <!-- Back to Home -->
-                    <div class="mt-6 text-center">
-                        <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="text-gray-400 hover:text-white transition duration-200 text-sm">
-                            ← Kembali ke beranda
-                        </a>
+                    <div class="input-group">
+                        <input id="password" name="password" type="password" required class="input-field peer pr-10" placeholder=" " autocomplete="current-password">
+                        <label for="password" class="input-label">Password</label>
+                        <button type="button" onclick="togglePassword()" class="absolute right-0 top-1 text-gray-400 hover:text-premium-gold transition-colors focus:outline-none">
+                            <i id="eye-icon" data-lucide="eye" class="w-5 h-5"></i>
+                        </button>
                     </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center cursor-pointer group">
+                            <input id="remember" name="remember" type="checkbox" 
+                                   class="w-4 h-4 rounded border-gray-400 text-premium-gold focus:ring-premium-gold bg-transparent transition-all">
+                            <span class="ml-2 text-gray-500 group-hover:text-gray-900 dark:group-hover:text-gray-300 transition-colors">Ingat saya</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" 
+                            class="w-full py-4 bg-premium-gold hover:bg-[#E6C200] text-black font-bold tracking-widest uppercase text-xs rounded-none transition-all duration-300 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,215,0,0.2)] transform active:translate-y-0.5">
+                        Masuk Sekarang
+                    </button>
+                </form>
+
+                <div class="mt-10 pt-6 border-t border-gray-200 dark:border-gray-800 text-center">
+                    <p class="text-sm text-gray-500 mb-4">Belum memiliki akun?</p>
+                    <a href="{{ url_for('auth_controller.auth_register', from='login') }}" 
+                       class="inline-block text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white hover:text-premium-gold transition-colors border-b border-transparent hover:border-premium-gold pb-0.5">
+                        Daftar Akun Baru
+                    </a>
+                </div>
+                
+                <div class="mt-8 text-center">
+                     <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="arrow-left" class="w-3 h-3"></i> Kembali ke Beranda
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Initialize dark mode
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
+        lucide.createIcons();
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.setAttribute('data-lucide', 'eye-off');
             } else {
-                document.documentElement.classList.remove('dark');
+                passwordInput.type = 'password';
+                eyeIcon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // --- ANIMATION LOGIC ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromPage = urlParams.get('from');
+            const imagePanel = document.getElementById('image-panel');
+
+            // Jika datang dari Register, slide gambar dari Kanan ke Posisi Normal (Kiri)
+            if (fromPage === 'register') {
+                imagePanel.classList.add('animate-slide-from-right');
+                
+                // Hapus URL param agar bersih
+                urlParams.delete('from');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+            } else {
+                // Jika load normal, fade in biasa
+                imagePanel.classList.add('animate-enter');
             }
         });
     </script>

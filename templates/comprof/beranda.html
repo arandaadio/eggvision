@@ -167,7 +167,7 @@
         <div class="space-y-8 max-w-4xl mx-auto font-sans">
             
             {% for news_item in news_list[:3] %}
-            <a href="{{ url_for('comprof_controller.comprof_berita') }}" class="group block border-b border-gray-300 dark:border-gray-800 pb-8 transition-all duration-300 hover:opacity-80">
+            <a href="{{ url_for('comprof_controller.comprof_berita', open_id=news_item.id) }}" class="group block border-b border-gray-300 dark:border-gray-800 pb-8 transition-all duration-300 hover:opacity-80">
                 <div class="flex flex-col md:flex-row items-start gap-6">
                     <div class="flex-grow">
                         <h3 class="text-2xl mb-2 text-gray-800 dark:text-pure-white group-hover:text-premium-gold transition-colors">{{ news_item.title }}</h3>
@@ -195,7 +195,9 @@
                 <p class="text-gray-500 dark:text-gray-500">Berita akan segera tersedia</p>
             </div>
             {% endfor %}
-            
+            <div>
+                {{ egg_cta('Lihat Semua Berita', href=url_for('comprof_controller.comprof_berita'), type='link', extra_class='mx-auto') }}
+            </div>
         </div>
     </div>
 </section>
@@ -224,7 +226,11 @@
                     </blockquote>
                     <div class="pl-10">
                         <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Fulan Setiawan</p>
-                        <p class="text-primary-black dark:text-premium-gold">Pendiri Sinar Telur Abadi</p>
+                        <p class="text-primary-black dark:text-premium-gold mb-6">Pendiri Sinar Telur Abadi</p>
+                        <div>
+                            {# REPLACE '3' WITH THE ACTUAL ID FOR FULAN'S NEWS ITEM #}
+                            {{ egg_cta('Lihat Selengkapnya', href=url_for('comprof_controller.comprof_berita', open_id=3), type='link') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -242,7 +248,11 @@
                     </blockquote>
                     <div class="pl-10">
                         <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Rina Saraswati</p>
-                        <p class="text-primary-black dark:text-premium-gold">Pendiri Sari Sehat Katering</p>
+                        <p class="text-primary-black dark:text-premium-gold mb-6">Pendiri Sari Sehat Katering</p>
+                        <div>
+                            {# REPLACE '6' WITH THE ACTUAL ID FOR RINA'S NEWS ITEM #}
+                            {{ egg_cta('Lihat Selengkapnya', href=url_for('comprof_controller.comprof_berita', open_id=6), type='link') }}
+                        </div>
                     </div>
                 </div>
 
