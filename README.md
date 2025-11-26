@@ -137,6 +137,6 @@ Ikuti langkah berikut untuk menjalankan EggVision di komputer lokal:
 -----
 
 <div align="center">
-  <p>Dibuat dengan cinta ❤️ dan 🥚 oleh Tim EggVision</p>
+  <p>Dibuat dengan ❤️ oleh Tim EggVision (TDCFives)</p>
   <p>&copy; 2025 EggVision. Hak Cipta Dilindungi.</p>
 </div>
