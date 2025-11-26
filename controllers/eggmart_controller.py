@@ -722,25 +722,44 @@ def save_listing():
 
     return redirect(url_for('eggmart_controller.eggmartDashboard'))
 
+# ==============================================================================
+# 1. FUNGSI KATALOG DENGAN FILTER (YANG SEBELUMNYA SALAH/KURANG)
+# ==============================================================================
+
 @eggmart_controller.route('/catalog')
 @login_required
 def eggmart():
-    """EggMart catalog page (untuk PEMBELI)"""
-    # kalau mau lock ke role pembeli, boleh aktifkan ini:
-    # if current_user.role != 'pembeli':
-    #     flash('Hanya Pembeli yang dapat mengakses EggMart.', 'error')
-    #     return redirect(url_for('comprof_controller.comprof_beranda'))
-
+    """EggMart catalog page (untuk PEMBELI) with Filtering"""
     now = datetime.now()
     sellers = []
 
+    # Get Filter Params
+    search_query = request.args.get('q', '').strip()
+    price_max = request.args.get('price_max', type=int)
+    grades = request.args.getlist('grade') 
+    locations = request.args.getlist('location') 
+
     conn = get_db_connection()
+    unique_locations = [] # List untuk menampung lokasi toko
+
     if conn:
         try:
             cur = conn.cursor(dictionary=True)
 
-            # Ambil semua seller yang punya listing aktif
+            # --- NEW: Ambil daftar lokasi unik dari Pengusaha ---
             cur.execute("""
+                SELECT DISTINCT farm_location 
+                FROM users 
+                WHERE role = 'pengusaha' 
+                  AND farm_location IS NOT NULL 
+                  AND farm_location != ''
+                ORDER BY farm_location
+            """)
+            loc_rows = cur.fetchall()
+            unique_locations = [row['farm_location'] for row in loc_rows]
+
+            # Base Query: Ambil Seller yang punya listing AKTIF
+            sql = """
                 SELECT 
                     u.id,
                     u.name,
@@ -748,34 +767,79 @@ def eggmart():
                     COALESCE(AVG(r.rating), 0) AS rating,
                     COUNT(r.id) AS review_count
                 FROM users u
-                JOIN egg_listings el 
-                    ON el.seller_id = u.id AND el.status = 'active'
-                LEFT JOIN seller_ratings r 
-                    ON r.seller_id = u.id
+                JOIN egg_listings el ON el.seller_id = u.id AND el.status = 'active'
+                LEFT JOIN seller_ratings r ON r.seller_id = u.id
                 WHERE u.role = 'pengusaha'
-                GROUP BY u.id, u.name, u.farm_location
-                ORDER BY u.name
-            """)
+            """
+            params = []
+
+            # 3. Terapkan Filter Search (Nama Toko)
+            if search_query:
+                sql += " AND u.name LIKE %s"
+                params.append(f"%{search_query}%")
+
+            # 4. Terapkan Filter Lokasi (OR logic)
+            if locations:
+                loc_conditions = []
+                for loc in locations:
+                    if loc == 'nearby': continue # Skip logika geo kompleks dulu
+                    loc_conditions.append("u.farm_location LIKE %s")
+                    params.append(f"%{loc}%")
+                
+                if loc_conditions:
+                    sql += f" AND ({' OR '.join(loc_conditions)})"
+
+            # 5. Terapkan Filter Harga & Grade (Pada level Seller)
+            # Kita filter seller yang MEMILIKI setidaknya satu produk yang sesuai kriteria
+            if price_max:
+                # Seller harus punya barang dengan harga <= max
+                sql += " AND EXISTS (SELECT 1 FROM egg_listings el2 WHERE el2.seller_id = u.id AND el2.status='active' AND el2.price_per_egg <= %s)"
+                params.append(price_max)
+            
+            if grades:
+                # Seller harus punya barang dengan grade yang dipilih
+                placeholders = ','.join(['%s'] * len(grades))
+                sql += f" AND EXISTS (SELECT 1 FROM egg_listings el3 WHERE el3.seller_id = u.id AND el3.status='active' AND el3.grade IN ({placeholders}))"
+                params.extend(grades)
+
+            # Grouping & Ordering
+            sql += " GROUP BY u.id, u.name, u.farm_location ORDER BY u.name"
+
+            # Eksekusi Query Seller
+            cur.execute(sql, tuple(params))
             seller_rows = cur.fetchall()
 
             for row in seller_rows:
                 code = (row["name"] or "SL")[:2].upper()
 
-                # Ambil listing aktif per seller
-                cur2 = conn.cursor(dictionary=True)
-                cur2.execute("""
-                    SELECT 
-                        id,
-                        grade,
-                        stock_eggs,
-                        price_per_egg
+                # 6. Ambil Produk per Seller (Filter Produknya Juga!)
+                prod_sql = """
+                    SELECT id, grade, stock_eggs, price_per_egg
                     FROM egg_listings
-                    WHERE seller_id = %s
-                      AND status = 'active'
-                    ORDER BY grade
-                """, (row["id"],))
+                    WHERE seller_id = %s AND status = 'active'
+                """
+                prod_params = [row["id"]]
+
+                # Filter produk sesuai kriteria user agar yang tampil relevan
+                if price_max:
+                    prod_sql += " AND price_per_egg <= %s"
+                    prod_params.append(price_max)
+                
+                if grades:
+                    placeholders = ','.join(['%s'] * len(grades))
+                    prod_sql += f" AND grade IN ({placeholders})"
+                    prod_params.extend(grades)
+
+                prod_sql += " ORDER BY grade"
+
+                cur2 = conn.cursor(dictionary=True)
+                cur2.execute(prod_sql, tuple(prod_params))
                 product_rows = cur2.fetchall()
                 cur2.close()
+
+                # Jika setelah difilter seller tidak punya produk (misal harganya ketinggian semua), skip seller ini
+                if not product_rows and (price_max or grades):
+                    continue
 
                 products = [
                     {
@@ -783,34 +847,202 @@ def eggmart():
                         "grade": p["grade"],
                         "stock": p["stock_eggs"],
                         "price": p["price_per_egg"],
-                        # karena di DB belum ada kolom description, kita generate teks default
                         "description": f"Telur grade {p['grade']} siap kirim",
                     }
                     for p in product_rows
                 ]
 
-                sellers.append(
-                    {
-                        "id": row["id"],
-                        "code": code,
-                        "name": row["name"],
-                        "location": row["farm_location"] or "-",
-                        "rating": float(row["rating"] or 0),
-                        "review_count": int(row["review_count"] or 0),
-                        "products": products,
-                    }
-                )
+                sellers.append({
+                    "id": row["id"],
+                    "code": code,
+                    "name": row["name"],
+                    "location": row["farm_location"] or "-",
+                    "rating": float(row["rating"] or 0),
+                    "review_count": int(row["review_count"] or 0),
+                    "products": products,
+                })
 
             cur.close()
         finally:
             conn.close()
+
+    # Kembalikan data filters ke template agar input tidak kereset
+    current_filters = {
+        'q': search_query,
+        'price_max': price_max,
+        'grades': grades,
+        'locations': locations
+    }
 
     return render_template(
         "eggmart/catalog.html",
         sellers=sellers,
         active_menu="catalog",
         now=now,
+        filters=current_filters
     )
+
+@eggmart_controller.route('/api/catalog/filter', methods=['GET'])
+@login_required
+def api_filter_catalog():
+    search_query = request.args.get('q', '').strip()
+    price_max = request.args.get('price_max', type=int)
+    grades = request.args.getlist('grade')
+    locations = request.args.getlist('location')
+
+    conn = get_db_connection()
+    sellers = []
+    
+    if conn:
+        try:
+            cur = conn.cursor(dictionary=True)
+
+            # Base Query
+            sql = """
+                SELECT 
+                    u.id,
+                    u.name,
+                    u.farm_location,
+                    COALESCE(AVG(r.rating), 0) AS rating,
+                    COUNT(r.id) AS review_count
+                FROM users u
+                JOIN egg_listings el ON el.seller_id = u.id AND el.status = 'active'
+                LEFT JOIN seller_ratings r ON r.seller_id = u.id
+                WHERE u.role = 'pengusaha'
+            """
+            params = []
+
+            if search_query:
+                sql += " AND u.name LIKE %s"
+                params.append(f"%{search_query}%")
+
+            if locations:
+                loc_conditions = []
+                for loc in locations:
+                    loc_conditions.append("u.farm_location LIKE %s")
+                    params.append(f"%{loc}%")
+                if loc_conditions:
+                    sql += f" AND ({' OR '.join(loc_conditions)})"
+
+            if price_max:
+                sql += " AND EXISTS (SELECT 1 FROM egg_listings el2 WHERE el2.seller_id = u.id AND el2.status='active' AND el2.price_per_egg <= %s)"
+                params.append(price_max)
+            
+            if grades:
+                placeholders = ','.join(['%s'] * len(grades))
+                sql += f" AND EXISTS (SELECT 1 FROM egg_listings el3 WHERE el3.seller_id = u.id AND el3.status='active' AND el3.grade IN ({placeholders}))"
+                params.extend(grades)
+
+            sql += " GROUP BY u.id, u.name, u.farm_location ORDER BY u.name"
+
+            cur.execute(sql, tuple(params))
+            seller_rows = cur.fetchall()
+
+            for row in seller_rows:
+                code = (row["name"] or "SL")[:2].upper()
+
+                # Fetch Products for this seller
+                prod_sql = """
+                    SELECT id, grade, stock_eggs, price_per_egg
+                    FROM egg_listings
+                    WHERE seller_id = %s AND status = 'active'
+                """
+                prod_params = [row["id"]]
+
+                if price_max:
+                    prod_sql += " AND price_per_egg <= %s"
+                    prod_params.append(price_max)
+                
+                if grades:
+                    placeholders = ','.join(['%s'] * len(grades))
+                    prod_sql += f" AND grade IN ({placeholders})"
+                    prod_params.extend(grades)
+
+                prod_sql += " ORDER BY grade"
+
+                cur2 = conn.cursor(dictionary=True)
+                cur2.execute(prod_sql, tuple(prod_params))
+                product_rows = cur2.fetchall()
+                cur2.close()
+
+                if (price_max or grades) and not product_rows:
+                    continue
+
+                products = [
+                    {
+                        "id": p["id"],
+                        "grade": p["grade"],
+                        "stock": p["stock_eggs"],
+                        "price": p["price_per_egg"],
+                        "description": f"Telur grade {p['grade']} siap kirim",
+                    }
+                    for p in product_rows
+                ]
+
+                sellers.append({
+                    "id": row["id"],
+                    "code": code,
+                    "name": row["name"],
+                    "location": row["farm_location"] or "-",
+                    "rating": float(row["rating"] or 0),
+                    "review_count": int(row["review_count"] or 0),
+                    "products": products,
+                    "detail_url": url_for('eggmart_controller.eggmartDetail', seller_id=row["id"]) # Helper for frontend
+                })
+
+            cur.close()
+        finally:
+            conn.close()
+            
+    return jsonify({'success': True, 'sellers': sellers})
+    
+# ==============================================================================
+# 2. FUNGSI BARU: API UPDATE PROFILE (YANG HILANG)
+# ==============================================================================
+
+@eggmart_controller.route('/api/profile/update', methods=['POST'])
+@login_required
+def update_profile():
+    data = request.get_json()
+    name = data.get('name')
+    email = data.get('email')
+    location = data.get('location') # Field baru dari frontend
+    
+    # Validasi dasar
+    if not name or not email:
+        return jsonify({'success': False, 'message': 'Nama dan Email wajib diisi'}), 400
+        
+    conn = get_db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            
+            # 1. Cek validitas email (apakah dipakai user lain?)
+            cur.execute("SELECT id FROM users WHERE email = %s AND id != %s", (email, current_user.id))
+            if cur.fetchone():
+                return jsonify({'success': False, 'message': 'Email sudah digunakan'}), 400
+            
+            # 2. Update User (termasuk lokasi ke farm_location)
+            # Kita update farm_location meskipun user adalah pembeli (karena struktur DB menggunakan kolom itu untuk lokasi)
+            cur.execute("""
+                UPDATE users 
+                SET name = %s, 
+                    email = %s, 
+                    farm_location = %s 
+                WHERE id = %s
+            """, (name, email, location, current_user.id))
+            
+            conn.commit()
+            cur.close()
+            return jsonify({'success': True, 'message': 'Profil & Lokasi berhasil diperbarui'})
+            
+        except Exception as e:
+            print("Update profile error:", e)
+            return jsonify({'success': False, 'message': 'Terjadi kesalahan server'}), 500
+        finally:
+            conn.close()
+            
+    return jsonify({'success': False, 'message': 'Database error'}), 500
 
 @eggmart_controller.route('/detail/<int:seller_id>')
 @login_required
