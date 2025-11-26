@@ -4,7 +4,11 @@
 
 {% block head %}
 <style>
-    html, body { margin: 0; padding: 0; }
+    html, body {
+        margin: 0;
+        padding: 0;
+    }
+
     .hero-bg {
         background-image: url("{{ url_for('static', filename='img/eggnews.jpg') }}");
         background-size: cover;
@@ -12,84 +16,84 @@
         background-repeat: no-repeat;
         position: relative;
     }
-    .hero-overlay { background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 10%, rgba(255, 255, 255, 1) 100%); }
-    .dark .hero-overlay { background: linear-gradient(to bottom, rgba(26, 26, 26, 0.65) 40%, rgba(26, 26, 26, 0.75) 60%, rgba(26, 26, 26, 1) 90%); }
-    .hero-section { margin-top: 0 !important; min-height: 90vh; }
-    .transparent-nav { background: transparent !important; border-bottom-color: transparent !important; backdrop-filter: none; }
-    .solid-nav { background: #000000 !important; border-bottom-color: #1a1a1a !important; backdrop-filter: blur(10px); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .newspaper-content { font-family: 'Georgia', 'Times New Roman', serif; line-height: 1.8; font-size: 1.125rem; text-align: justify; }
-    .newspaper-content p { margin-bottom: 1.5rem; }
-    .drop-cap::first-letter { font-size: 3.5rem; float: left; line-height: 0.8; margin-right: 0.5rem; font-weight: bold; color: #FFD700; }
+    
+    /* Default (Light Mode) Overlay */
+    .hero-overlay {
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 10%, rgba(255, 255, 255, 1) 100%);
+    }
+
+    /* Dark Mode Overlay */
+    .dark .hero-overlay {
+        background: linear-gradient(to bottom, rgba(26, 26, 26, 0.65) 40%, rgba(26, 26, 26, 0.75) 60%, rgba(26, 26, 26, 1) 90%);
+    }
+    
+    .hero-section {
+        margin-top: 0 !important;
+        min-height: 90vh;
+    }
+
+    /* Navbar Scroll Effects */
+    .transparent-nav {
+        background: transparent !important;
+        border-bottom-color: transparent !important;
+        backdrop-filter: none;
+    }
+
+    .solid-nav {
+        background: #000000 !important;
+        border-bottom-color: #1a1a1a !important;
+        backdrop-filter: blur(10px);
+    }
+
+    .section-anchor {
+        scroll-margin-top: 120px;
+    }
+
+    .news-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .news-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Newspaper Text Styling for Modal */
+    .newspaper-content {
+        font-family: 'Georgia', 'Times New Roman', serif;
+        line-height: 1.8;
+        font-size: 1.125rem;
+        text-align: justify;
+    }
+    
+    .newspaper-content p {
+        margin-bottom: 1.5rem;
+    }
+
+    .drop-cap::first-letter {
+        font-size: 3.5rem;
+        float: left;
+        line-height: 0.8;
+        margin-right: 0.5rem;
+        font-weight: bold;
+        color: #FFD700; /* Premium Gold */
+    }
+
+    /* Hide scrollbar for horizontal nav */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-
-{# 1. PREPARE DATA FOR JAVASCRIPT (With ID included) #}
-{% set js_news_list = [] %}
-{% for news in news_list %}
-    {% set _ = js_news_list.append({
-        'id': news.id,
-        'title': news.title,
-        'date': news.published_at.strftime('%d %B %Y') if news.published_at else '',
-        'content': news.content | replace('\n', '<br><br>'),
-        'image': news.image_url or url_for('static', filename='img/news-placeholder.jpg'),
-        'tags': (news.tags or 'GENERAL').split(',')[0]
-    }) %}
-{% endfor %}
-
 <div x-data="{ 
     readModalOpen: false, 
-    allNews: {{ js_news_list | tojson | forceescape }},
-    currentIndex: 0,
-    activeNews: {}, 
-
-    init() {
-        // Check URL for 'open_id' parameter for Deep Linking
-        const url = new URL(window.location.href);
-        const openId = url.searchParams.get('open_id');
-        
-        if (openId) {
-            // Find the index of the news item with that ID (loose comparison for string/int)
-            const index = this.allNews.findIndex(n => n.id == openId);
-            
-            if (index !== -1) {
-                setTimeout(() => {
-                    this.openNews(index);
-                    
-                    // Remove the 'open_id' from the URL without refreshing
-                    url.searchParams.delete('open_id');
-                    window.history.replaceState({}, '', url);
-                    
-                }, 300);
-            }
-        }
-    },
-
-    openNews(index) {
-        this.currentIndex = index;
-        this.activeNews = this.allNews[index];
-        this.toggleUI(true);
-    },
-
-    nextNews() {
-        if (this.currentIndex < this.allNews.length - 1) {
-            this.currentIndex++;
-            this.activeNews = this.allNews[this.currentIndex];
-            document.getElementById('modal-content-box').scrollTop = 0;
-        }
-    },
-
-    prevNews() {
-        if (this.currentIndex > 0) {
-            this.currentIndex--;
-            this.activeNews = this.allNews[this.currentIndex];
-            document.getElementById('modal-content-box').scrollTop = 0;
-        }
-    },
-
+    activeNews: { title: '', date: '', content: '', image: '', tags: '' },
     toggleUI(isOpen) {
         this.readModalOpen = isOpen;
         const nav = document.getElementById('mainNav');
@@ -97,7 +101,7 @@
         if(isOpen) {
             if(nav) nav.style.display = 'none';
             if(chat) chat.style.display = 'none';
-            document.body.style.overflow = 'hidden'; 
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
         } else {
             if(nav) nav.style.display = '';
             if(chat) chat.style.display = '';
@@ -124,12 +128,13 @@
             
             <div class="sticky top-0 z-30 bg-[#f8f9fa]/95 dark:bg-[#1a1a1a]/95 backdrop-blur-md border-b-2 border-premium-gold mb-12 py-4 transition-colors duration-300">
                 <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                    
                     <nav class="w-full lg:w-auto overflow-x-auto no-scrollbar">
                         <ul class="flex items-center gap-6 text-xs md:text-base tracking-widest uppercase whitespace-nowrap text-gray-600 dark:text-gray-400 font-canela font-bold">
                             <li>
                                 <a href="{{ url_for('comprof_controller.comprof_berita') }}" 
                                    class="{{ 'text-premium-gold' if not active_filters.tag else 'hover:text-premium-gold' }} transition-colors font-canela">
-                                    SEMUA BERITA
+                                    All News
                                 </a>
                             </li>
                             <li class="text-gray-300 dark:text-gray-700">|</li>
@@ -148,18 +153,23 @@
                         <form action="{{ url_for('comprof_controller.comprof_berita') }}" method="GET" class="flex gap-3 w-full sm:w-auto">
                             <input type="hidden" name="q" value="{{ active_filters.q }}">
                             <input type="hidden" name="tag" value="{{ active_filters.tag }}">
-                            <select name="time" onchange="this.form.submit()" class="bg-white dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none cursor-pointer dark:text-white">
+                            <select name="time" onchange="this.form.submit()" 
+                                    class="bg-white dark:bg-[#161616] border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none cursor-pointer dark:text-white">
                                 <option value="all" {% if active_filters.time == 'all' %}selected{% endif %}>Most Recent</option>
                                 <option value="yesterday" {% if active_filters.time == 'yesterday' %}selected{% endif %}>Last 24 Hours</option>
                                 <option value="week" {% if active_filters.time == 'week' %}selected{% endif %}>Last 7 Days</option>
                                 <option value="month" {% if active_filters.time == 'month' %}selected{% endif %}>Last 30 Days</option>
                             </select>
                         </form>
+
                         <form action="{{ url_for('comprof_controller.comprof_berita') }}" method="GET" class="relative w-full sm:w-48">
                             <input type="hidden" name="tag" value="{{ active_filters.tag }}">
                             <input type="hidden" name="time" value="{{ active_filters.time }}">
-                            <input type="text" name="q" value="{{ active_filters.q }}" placeholder="Cari berita" class="w-full bg-transparent border-b border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-base py-2 pr-8 focus:outline-none focus:border-premium-gold placeholder-gray-400">
-                            <button type="submit" class="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-premium-gold"><i data-lucide="search" class="w-4 h-4"></i></button>
+                            <input type="text" name="q" value="{{ active_filters.q }}" placeholder="Cari berita dari kami" 
+                                   class="w-full bg-transparent border-b border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-base py-2 pr-8 focus:outline-none focus:border-premium-gold placeholder-gray-400">
+                            <button type="submit" class="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-premium-gold">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -168,22 +178,54 @@
             {% if news_list %}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-12">
                 {% for news in news_list %}
-                <article class="group flex flex-col h-full cursor-pointer" @click="openNews({{ loop.index0 }})">
+                
+                {# 1. Prepare the data object cleanly using Jinja #}
+                {% set news_payload = {
+                    'id': news.id,
+                    'title': news.title,
+                    'date': news.published_at.strftime('%d %B %Y') if news.published_at else '',
+                    'content': news.content | replace('\n', '<br><br>'),
+                    'image': news.image_url or url_for('static', filename='img/news-placeholder.jpg'),
+                    'tags': (news.tags or 'GENERAL').split(',')[0]
+                } %}
+
+                {# 2. Store data in 'data-payload' and parse it on click #}
+                <article class="group flex flex-col h-full cursor-pointer"
+                         data-payload="{{ news_payload | tojson | forceescape }}"
+                         @click="
+                            toggleUI(true);
+                            activeNews = JSON.parse($el.dataset.payload);
+                         ">
+                    
                     <div class="w-full aspect-[3/2] overflow-hidden mb-4 bg-gray-200 dark:bg-gray-800">
                         {% if news.image_url %}
                             <img src="{{ news.image_url }}" alt="{{ news.title }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                         {% else %}
-                            <div class="w-full h-full flex items-center justify-center text-gray-400"><i data-lucide="image" class="w-12 h-12"></i></div>
+                            <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                <i data-lucide="image" class="w-12 h-12"></i>
+                            </div>
                         {% endif %}
                     </div>
+
                     <div class="flex flex-col flex-grow border-t-4 border-transparent group-hover:border-premium-gold transition-all duration-300 pt-2">
                         <div class="mb-2">
                             <span class="text-[10px] font-bold tracking-widest uppercase text-premium-gold">
-                                {% if news.tags %}{{ news.tags.split(',')[0] }}{% else %}NEWS{% endif %}
+                                {% if news.tags %}
+                                    {{ news.tags.split(',')[0] }}
+                                {% else %}
+                                    NEWS
+                                {% endif %}
                             </span>
                         </div>
-                        <h2 class="font-canela text-2xl md:text-3xl leading-tight text-gray-900 dark:text-white mb-3 group-hover:underline decoration-1 underline-offset-4">{{ news.title }}</h2>
-                        <p class="font-jakarta text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">{{ news.content }}</p>
+
+                        <h2 class="font-canela text-2xl md:text-3xl leading-tight text-gray-900 dark:text-white mb-3 group-hover:underline decoration-1 underline-offset-4">
+                            {{ news.title }}
+                        </h2>
+
+                        <p class="font-jakarta text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow">
+                            {{ news.content }}
+                        </p>
+
                         <div class="mt-auto">
                             <span class="inline-flex items-center text-xs font-bold uppercase tracking-widest text-gray-900 dark:text-white group-hover:text-premium-gold transition-colors">
                                 Read More <i data-lucide="arrow-up-right" class="w-3 h-3 ml-1"></i>
@@ -195,19 +237,23 @@
             </div>
             {% else %}
             <div class="flex flex-col items-center justify-center py-24 text-center">
-                <div class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4"><i data-lucide="newspaper" class="w-8 h-8 text-gray-400"></i></div>
-                <h3 class="font-canela text-2xl text-gray-900 dark:text-white">Berita tidak ditemukan</h3>
+                <div class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                    <i data-lucide="newspaper" class="w-8 h-8 text-gray-400"></i>
+                </div>
+                <h3 class="font-canela text-2xl text-gray-900 dark:text-white">Belum ada berita ditemukan</h3>
                 <p class="text-gray-500 mt-2">Coba sesuaikan filter atau kata kunci pencarian Anda.</p>
-                <a href="{{ url_for('comprof_controller.comprof_berita') }}" class="mt-6 text-premium-gold font-bold text-sm hover:underline">RESET FILTER</a>
+                <a href="{{ url_for('comprof_controller.comprof_berita') }}" class="mt-6 text-premium-gold font-bold text-sm hover:underline">Reset Filter</a>
             </div>
             {% endif %}
         </div>
     </section>
 
+    <!-- POPUP MODAL (Newspaper Style with Dark Mode) -->
     <div x-show="readModalOpen" 
          class="fixed inset-0 z-[9999] flex items-center justify-center p-0 sm:p-4"
          style="display: none;">
         
+        <!-- Backdrop -->
         <div class="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity"
              x-show="readModalOpen"
              x-transition:enter="ease-out duration-300"
@@ -218,9 +264,7 @@
              x-transition:leave-end="opacity-0"
              @click="toggleUI(false)"></div>
 
-        <button @click.stop="prevNews()" x-show="currentIndex > 0" class="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-50 p-4 bg-black/50 hover:bg-black text-white rounded-full transition-all backdrop-blur-sm border border-white/10"><i data-lucide="chevron-left" class="w-8 h-8"></i></button>
-        <button @click.stop="nextNews()" x-show="currentIndex < allNews.length - 1" class="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-50 p-4 bg-black/50 hover:bg-black text-white rounded-full transition-all backdrop-blur-sm border border-white/10"><i data-lucide="chevron-right" class="w-8 h-8"></i></button>
-
+        <!-- Modal Card -->
         <div class="relative w-full h-full sm:h-auto sm:max-h-[95vh] max-w-5xl bg-[#fdfbf7] dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100 shadow-2xl overflow-hidden flex flex-col transition-all transform"
              x-show="readModalOpen"
              x-transition:enter="ease-out duration-300"
@@ -240,6 +284,7 @@
             </button>
 
             <div id="modal-content-box" class="overflow-y-auto p-6 md:p-12 lg:p-16 custom-scrollbar bg-[#fdfbf7] dark:bg-[#1a1a1a]">
+                
                 <div class="border-b-2 border-black dark:border-white/20 pb-8 mb-10 text-center max-w-3xl mx-auto">
                     <div class="flex justify-center items-center gap-2 mb-4">
                          <span class="px-3 py-1 bg-black dark:bg-white text-[#fdfbf7] dark:text-black text-xs font-bold uppercase tracking-widest" x-text="activeNews.tags"></span>
@@ -249,7 +294,7 @@
                         <span>Published on</span> <span x-text="activeNews.date" class="text-black dark:text-white"></span>
                     </p>
                 </div>
-
+                
                 <div class="w-full max-w-3xl mx-auto h-64 md:h-[500px] mb-12 overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-lg">
                     <img :src="activeNews.image" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000" alt="Article Image">
                 </div>
@@ -258,12 +303,6 @@
                     <div class="newspaper-content drop-cap text-lg leading-relaxed text-gray-800 dark:text-gray-200" x-html="activeNews.content"></div>
 
                     <div class="mt-16 pt-8 border-t border-gray-300 dark:border-gray-700 text-center">
-                        
-                        <div class="flex md:hidden justify-between gap-4 mb-6">
-                            <button @click.stop="prevNews()" :disabled="currentIndex === 0" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-black dark:text-white disabled:opacity-30 rounded text-xs font-bold uppercase">Previous</button>
-                            <button @click.stop="nextNews()" :disabled="currentIndex === allNews.length - 1" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-black dark:text-white disabled:opacity-30 rounded text-xs font-bold uppercase">Next</button>
-                        </div>
-
                         <div class="flex justify-center gap-4">
                             <button @click="toggleUI(false)" class="px-8 py-3 bg-black dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-widest hover:bg-premium-gold hover:text-black dark:hover:bg-premium-gold transition-colors">
                                 Close Article
@@ -273,7 +312,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
 </div>
 
@@ -282,32 +320,7 @@
         const navbar = document.getElementById('mainNav');
         const heroSection = document.querySelector('.hero-section');
         
-        // --- 1. SCROLL RESTORATION LOGIC ---
-        // Check if we have a saved scroll position for this page
-        const savedScrollPosition = sessionStorage.getItem('beritaScrollPos');
-        
-        if (savedScrollPosition) {
-            // Restore the scroll position immediately
-            window.scrollTo(0, parseInt(savedScrollPosition, 10));
-            // Clear it so it doesn't persist if the user navigates away and back later manually
-            sessionStorage.removeItem('beritaScrollPos');
-        }
-
-        // Listen for any click on filter links or form submissions
-        const filterLinks = document.querySelectorAll('nav a, form select, form button');
-        
-        filterLinks.forEach(element => {
-            // Triggers on click for links/buttons, and change for selects
-            const eventType = element.tagName === 'SELECT' ? 'change' : 'click';
-            
-            element.addEventListener(eventType, function() {
-                // Save current scroll position before the reload happens
-                sessionStorage.setItem('beritaScrollPos', window.scrollY);
-            });
-        });
-
-
-        // --- 2. NAVBAR TRANSPARENCY LOGIC (Existing) ---
+        // Logic: Navbar Transparent on Hero, Solid Black on Scroll
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
@@ -320,10 +333,15 @@
                     }
                 });
             },
-            { rootMargin: '-100px 0px 0px 0px', threshold: 0 }
+            {
+                rootMargin: '-100px 0px 0px 0px',
+                threshold: 0
+            }
         );
     
-        if (heroSection) { observer.observe(heroSection); }
+        if (heroSection) {
+            observer.observe(heroSection);
+        }
     });
 </script>
 {% endblock %}
