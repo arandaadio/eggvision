@@ -87,22 +87,22 @@
                     <div class="h-px w-full bg-gray-200 dark:bg-dark-border"></div>
 
                     <div class="space-y-4">
-                        <h3 class="font-canela font-normal text-xl">Rentang Harga</h3>
-                        <div class="flex items-center gap-2">
-                            <div class="relative flex-1">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">Max</span>
-                                <input type="number" x-model="maxPrice" class="w-full pl-10 pr-2 py-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:border-primary focus:ring-0 transition-all">
-                            </div>
-                        </div>
-                        <div>
-                            <input type="range" min="0" max="100000" step="500" x-model="maxPrice"
-                                   class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary">
-                            <div class="flex justify-between text-[10px] text-gray-400 mt-2">
-                                <span>Rp 0</span>
-                                <span>Rp 100k+</span>
-                            </div>
-                        </div>
-                    </div>
+                      <h3 class="font-canela font-normal text-xl">Rentang Harga per Butir</h3>
+                      <div class="flex items-center gap-2">
+                          <div class="relative flex-1">
+                              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">Max</span>
+                              <input type="number" x-model="maxPrice" class="w-full pl-10 pr-2 py-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:border-primary focus:ring-0 transition-all">
+                          </div>
+                      </div>
+                      <div>
+                          <input type="range" min="0" max="5000" step="100" x-model="maxPrice"
+                                 class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary">
+                          <div class="flex justify-between text-[10px] text-gray-400 mt-2">
+                              <span>Rp 0</span>
+                              <span>Rp 5.000</span>
+                          </div>
+                      </div>
+                  </div>
                 </div>
             </aside>
 
@@ -312,7 +312,7 @@ document.addEventListener('alpine:init', () => {
         profileModalOpen: false,
         profileTab: 'info', 
         minPrice: 0,
-        maxPrice: 50000,
+        maxPrice: 5000,
         locationMode: 'manual',
         searchQuery: '',
         
