@@ -947,23 +947,22 @@ def get_chat_for_seller(seller_id):
 
         # Ambil semua pesan chat utk session ini
         cur.execute("""
-            SELECT message, message_type, created_at
+            SELECT id, message, message_type, created_at
             FROM chat_messages
             WHERE session_id = %s
             ORDER BY created_at ASC
         """, (session_id,))
+
         msgs = []
         for m in cur.fetchall():
             mtype = m['message_type']
-            # Dari sudut pandang BUYER:
-            # - user_to_admin / guest_to_admin = pesan dari buyer
-            # - admin_to_user / admin_to_guest = pesan dari seller
             if mtype in ('user_to_admin', 'guest_to_admin'):
                 sender = 'self'
             else:
                 sender = 'seller'
 
             msgs.append({
+                "id": m["id"],   # <--- PENTING: Tambahkan ID ini
                 "sender": sender,
                 "text": m["message"],
                 "time": m["created_at"].strftime("%H:%M") if m["created_at"] else ""
@@ -1213,7 +1212,8 @@ def seller_chat_thread(session_id):
                     sender = "seller"
 
                 messages.append({
-                    "sender": sender,   # 'buyer' atau 'seller'
+                    "id": row["id"],      # <--- PENTING: Tambahkan ini
+                    "sender": sender,
                     "text": row["message"],
                     "time": row["created_at"].strftime("%H:%M") if row["created_at"] else ""
                 })
@@ -1278,3 +1278,82 @@ def seller_chat_thread(session_id):
         conn.close()
 
 
+@eggmart_controller.route('/api/chat/threads', methods=['GET'])
+@login_required
+def api_get_chat_threads():
+    """
+    API untuk mengambil daftar chat thread di sidebar kiri (Seller Dashboard).
+    Digunakan oleh AJAX Polling di JavaScript.
+    """
+    # 1. Cek Role
+    if current_user.role not in ('pengusaha', 'admin'):
+        return jsonify(success=False, threads=[])
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify(success=False, message="Database error"), 500
+
+    try:
+        cur = conn.cursor(dictionary=True)
+        seller_key = f"seller:{current_user.id}"
+
+        # 2. Query Daftar Chat
+        # Mengambil: ID Session, Nama Buyer, Last Message, Unread Count
+        # Kita perlu JOIN ke users untuk nama buyer.
+        # Kita perlu SUBQUERY untuk pesan terakhir dan jumlah unread.
+        query = """
+            SELECT 
+                cs.id,
+                u.name AS buyer_name,
+                cs.last_message_at,
+                (
+                    SELECT message 
+                    FROM chat_messages 
+                    WHERE session_id = cs.id 
+                    ORDER BY created_at DESC LIMIT 1
+                ) AS last_message_text,
+                (
+                    SELECT COUNT(*) 
+                    FROM chat_messages 
+                    WHERE session_id = cs.id 
+                      AND status = 'unread' 
+                      AND message_type IN ('user_to_admin', 'guest_to_admin')
+                ) AS unread_count
+            FROM chat_sessions cs
+            LEFT JOIN users u ON cs.user_id = u.id
+            WHERE cs.guest_email = %s
+            ORDER BY cs.last_message_at DESC
+        """
+        cur.execute(query, (seller_key,))
+        rows = cur.fetchall()
+
+        results = []
+        for row in rows:
+            # Format nama & inisial
+            b_name = row['buyer_name'] if row['buyer_name'] else f"Guest #{row['id']}"
+            initials = "".join([x[0] for x in b_name.split()[:2]]).upper()
+
+            # Format waktu (HH:MM)
+            time_str = ""
+            if row['last_message_at']:
+                time_str = row['last_message_at'].strftime('%H:%M')
+
+            results.append({
+                'id': row['id'],
+                'name': b_name,
+                'initials': initials,
+                'last_message': row['last_message_text'] or 'Belum ada pesan',
+                'last_time': time_str,
+                'unread': row['unread_count'],
+                # URL ini menghubungkan list ke controller detail yang SUDAH ANDA PUNYA
+                'fetch_url': url_for('eggmart_controller.seller_chat_thread', session_id=row['id'])
+            })
+
+        return jsonify(success=True, threads=results)
+
+    except Exception as e:
+        print(f"Error api_get_chat_threads: {e}")
+        return jsonify(success=False, message=str(e)), 500
+    finally:
+        if conn:
+            conn.close()
