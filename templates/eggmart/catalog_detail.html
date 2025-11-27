@@ -1,12 +1,50 @@
 {% extends "eggmart/base.html" %}
 
 {% block content %}
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ midtrans_client_key }}"></script>
+
 <div x-data="{ 
     chatOpen: false, 
     cart: {}, 
+    isLoading: false,
     
+    // --- New Variables for Header ---
+    profileModalOpen: false,
+    profileTab: 'info',
+    profileName: '{{ current_user.name }}',
+    profileEmail: '{{ current_user.email }}',
+    profileLocation: '{{ current_user.farm_location or '' }}',
+    locationMode: 'manual',
+    isDetectingLocation: false,
+    
+    shopDropdownOpen: false,
+    allShops: [], // To store list of other shops
+
     formatRupiah(num) {
         return 'Rp ' + parseInt(num).toLocaleString('id-ID');
+    },
+
+    init() {
+        // Fetch all shops for the dropdown
+        this.fetchShops();
+        
+        // Auto-detect location if empty
+        if (!this.profileLocation || this.profileLocation === 'None') {
+            this.detectLocation(true);
+        }
+    },
+
+    async fetchShops() {
+        try {
+            // Reusing the catalog API to get list of sellers
+            const res = await fetch(`{{ url_for('eggmart_controller.api_filter_catalog') }}`);
+            const data = await res.json();
+            if(data.success) {
+                this.allShops = data.sellers;
+            }
+        } catch(err) {
+            console.error('Failed to load shops', err);
+        }
     },
     
     addToCart(id, price, maxStock) {
@@ -41,47 +79,165 @@
         return sum;
     },
 
-    checkout() {
+    async checkout() {
         const items = Object.entries(this.cart).filter(([_, val]) => val.qty > 0);
         if (items.length === 0) {
             alert('Pilih minimal satu produk.');
             return;
         }
         
+        // Take the first item (current logic handles 1 transaction per checkout)
         const [listingId, item] = items[0];
-        document.getElementById('checkoutListingId').value = listingId;
-        document.getElementById('checkoutQuantity').value = item.qty;
-        document.getElementById('realCheckoutBtn').click();
-    }
+        this.isLoading = true;
+
+        try {
+            const response = await fetch(`{{ url_for('eggmart_controller.create_transaction') }}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ listing_id: listingId, quantity: item.qty })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.snap_token) {
+                window.snap.pay(result.snap_token, {
+                    onSuccess: function(result){ window.location.href = `{{ url_for('eggmart_controller.eggmartHistory') }}?new_order_code=${result.order_id}`; },
+                    onPending: function(result){ window.location.href = `{{ url_for('eggmart_controller.eggmartHistory') }}?new_order_code=${result.order_id}`; },
+                    onError: function(result){ alert('Pembayaran gagal!'); console.error(result); },
+                    onClose: function(){ alert('Anda menutup popup tanpa menyelesaikan pembayaran'); }
+                });
+            } else {
+                alert(result.message || 'Gagal membuat transaksi.');
+            }
+        } catch (err) {
+            console.error('Checkout Error:', err);
+            alert('Terjadi kesalahan koneksi.');
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    // --- Profile Logic ---
+    detectLocation(isAuto = false) {
+        if (!navigator.geolocation) { alert('Browser Anda tidak mendukung Geolocation.'); return; }
+        this.isDetectingLocation = true;
+        if (!isAuto) this.locationMode = 'gps';
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        this.profileLocation = data.display_name;
+                        this.isDetectingLocation = false;
+                        if (isAuto) this.saveProfile(true);
+                    })
+                    .catch(err => { this.isDetectingLocation = false; });
+            },
+            (error) => { this.isDetectingLocation = false; }
+        );
+    },
 }">
 
     <header class="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-dark-border bg-paper/90 dark:bg-dark-surface/90 backdrop-blur-md transition-colors duration-300">
-        <div class="container mx-auto px-4 h-20 flex items-center justify-between">
-            
-            <a href="{{ url_for('eggmart_controller.eggmart') }}" class="flex items-center gap-4 group">
-                <div class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                    <i data-lucide="arrow-left" class="w-5 h-5 text-ink dark:text-white"></i>
-                </div>
-                <div class="h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-8 w-auto">
-                <span class="font-canela font-normal text-xl text-ink dark:text-white tracking-wide group-hover:text-primary transition-colors hidden sm:block">
-                    EggMart
-                </span>
-            </a>
+      <div class="container mx-auto px-4 h-20 flex items-center justify-between">
+          
+          <div class="flex-shrink-0">
+              <a href="{{ url_for('eggmart_controller.eggmart') }}" class="flex items-center gap-3 sm:gap-4 group">
+                  <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-8 sm:h-10 w-auto">
+                  <div class="h-5 sm:h-6 w-px bg-gray-300 dark:bg-gray-700 hidden xs:block"></div>
+                  <span class="font-canela font-normal text-xl sm:text-2xl text-ink dark:text-white tracking-wide group-hover:text-primary transition-colors hidden xs:block">
+                      EggMart
+                  </span>
+              </a>
+          </div>
 
-            <div class="hidden md:flex items-center gap-3 bg-white dark:bg-white/5 px-5 py-2 rounded-full border border-gray-200 dark:border-dark-border shadow-sm">
-                <i data-lucide="store" class="w-4 h-4 text-primary"></i>
-                <span class="text-sm text-gray-500 dark:text-gray-400">Toko Terpilih:</span>
-                <span class="text-sm font-bold text-ink dark:text-white truncate max-w-[150px]">{{ seller.name }}</span>
-            </div>
+          <div class="hidden lg:flex items-center gap-4">
+              <div class="flex items-center gap-3 px-5 py-2 rounded-full bg-white dark:bg-white/5 border border-gray-200 dark:border-dark-border shadow-sm">
+                  <div class="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700">
+                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name }}" alt="User" class="w-full h-full">
+                  </div>
+                  <div class="flex flex-col items-start">
+                      <span class="text-[10px] font-bold uppercase text-gray-400 leading-none mb-0.5">Dikirim ke</span>
+                      <div class="flex items-center gap-1 text-xs font-bold text-ink dark:text-white">
+                          <span class="truncate max-w-[200px]" x-text="profileLocation ? profileLocation.split(',')[0] : 'Atur Lokasi'"></span>
+                      </div>
+                  </div>
+              </div>
 
-            <div class="flex items-center gap-3">
-                <button onclick="toggleDarkMode()" class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-primary transition-colors">
-                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
-                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
-                </button>
-            </div>
-        </div>
+              <div class="relative" @click.outside="shopDropdownOpen = false">
+                  <button 
+                      @click="shopDropdownOpen = !shopDropdownOpen"
+                      class="flex items-center gap-3 px-5 py-2 rounded-full bg-white dark:bg-white/5 border border-gray-200 dark:border-dark-border hover:border-primary/50 transition-all shadow-sm group">
+                      <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                          <i data-lucide="store" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <div class="flex flex-col items-start">
+                          <span class="text-[10px] font-bold uppercase text-gray-400 leading-none mb-0.5">Toko Terpilih</span>
+                          <div class="flex items-center gap-1 text-xs font-bold text-ink dark:text-white group-hover:text-primary transition-colors">
+                              <span class="truncate max-w-[150px]">{{ seller.name }}</span>
+                              <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" :class="shopDropdownOpen ? 'rotate-180' : ''"></i>
+                          </div>
+                      </div>
+                  </button>
+
+                  <div x-show="shopDropdownOpen" 
+                      x-transition:enter="transition ease-out duration-200"
+                      x-transition:enter-start="opacity-0 translate-y-2"
+                      x-transition:enter-end="opacity-100 translate-y-0"
+                      x-cloak
+                      class="absolute top-full mt-2 left-0 w-64 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-xl shadow-xl overflow-hidden z-50 py-2">
+                      
+                      <div class="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Ganti Toko</div>
+                      
+                      <template x-for="shop in allShops" :key="shop.id">
+                          <a :href="shop.detail_url" 
+                            class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-l-2 border-transparent hover:border-primary">
+                              <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center font-canela text-primary font-bold text-xs" x-text="shop.code"></div>
+                              <div class="flex-1 min-w-0">
+                                  <p class="text-sm font-bold text-ink dark:text-white truncate" x-text="shop.name"></p>
+                                  <p class="text-xs text-gray-500 truncate" x-text="shop.location"></p>
+                              </div>
+                          </a>
+                      </template>
+                      
+                      <div x-show="allShops.length === 0" class="px-4 py-3 text-sm text-gray-500 text-center">
+                          Memuat daftar toko...
+                      </div>
+                  </div>
+              </div>
+
+          </div>
+          
+          <div class="flex items-center gap-3">
+              <button 
+                  onclick="toggleDarkMode()" 
+                  class="relative inline-flex items-center w-12 h-6 sm:w-14 sm:h-7 rounded-full transition-colors duration-300 ease-in-out 
+                      bg-gray-300 dark:bg-gray-600 hover:ring-2 hover:ring-premium-gold focus:outline-none"
+                  aria-label="Toggle dark mode"
+              >
+                  <span 
+                      class="absolute left-0.5 top-0.5 w-5 h-5 sm:left-1 sm:top-1 sm:w-5 sm:h-5 rounded-full bg-white dark:bg-primary-black transform transition-transform duration-300 ease-in-out 
+                          dark:translate-x-6 sm:dark:translate-x-7"
+                  ></span>
+                  
+                  <svg xmlns="http://www.w3.org/2000/svg" 
+                      class="absolute left-1.5 w-3 h-3 sm:w-4 sm:h-4 text-gray-700 dark:hidden" 
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 3v1m0 16v1m8.66-9H21M3 12H2m15.36-6.36l.7.7M6.34 17.66l.7.7M17.66 17.66l.7-.7M6.34 6.34l.7-.7M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                  </svg>
+                  
+                  <svg xmlns="http://www.w3.org/2000/svg" 
+                      class="absolute right-1.5 w-3 h-3 sm:w-4 sm:h-4 hidden dark:block text-yellow-400" 
+                      fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 2a8 8 0 107.446 5.032A6 6 0 0110 2z"/>
+                  </svg>
+              </button>
+          </div>
+      </div>
     </header>
 
     <div class="container mx-auto px-4 py-8 space-y-8">
@@ -176,7 +332,7 @@
 
                 <div class="space-y-4">
                     {% for product in seller.products %}
-                    {% set is_out_of_stock = product.stock <= 0 %}
+                    {% set is_out_of_stock = product.stock <= 0 or product.id == 0 %}
                     
                     <div class="group bg-white dark:bg-black/20 border border-gray-200 dark:border-dark-border p-4 sm:p-6 rounded-xl hover:border-primary/50 transition-all duration-300 flex flex-col sm:flex-row sm:items-center gap-6 {{ 'opacity-60 grayscale' if is_out_of_stock else '' }}">
                         
@@ -187,7 +343,9 @@
                             </div>
                             {% if is_out_of_stock %}
                                 <div class="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                    <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">HABIS</span>
+                                    <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">
+                                        {{ 'BELUM ADA' if product.id == 0 else 'HABIS' }}
+                                    </span>
                                 </div>
                             {% endif %}
                         </div>
@@ -202,24 +360,32 @@
                             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ product.description }}</p>
                             
                             <div class="flex items-center justify-between">
-                                <div class="text-xl font-mono font-bold text-ink dark:text-white">
-                                    Rp {{ "{:,.0f}".format(product.price).replace(',', '.') }} <span class="text-xs text-gray-400 font-sans font-normal">/ butir</span>
-                                </div>
-
-                                {% if not is_out_of_stock %}
-                                <div class="flex items-center gap-3 bg-gray-50 dark:bg-white/5 rounded-lg p-1 border border-gray-200 dark:border-dark-border">
-                                    <button @click="removeFromCart('{{ product.id }}')" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-white/10 transition-colors" :class="!cart['{{ product.id }}'] || cart['{{ product.id }}'].qty === 0 ? 'text-gray-300' : 'text-ink dark:text-white'">
-                                        <i data-lucide="minus" class="w-4 h-4"></i>
-                                    </button>
-                                    <span class="w-8 text-center font-mono text-sm font-bold" x-text="cart['{{ product.id }}'] ? cart['{{ product.id }}'].qty : 0">0</span>
-                                    <button @click="addToCart('{{ product.id }}', {{ product.price }}, {{ product.stock }})" class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-white/10 shadow-sm hover:text-primary transition-colors">
-                                        <i data-lucide="plus" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                                {% else %}
-                                <button disabled class="px-4 py-2 bg-gray-200 dark:bg-white/10 text-gray-400 text-xs font-bold rounded-lg cursor-not-allowed">Tidak Tersedia</button>
-                                {% endif %}
-                            </div>
+                              <div class="text-xl font-mono font-bold text-ink dark:text-white">
+                                  {% if product.price > 0 %}
+                                      Rp {{ "{:,.0f}".format(product.price).replace(',', '.') }} <span class="text-xs text-gray-400 font-sans font-normal">/ butir</span>
+                                  {% else %}
+                                      <span class="text-sm text-gray-400 font-sans font-normal">-</span>
+                                  {% endif %}
+                              </div>
+                          
+                              {% if not is_out_of_stock %}
+                                  <div class="flex items-center gap-3 bg-gray-50 dark:bg-white/5 rounded-lg p-1 border border-gray-200 dark:border-dark-border">
+                                      <button @click="removeFromCart('{{ product.id }}')" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-white/10 transition-colors" :class="!cart['{{ product.id }}'] || cart['{{ product.id }}'].qty === 0 ? 'text-gray-300' : 'text-ink dark:text-white'">
+                                          <i data-lucide="minus" class="w-4 h-4"></i>
+                                      </button>
+                                      
+                                      <span class="w-8 text-center font-mono text-sm font-bold" x-text="cart['{{ product.id }}'] ? cart['{{ product.id }}'].qty : 0">0</span>
+                                      
+                                      <button @click="addToCart('{{ product.id }}', {{ product.price }}, {{ product.stock }})" class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-white/10 shadow-sm hover:text-primary transition-colors">
+                                          <i data-lucide="plus" class="w-4 h-4"></i>
+                                      </button>
+                                  </div>
+                              {% else %}
+                                  <button disabled class="px-4 py-2 bg-gray-200 dark:bg-white/10 text-gray-400 text-xs font-bold rounded-lg cursor-not-allowed">
+                                      {{ 'Belum Tersedia' if product.id == 0 else 'Stok Habis' }}
+                                  </button>
+                              {% endif %}
+                          </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -261,9 +427,11 @@
                     </div>
 
                     <button @click="checkout()" 
-                            :disabled="totalQty === 0"
+                            :disabled="totalQty === 0 || isLoading"
                             class="w-full py-4 bg-black dark:bg-white text-white dark:text-black font-bold text-sm uppercase tracking-widest rounded-xl hover:bg-primary hover:text-black dark:hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
-                        Bayar Sekarang <i data-lucide="credit-card" class="w-4 h-4"></i>
+                        <span x-show="!isLoading">Bayar Sekarang</span>
+                        <span x-show="isLoading">Memproses...</span>
+                        <i x-show="!isLoading" data-lucide="credit-card" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
@@ -309,13 +477,6 @@
         </div>
 
     </div>
-
-    <form id="realCheckoutForm" action="{{ url_for('eggmart_controller.create_transaction') }}" method="POST" class="hidden">
-        <input type="hidden" name="listing_id" id="checkoutListingId">
-        <input type="hidden" name="quantity" id="checkoutQuantity">
-        <button type="submit" id="realCheckoutBtn"></button>
-    </form>
-    
 </div>
 
 <script>

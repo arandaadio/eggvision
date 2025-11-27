@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EggVision Auth{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logoegg.png') }}">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'canela': ['Canela Bold', 'serif'],
+                        'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        'paper': '#FDFBF7',      
+                        'ink': '#1a1a1a',        
+                        'premium-gold': '#FFD700',
+                        'dark-surface': '#1a1a1a' /* Requested Color */
+                    },
+                    backgroundImage: {
+                        'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Default Fade Up (First Load) */
+        .animate-enter {
+            opacity: 0;
+            transform: translateY(10px);
+            animation: enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        /* Slide In From Left (Moving Right) */
+        .animate-slide-in-left {
+            animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Slide In From Right (Moving Left) */
+        .animate-slide-in-right {
+            animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes enter { to { opacity: 1; transform: translateY(0); } }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+
+        /* Input Styling */
+        .input-group { position: relative; margin-bottom: 1.5rem; }
+        .input-field {
+            display: block; width: 100%; padding: 0.5rem 0;
+            background: transparent; border: none;
+            border-bottom: 1px solid #525252;
+            color: inherit; font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: border-color 0.3s;
+        }
+        .input-field:focus { outline: none; border-bottom-color: #FFD700; }
+        .input-label {
+            position: absolute; top: 0.5rem; left: 0;
+            font-size: 0.875rem; color: #9ca3af;
+            pointer-events: none; transition: 0.3s ease all;
+        }
+        .input-field:focus ~ .input-label,
+        .input-field:not(:placeholder-shown) ~ .input-label {
+            top: -1.2rem; font-size: 0.75rem; color: #FFD700;
+        }
+    </style>
+</head>
+<body class="h-full font-jakarta text-ink dark:text-paper bg-paper dark:bg-dark-surface transition-colors duration-500 overflow-hidden">
+
+    <div class="fixed inset-0 bg-noise opacity-40 pointer-events-none z-0"></div>
+
+    <div class="relative z-10 flex min-h-screen w-full overflow-hidden">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        // Icon Render
+        lucide.createIcons();
+
+        // Password Visibility Toggle
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons(); 
+        }
+
+        // Dark Mode Logic
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+            // Trigger icons re-render if needed
+            setTimeout(() => lucide.createIcons(), 50);
+        }
+
+        // Initialize theme
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // URL Cleanup (Removes transition params)
+        document.addEventListener('DOMContentLoaded', () => {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('transition')) {
+                url.searchParams.delete('transition');
+                window.history.replaceState({}, '', url);
+            }
+        });
+    </script>
+</body>
+</html>

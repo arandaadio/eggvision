@@ -2,20 +2,22 @@
 
 {% block content %}
 <div x-data="catalogData">
-
     <header class="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-dark-border bg-paper/90 dark:bg-dark-surface/90 backdrop-blur-md transition-colors duration-300">
         <div class="container mx-auto px-4 h-20 flex items-center justify-between">
-            <a href="{{ url_for('comprof_controller.comprof_beranda') }}" class="flex items-center gap-4 group">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-10 w-auto">
-                <div class="h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
-                <span class="font-canela font-normal text-2xl text-ink dark:text-white tracking-wide group-hover:text-primary transition-colors">
-                    EggMart
-                </span>
-            </a>
+            
+            <div class="flex-shrink-0">
+                <a href="{{ url_for('eggmart_controller.eggmart') }}" class="flex items-center gap-3 sm:gap-4 group">
+                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-8 sm:h-10 w-auto">
+                    <div class="h-5 sm:h-6 w-px bg-gray-300 dark:bg-gray-700 hidden xs:block"></div>
+                    <span class="font-canela font-normal text-xl sm:text-2xl text-ink dark:text-white tracking-wide group-hover:text-primary transition-colors hidden xs:block">
+                        EggMart
+                    </span>
+                </a>
+            </div>
 
             <div class="hidden lg:flex items-center gap-6 bg-white dark:bg-white/5 px-6 py-2 rounded-full border border-gray-200 dark:border-dark-border shadow-sm hover:shadow-md transition-all">
                 <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:text-primary transition-colors"
-                     @click="profileModalOpen = true; profileTab = 'location'">
+                    @click="profileModalOpen = true; profileTab = 'location'">
                     <i data-lucide="map-pin" class="w-4 h-4 text-primary"></i>
                     <span class="truncate max-w-[200px]" x-text="profileLocation || 'Atur Lokasi'"></span> 
                 </div>
@@ -29,16 +31,49 @@
             </div>
 
             <div class="flex items-center gap-2 sm:gap-3">
-                <a href="{{ url_for('eggmart_controller.eggmartHistory') }}" class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300 transition-colors relative group" title="Riwayat Transaksi">
-                    <i data-lucide="history" class="w-5 h-5"></i>
+                
+                <a href="{{ url_for('eggmart_controller.eggmartHistory') }}" 
+                  class="flex items-center gap-2 p-2.5 sm:px-4 sm:py-2 rounded-full bg-transparent sm:bg-gray-100 sm:dark:bg-white/10 hover:bg-gray-100 dark:hover:bg-white/10 sm:hover:bg-gray-200 sm:dark:hover:bg-white/20 text-gray-600 dark:text-gray-300 sm:text-gray-700 sm:dark:text-gray-200 transition-all group"
+                  title="Riwayat Transaksi">
+                    <i data-lucide="history" class="w-5 h-5 sm:w-4 sm:h-4 group-hover:text-primary transition-colors"></i>
+                    <span class="text-sm font-bold hidden xl:block">Riwayat</span>
                 </a>
-                <button onclick="toggleDarkMode()" class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-primary transition-colors">
-                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
-                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+
+                <button 
+                    onclick="toggleDarkMode()" 
+                    class="relative inline-flex items-center w-12 h-6 sm:w-14 sm:h-7 rounded-full transition-colors duration-300 ease-in-out 
+                        bg-gray-300 dark:bg-gray-600 hover:ring-2 hover:ring-premium-gold focus:outline-none"
+                    aria-label="Toggle dark mode"
+                >
+                    <span 
+                        class="absolute left-0.5 top-0.5 w-5 h-5 sm:left-1 sm:top-1 sm:w-5 sm:h-5 rounded-full bg-white dark:bg-primary-black transform transition-transform duration-300 ease-in-out 
+                            dark:translate-x-6 sm:dark:translate-x-7"
+                    ></span>
+                    
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="absolute left-1.5 w-3 h-3 sm:w-4 sm:h-4 text-gray-700 dark:hidden" 
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M12 3v1m0 16v1m8.66-9H21M3 12H2m15.36-6.36l.7.7M6.34 17.66l.7.7M17.66 17.66l.7-.7M6.34 6.34l.7-.7M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                    </svg>
+                    
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="absolute right-1.5 w-3 h-3 sm:w-4 sm:h-4 hidden dark:block text-yellow-400" 
+                        fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a8 8 0 107.446 5.032A6 6 0 0110 2z"/>
+                    </svg>
                 </button>
+
+                <button 
+                    @click="profileModalOpen = true; profileTab = 'info'"
+                    class="lg:hidden w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700 ml-1">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name }}" alt="User" class="w-full h-full">
+                </button>
+
                 <button @click="mobileFiltersOpen = true" class="lg:hidden p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-ink dark:text-white">
                     <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
                 </button>
+
             </div>
         </div>
     </header>

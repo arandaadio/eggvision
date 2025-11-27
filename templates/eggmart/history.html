@@ -1,277 +1,243 @@
-{% extends "eggmin/base.html" %}
-{% block title %}Riwayat Transaksi · EggMin{% endblock %}
+{% extends "eggmart/base.html" %}
 
-{% block body %}
-<div class="min-h-screen bg-background">
-  <!-- Sidebar -->
-  <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
-    <!-- Logo -->
-    <div class="p-6 border-b border-sidebar-border">
-      <div class="flex flex-col items-center gap-2">
-        <div class="w-12 h-12 rounded-full bg-premium-gold flex items-center justify-center">
-          <div class="text-primary-black font-bold text-xs">EM</div>
-        </div>
-        <span class="text-premium-gold text-sm font-semibold">EGGMIN</span>
-      </div>
-    </div>
+{% block title %}Riwayat Transaksi · EggMart{% endblock %}
 
-    <!-- Menu -->
-    <nav class="flex-1 py-4">
-     {% if current_user.role == 'pengusaha' %}
-    {% set menu = [
-      {"id":"dashboard", "icon":"layout-dashboard", "label":"Dashboard", "href":url_for('eggmart_controller.eggmartDashboard')},
-      {"id":"history",   "icon":"history",          "label":"History", "href":url_for('eggmart_controller.eggmartHistory')},
-      {"id":"eggmonitor","icon":"scan",             "label":"EggMonitor", "href":"/eggmonitor/index"}
-    ] %}
-
-  {# PEMBELI: Catalog + History #}
-  {% elif current_user.role == 'pembeli' %}
-    {% set menu = [
-      {"id":"catalog", "icon":"egg",     "label":"Catalog", "href":url_for('eggmart_controller.eggmart')},
-      {"id":"history", "icon":"history", "label":"History", "href":url_for('eggmart_controller.eggmartHistory')}
-    ] %}
-
-  {# ROLE LAIN (admin, dll) -> fallback bebas #}
-  {% else %}
-    {% set menu = [
-      {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
-      {"id":"catalog", "icon":"egg",            "label":"Catalog",   "href":url_for('eggmart_controller.eggmart')},
-      {"id":"history", "icon":"history",        "label":"History","href":url_for('eggmart_controller.eggmartHistory')}
-    ] %}
-  {% endif %}
-
-      {% for item in menu %}
-        {% set is_active = (item.id == active_menu) %}
-        <a href="{{ item.href }}"
-           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
-           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
-          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
-          <span class="text-xs">{{ item.label }}</span>
-        </a>
-      {% endfor %}
-    </nav>
-
-    <!-- Profile -->
-    <div class="p-4 border-t border-sidebar-border">
-      <div class="w-full flex flex-col items-center gap-2 text-sidebar-foreground">
-        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
-          <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
-            alt="Profile"
-            class="w-full h-full object-cover" />
-        </div>
-        <span class="text-xs">{{current_user.role}}</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <main class="ml-[130px] p-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-4xl font-bold mb-1">Riwayat Transaksi</h1>
-        <p class="text-muted-foreground">
-          Ringkasan transaksi Anda sebagai pembeli maupun penjual.
-        </p>
-      </div>
-
-      <div class="flex items-center gap-8">
-        <!-- User Info -->
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
-              alt="Admin"
-              class="w-full h-full object-cover" />
-          </div>
-          <div>
-            <div class="text-sm font-semibold">{{ current_user.name if current_user else 'User' }}</div>
-            <div class="text-xs text-muted-foreground">
-              {{ current_user.role if current_user else 'Role' }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Date & Time -->
-        <div class="flex items-center gap-4 text-sm">
-          <div class="flex items-center gap-2">
-            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-date">{{ now.strftime('%d/%b/%Y') if now else '' }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-time">{{ now.strftime('%H:%M:%S') if now else '' }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Content -->
-    <div class="space-y-8">
-      <!-- Sebagai Pembeli -->
-        
-        {% if current_user.role == 'pembeli' %}
-          <section class="p-6 rounded-xl border bg-card">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-lg font-semibold text-foreground">Sebagai Pembeli</h2>
-            <p class="text-xs text-muted-foreground">
-              Transaksi di mana Anda bertindak sebagai pembeli (checkout dari penjual EggMart).
-            </p>
-          </div>
-        </div>
-
-        <div class="border border-border rounded-lg overflow-hidden">
-          <table class="w-full text-sm">
-            <thead class="bg-muted">
-              <tr>
-                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Tanggal</th>
-                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Kode Order</th>
-                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Penjual</th>
-                <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Jumlah (butir)</th>
-                <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Total</th>
-                <th class="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if buyer_orders %}
-                {% for o in buyer_orders %}
-                <tr class="border-t border-border">
-                  <td class="px-3 py-2 text-xs">
-                    {{ o.created_at.strftime('%d/%b/%Y %H:%M') if o.created_at else '-' }}
-                  </td>
-                  <td class="px-3 py-2">
-                    <span class="text-xs font-mono text-foreground">{{ o.order_code }}</span>
-                  </td>
-                  <td class="px-3 py-2 text-xs">
-                    {{ o.other_name }}
-                  </td>
-                  <td class="px-3 py-2 text-right text-xs">
-                    {{ o.total_eggs }}
-                  </td>
-                  <td class="px-3 py-2 text-right text-xs">
-                    Rp {{ '{:,.0f}'.format(o.total) }}
-                  </td>
-                  <td class="px-3 py-2 text-center text-xs">
-                    {% set base = 'inline-flex items-center justify-center rounded-full px-2 py-0.5 border text-[10px] font-medium ' %}
-                    {% if o.status in ['paid', 'settlement'] %}
-                      {% set cls = base + 'bg-success/10 text-success border-success/40' %}
-                    {% elif o.status in ['pending'] %}
-                      {% set cls = base + 'bg-chart-2/10 text-chart-2 border-chart-2/40' %}
-                    {% else %}
-                      {% set cls = base + 'bg-destructive/10 text-destructive border-destructive/40' %}
-                    {% endif %}
-                    <span class="{{ cls }}">
-                      {{ o.status }}
-                    </span>
-                  </td>
-                </tr>
-                {% endfor %}
-              {% else %}
-                <tr>
-                  <td colspan="6" class="px-3 py-4 text-center text-xs text-muted-foreground">
-                    Belum ada transaksi sebagai pembeli.
-                  </td>
-                </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-        {% endif %}
-
-      <!-- Sebagai Penjual -->
-      
-      {% if current_user.role == 'pengusaha' %}
-         <section class="p-6 rounded-xl border bg-card">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-lg font-semibold text-foreground">Sebagai Penjual</h2>
-            <p class="text-xs text-muted-foreground">
-              Transaksi di mana Anda bertindak sebagai penjual (order masuk dari pembeli).
-            </p>
-          </div>
-        </div>
-
-        <div class="border border-border rounded-lg overflow-hidden">
-          <table class="w-full text-sm">
-            <thead class="bg-muted">
-              <tr>
-                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Tanggal</th>
-                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Kode Order</th>
-                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Pembeli</th>
-                <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Jumlah (butir)</th>
-                <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Total</th>
-                <th class="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% if seller_orders %}
-                {% for o in seller_orders %}
-                <tr class="border-t border-border">
-                  <td class="px-3 py-2 text-xs">
-                    {{ o.created_at.strftime('%d/%b/%Y %H:%M') if o.created_at else '-' }}
-                  </td>
-                  <td class="px-3 py-2">
-                    <span class="text-xs font-mono text-foreground">{{ o.order_code }}</span>
-                  </td>
-                  <td class="px-3 py-2 text-xs">
-                    {{ o.other_name }}
-                  </td>
-                  <td class="px-3 py-2 text-right text-xs">
-                    {{ o.total_eggs }}
-                  </td>
-                  <td class="px-3 py-2 text-right text-xs">
-                    Rp {{ '{:,.0f}'.format(o.total) }}
-                  </td>
-                  <td class="px-3 py-2 text-center text-xs">
-                    {% set base = 'inline-flex items-center justify-center rounded-full px-2 py-0.5 border text-[10px] font-medium ' %}
-                    {% if o.status in ['paid', 'settlement'] %}
-                      {% set cls = base + 'bg-success/10 text-success border-success/40' %}
-                    {% elif o.status in ['pending'] %}
-                      {% set cls = base + 'bg-chart-2/10 text-chart-2 border-chart-2/40' %}
-                    {% else %}
-                      {% set cls = base + 'bg-destructive/10 text-destructive border-destructive/40' %}
-                    {% endif %}
-                    <span class="{{ cls }}">
-                      {{ o.status }}
-                    </span>
-                  </td>
-                </tr>
-                {% endfor %}
-              {% else %}
-                <tr>
-                  <td colspan="6" class="px-3 py-4 text-center text-xs text-muted-foreground">
-                    Belum ada transaksi sebagai penjual.
-                  </td>
-                </tr>
-              {% endif %}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      {% endif %}
-        
-
-    </div>
-  </main>
-</div>
-
-<script>
-  // Optional: update jam live biar konsisten dengan halaman lain
-  document.addEventListener('DOMContentLoaded', function () {
-    const timeEl = document.getElementById('live-time');
-    if (!timeEl) return;
-    setInterval(function () {
-      const now = new Date();
-      timeEl.textContent = now.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
-    }, 1000);
-  });
+{% block head %}
+<script type="text/javascript"
+    src="https://app.sandbox.midtrans.com/snap/snap.js"
+    data-client-key="{{ midtrans_client_key }}">
 </script>
+{% endblock %}
+
+{% block content %}
+<div x-data="{ 
+    tab: 'all',
+    invoiceOpen: {{ 'true' if new_order else 'false' }},
+    activeInvoice: {{ new_order | tojson if new_order else '{}' }},
+    
+    // Format Currency
+    formatRupiah(num) {
+        return 'Rp ' + parseInt(num).toLocaleString('id-ID').replace(',', '.');
+    },
+
+    // Format Date
+    formatDate(dateStr) {
+        if(!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    },
+
+    // Open Invoice Modal
+    viewInvoice(order) {
+        this.activeInvoice = order;
+        this.invoiceOpen = true;
+    },
+
+    // Trigger Midtrans Popup
+    payAgain(token) {
+        if (!token) { alert('Token pembayaran tidak valid.'); return; }
+        window.snap.pay(token, {
+            onSuccess: function(result){ window.location.reload(); },
+            onPending: function(result){ window.location.reload(); },
+            onError: function(result){ console.log('error'); },
+            onClose: function(){ console.log('customer closed the popup without finishing the payment'); }
+        });
+    }
+}">
+    
+    <header class="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-dark-border bg-paper/90 dark:bg-dark-surface/90 backdrop-blur-md transition-colors duration-300">
+        <div class="container mx-auto px-4 h-20 flex items-center justify-between">
+            <a href="{{ url_for('eggmart_controller.eggmart') }}" class="flex items-center gap-4 group">
+                <div class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-ink dark:text-white"></i>
+                </div>
+                <div class="h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-8 w-auto">
+                <span class="font-canela font-normal text-xl text-ink dark:text-white tracking-wide group-hover:text-primary transition-colors hidden sm:block">
+                    EggMart
+                </span>
+            </a>
+
+            <div class="hidden md:flex items-center gap-3 bg-white dark:bg-white/5 px-5 py-2 rounded-full border border-gray-200 dark:border-dark-border shadow-sm">
+                <i data-lucide="history" class="w-4 h-4 text-primary"></i>
+                <span class="text-sm font-bold text-ink dark:text-white">Riwayat Transaksi</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="toggleDarkMode()" class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-primary transition-colors">
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl min-h-screen">
+
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="font-canela font-normal text-3xl text-ink dark:text-white hidden sm:block">Daftar Pesanan</h2>
+            
+            <div class="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
+                <button @click="tab = 'all'" :class="tab === 'all' ? 'bg-white dark:bg-dark-surface shadow-sm text-ink dark:text-white' : 'text-gray-500'" class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap">Semua</button>
+                <button @click="tab = 'pending'" :class="tab === 'pending' ? 'bg-white dark:bg-dark-surface shadow-sm text-ink dark:text-white' : 'text-gray-500'" class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap">Menunggu</button>
+                <button @click="tab = 'success'" :class="tab === 'success' ? 'bg-white dark:bg-dark-surface shadow-sm text-ink dark:text-white' : 'text-gray-500'" class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap">Berhasil</button>
+                <button @click="tab = 'failed'" :class="tab === 'failed' ? 'bg-white dark:bg-dark-surface shadow-sm text-ink dark:text-white' : 'text-gray-500'" class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap">Gagal</button>
+            </div>
+        </div>
+
+        {% if orders %}
+        <div class="space-y-4">
+            {% for order in orders %}
+            
+            {% set js_status = 'pending' if order.status == 'pending' else ('success' if order.status in ['paid','settlement','capture'] else 'failed') %}
+
+            <div x-show="tab === 'all' || tab === '{{ js_status }}'"
+                 class="group bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 hover:shadow-lg transition-all duration-300"
+                 x-transition>
+                
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-primary">
+                            <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-ink dark:text-white text-lg">{{ order.seller_name }}</h4>
+                            <p class="text-xs text-gray-500">{{ order.date.strftime('%d %b %Y • %H:%M') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        {% if order.status == 'pending' %}
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full uppercase flex items-center gap-1">
+                                <i data-lucide="clock" class="w-3 h-3"></i> Menunggu Pembayaran
+                            </span>
+                        {% elif order.status in ['paid', 'settlement', 'capture'] %}
+                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase flex items-center gap-1">
+                                <i data-lucide="check-circle" class="w-3 h-3"></i> Berhasil
+                            </span>
+                        {% else %}
+                            <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full uppercase flex items-center gap-1">
+                                <i data-lucide="x-circle" class="w-3 h-3"></i> Gagal / Kadaluarsa
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="pl-0 md:pl-16">
+                    <div class="bg-gray-50 dark:bg-white/5 rounded-xl p-4 mb-4 border border-gray-100 dark:border-white/5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-gray-800 dark:text-gray-200 font-medium mb-1">{{ order.description }}</p>
+                                <p class="text-xs text-gray-400">{{ order.total_qty }} butir total</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Total</p>
+                                <p class="font-mono font-bold text-lg text-ink dark:text-white">Rp {{ "{:,.0f}".format(order.total).replace(',', '.') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3">
+                        {% if order.status == 'pending' %}
+                            <button @click="payAgain('{{ order.snap_token }}')" 
+                                    class="px-6 py-2 bg-primary text-black font-bold text-sm rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
+                                Bayar Sekarang
+                            </button>
+                        {% elif order.status in ['paid', 'settlement', 'capture'] %}
+                            {# Convert Jinja object to JS object for the modal #}
+                            {% set order_json = {
+                                'code': order.code,
+                                'date': order.date.strftime('%Y-%m-%d %H:%M:%S'),
+                                'seller_name': order.seller_name,
+                                'total': order.total,
+                                'items': order.items
+                            } %}
+                            <button @click="viewInvoice({{ order_json | tojson | forceescape }})"
+                                    class="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                                Lihat Nota
+                            </button>
+                            <a href="{{ url_for('eggmart_controller.eggmartDetail', seller_id=order.seller_id) }}" class="px-6 py-2 bg-black dark:bg-white text-white dark:text-black font-bold text-sm rounded-lg hover:opacity-90 transition-colors">
+                                Beli Lagi
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('eggmart_controller.eggmart') }}" class="px-6 py-2 bg-black dark:bg-white text-white dark:text-black font-bold text-sm rounded-lg hover:opacity-90 transition-colors">
+                                Cari Telur Lain
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-20 bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-dark-border">
+            <div class="w-16 h-16 bg-gray-200 dark:bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                <i data-lucide="history" class="w-8 h-8"></i>
+            </div>
+            <h3 class="font-bold text-xl text-gray-900 dark:text-white">Belum ada transaksi</h3>
+            <p class="text-gray-500 mt-2 mb-6">Mulai belanja telur segar sekarang!</p>
+            <a href="{{ url_for('eggmart_controller.eggmart') }}" class="px-6 py-3 bg-primary text-black font-bold rounded-xl hover:bg-primary/90 transition-colors">
+                Ke Katalog
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div x-show="invoiceOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;" x-cloak>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="invoiceOpen = false"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"></div>
+
+        <div class="relative bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl shadow-xl overflow-hidden w-full max-w-md mx-auto transform transition-all"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+            
+            <div class="absolute top-0 left-0 w-full h-2 bg-primary"></div>
+            <div class="absolute top-0 right-0 p-4">
+                <button @click="invoiceOpen = false"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <div class="text-center border-b border-dashed border-gray-200 dark:border-gray-700 pb-6">
+                    <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full mb-3">
+                        <i data-lucide="check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-xl uppercase tracking-widest text-gray-400 mb-1">STRUK DIGITAL</h3>
+                    <p class="font-mono text-sm text-gray-800 dark:text-white font-bold" x-text="activeInvoice.code"></p>
+                    <p class="text-xs text-gray-400 mt-1" x-text="formatDate(activeInvoice.date)"></p>
+                </div>
+
+                <div class="space-y-4 text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500">Penjual</span>
+                        <span class="font-bold text-ink dark:text-white" x-text="activeInvoice.seller_name"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500">Status</span>
+                        <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded uppercase">LUNAS</span>
+                    </div>
+                </div>
+                
+                <div class="border-t border-dashed border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+                    <template x-for="item in activeInvoice.items" :key="item.grade">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-300">
+                                <span x-text="item.quantity"></span>x Grade <span x-text="item.grade"></span>
+                            </span>
+                            <span class="font-mono" x-text="formatRupiah(item.price * item.quantity)"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between items-center">
+                    <span class="font-bold text-lg text-gray-900 dark:text-white">Total Bayar</span>
+                    <span class="font-canela text-2xl text-primary" x-text="formatRupiah(activeInvoice.total)"></span>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 dark:bg-white/5 p-4 text-center">
+                <button @click="invoiceOpen = false" class="text-sm font-bold text-primary hover:underline">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+</div>
 {% endblock %}
