@@ -9,7 +9,6 @@ import requests
 from utils.db import get_db_connection
 import midtransclient
 
-
 eggmart_controller = Blueprint('eggmart_controller', __name__)
 
 def get_midtrans_snap():
@@ -25,241 +24,156 @@ def get_midtrans_snap():
         client_key=current_app.config.get("MIDTRANS_CLIENT_KEY"),
     )
 
-
 @eggmart_controller.route('/transaction', methods=['POST'])
 @login_required
 def create_transaction():
     """
-    Buat transaksi baru dari listing EggMart.
-    - Validasi stok
-    - Ambil telur 'listed' dari egg_scans
-    - Simpan ke orders & order_items
-    - Update egg_scans -> sold, update egg_listings.stock_eggs
-    - (Opsional) panggil Midtrans Snap, balikin snap_token
+    Buat transaksi baru.
+    Logic update: Validasi fleksibel (bisa via listing_id ATAU grade+seller_id).
     """
-    # Bisa JSON (AJAX fetch) atau form POST biasa
     is_json = request.headers.get('Content-Type', '').startswith('application/json') or request.is_json
     data = request.get_json(silent=True) if is_json else request.form
 
     try:
-        listing_id = int(data.get('listing_id', 0))
+        # Ambil semua parameter yang mungkin dikirim
+        listing_id = int(data.get('listing_id', 0)) 
         quantity = int(data.get('quantity', 0))
+        grade_input = data.get('grade') 
+        seller_id_input = int(data.get('seller_id', 0))
     except (TypeError, ValueError):
         listing_id = 0
         quantity = 0
+        grade_input = None
+        seller_id_input = 0
 
-    if listing_id <= 0 or quantity <= 0:
-        if is_json:
-            return jsonify(success=False, message="Listing atau jumlah tidak valid."), 400
-        flash("Listing atau jumlah tidak valid.", "error")
+    # 1. Validasi Quantity
+    if quantity <= 0:
+        msg = "Jumlah pesanan minimal 1."
+        if is_json: return jsonify(success=False, message=msg), 400
+        flash(msg, "error")
+        return redirect(url_for('eggmart_controller.eggmart'))
+
+    # 2. Validasi Target: Harus ada Listing ID ATAU (Seller ID + Grade)
+    # Ini yang memperbaiki error "Listing tidak valid" sebelumnya
+    if listing_id <= 0 and (not grade_input or seller_id_input <= 0):
+        msg = "Data produk tidak valid (ID Listing atau Grade/Penjual hilang)."
+        if is_json: return jsonify(success=False, message=msg), 400
+        flash(msg, "error")
         return redirect(url_for('eggmart_controller.eggmart'))
 
     conn = get_db_connection()
     if not conn:
-        if is_json:
-            return jsonify(success=False, message="Gagal koneksi database."), 500
+        if is_json: return jsonify(success=False, message="Gagal koneksi database."), 500
         flash("Gagal koneksi database.", "error")
         return redirect(url_for('eggmart_controller.eggmart'))
 
-    seller_id = None
     try:
         cur = conn.cursor(dictionary=True)
+        
+        listing = None
+        
+        # A. Coba cari by Listing ID (jika ada)
+        if listing_id > 0:
+            cur.execute("SELECT * FROM egg_listings WHERE id = %s AND status='active'", (listing_id,))
+            listing = cur.fetchone()
+        
+        # B. Fallback: Cari listing by Seller + Grade (jika ID 0 atau tidak ketemu)
+        if not listing and grade_input and seller_id_input:
+            cur.execute("SELECT * FROM egg_listings WHERE seller_id = %s AND grade = %s AND status='active'", (seller_id_input, grade_input))
+            listing = cur.fetchone()
 
-        # 1) Ambil listing aktif
-        cur.execute("""
-            SELECT el.id, el.seller_id, el.grade, el.stock_eggs, el.price_per_egg,
-                   u.name AS seller_name
-            FROM egg_listings el
-            JOIN users u ON u.id = el.seller_id
-            WHERE el.id = %s AND el.status = 'active'
-        """, (listing_id,))
-        listing = cur.fetchone()
-
+        # Jika masih tidak ketemu, berarti penjual belum set harga di menu Listing
         if not listing:
-            if is_json:
-                return jsonify(success=False, message="Listing tidak ditemukan atau tidak aktif."), 404
-            flash("Listing tidak ditemukan atau tidak aktif.", "error")
-            return redirect(url_for('eggmart_controller.eggmart'))
-
-        seller_id = listing['seller_id']
-        price = float(listing['price_per_egg'])
-        stock = int(listing['stock_eggs'])
-
-        if quantity > stock:
-            msg = f"Stok tidak mencukupi. Maksimum {stock} butir."
-            if is_json:
-                return jsonify(success=False, message=msg), 400
+            msg = "Produk ini belum diberi harga oleh penjual (Listing belum dibuat)."
+            if is_json: return jsonify(success=False, message=msg), 400
             flash(msg, "error")
-            return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id))
+            return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id_input))
 
-        # 2) Ambil telur yang sudah status 'listed'
+        # Ambil data final dari listing yang ditemukan
+        seller_id = listing['seller_id']
+        grade = listing['grade']
+        price = float(listing['price_per_egg'])
+        
+        # 3. Cek Stok REAL dari egg_scans
+        # Kita ambil ID telur spesifik yang akan dijual
         cur.execute("""
-            SELECT id
-            FROM egg_scans
-            WHERE user_id = %s
-              AND grade = %s
-              AND status = 'listed'
-              AND listed_price = %s
-            ORDER BY listed_at ASC
+            SELECT id FROM egg_scans 
+            WHERE user_id = %s 
+              AND grade = %s 
+              AND status = 'available' 
+              AND (is_listed = FALSE OR is_listed IS NULL)
             LIMIT %s
-        """, (seller_id, listing['grade'], listing['price_per_egg'], quantity))
+        """, (seller_id, grade, quantity))
         egg_rows = cur.fetchall()
 
         if len(egg_rows) < quantity:
-            msg = "Stok telur ter-list tidak mencukupi."
-            if is_json:
-                return jsonify(success=False, message=msg), 400
+            msg = f"Stok tidak mencukupi. Hanya tersisa {len(egg_rows)} butir."
+            if is_json: return jsonify(success=False, message=msg), 400
             flash(msg, "error")
             return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id))
 
         egg_ids = [r['id'] for r in egg_rows]
         total = price * quantity
+        order_id_str = f"EGG-{int(time.time())}-{current_user.id}"
 
-        # 3) Buat order_id unik untuk Midtrans
-        order_id_str = f"EGG-{int(time.time())}-{listing_id}"
-
-        # 4) Insert ke orders
+        # 4. Insert Order Header
         cur.execute("""
-            INSERT INTO orders (
-                buyer_id, seller_id, total,
-                midtrans_order_id, status, payment_type, shipping_address,
-                created_at
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
-        """, (
-            current_user.id,
-            seller_id,
-            total,
-            order_id_str,
-            'pending',
-            'midtrans_snap',
-            ''  # shipping_address bisa ditambah nanti
-        ))
+            INSERT INTO orders (buyer_id, seller_id, total, midtrans_order_id, status, payment_type, created_at)
+            VALUES (%s, %s, %s, %s, 'pending', 'midtrans_snap', NOW())
+        """, (current_user.id, seller_id, total, order_id_str))
         order_db_id = cur.lastrowid
 
-        # 5) Insert ke order_items (1 butir per row)
-        for egg_id in egg_ids:
-            cur.execute("""
-                INSERT INTO order_items (order_id, egg_scan_id, price, quantity)
-                VALUES (%s, %s, %s, 1)
-            """, (order_db_id, egg_id, price))
-
-        # 6) Update egg_scans -> sold
+        # 5. Insert Order Items & Update Status Telur
+        for eid in egg_ids:
+            cur.execute("INSERT INTO order_items (order_id, egg_scan_id, price, quantity) VALUES (%s, %s, %s, 1)", (order_db_id, eid, price))
+        
         placeholders = ','.join(['%s'] * len(egg_ids))
-        cur.execute(f"""
-            UPDATE egg_scans
-            SET status = 'sold'
-            WHERE id IN ({placeholders})
-        """, egg_ids)
+        cur.execute(f"UPDATE egg_scans SET status = 'sold' WHERE id IN ({placeholders})", egg_ids)
 
-        # 7) Hitung ulang stok listed untuk listing ini
-        cur.execute("""
-            SELECT COUNT(*) AS listed_count
-            FROM egg_scans
-            WHERE user_id = %s
-              AND grade = %s
-              AND status = 'listed'
-              AND listed_price = %s
-        """, (seller_id, listing['grade'], listing['price_per_egg']))
-        remaining = int(cur.fetchone()['listed_count'] or 0)
-
-        cur.execute("""
-            UPDATE egg_listings
-            SET stock_eggs = %s,
-                status = CASE WHEN %s = 0 THEN 'inactive' ELSE status END,
-                updated_at = NOW()
-            WHERE id = %s
-        """, (remaining, remaining, listing_id))
+        # 6. Update Listing Cache (Stok tampilan)
+        new_stock = max(0, listing['stock_eggs'] - quantity)
+        cur.execute("UPDATE egg_listings SET stock_eggs = %s WHERE id = %s", (new_stock, listing['id']))
 
         conn.commit()
 
-        # 8) Panggil Midtrans Snap API (kalau SERVER_KEY di-set)
+        # 7. Midtrans Snap Request
         snap_token = None
-        midtrans_server_key = current_app.config.get("MIDTRANS_SERVER_KEY")
-        midtrans_is_production = current_app.config.get("MIDTRANS_IS_PRODUCTION", False)
-
-        if midtrans_server_key:
-            base_url = "https://app.midtrans.com" if midtrans_is_production else "https://app.sandbox.midtrans.com"
-            url = base_url + "/snap/v1/transactions"
-
-            auth_str = base64.b64encode((midtrans_server_key + ":").encode()).decode()
-
-            payload = {
-                "transaction_details": {
-                    "order_id": order_id_str,
-                    "gross_amount": int(total),  # Midtrans minta integer
-                },
-                "credit_card": {
-                    "secure": True
-                },
-                "customer_details": {
-                    "first_name": current_user.name,
-                    "email": getattr(current_user, "email", None),
-                },
-                "item_details": [
-                    {
-                        "id": str(listing_id),
-                        "price": int(price),
-                        "quantity": quantity,
-                        "name": f"Telur grade {listing['grade']}"
-                    }
-                ]
-            }
-
+        server_key = current_app.config.get("MIDTRANS_SERVER_KEY")
+        if server_key:
             try:
-                resp = requests.post(
-                    url,
-                    json=payload,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Accept": "application/json",
-                        "Authorization": f"Basic {auth_str}",
-                    },
-                    timeout=10
-                )
-                if 200 <= resp.status_code < 300:
-                    data_mid = resp.json()
-                    snap_token = data_mid.get("token")
-
-                    # Simpan token ke orders.midtrans_transaction_id (opsional)
-                    cur2 = conn.cursor()
-                    cur2.execute(
-                        "UPDATE orders SET midtrans_transaction_id = %s WHERE id = %s",
-                        (snap_token, order_db_id)
-                    )
-                    conn.commit()
-                    cur2.close()
-                else:
-                    print("Midtrans HTTP error:", resp.status_code, resp.text)
+                snap = get_midtrans_snap()
+                param = {
+                    "transaction_details": {"order_id": order_id_str, "gross_amount": int(total)},
+                    "credit_card": {"secure": True},
+                    "customer_details": {"first_name": current_user.name, "email": current_user.email},
+                    "item_details": [{"id": str(listing['id']), "price": int(price), "quantity": quantity, "name": f"Telur Grade {grade}"}]
+                }
+                transaction = snap.create_transaction(param)
+                snap_token = transaction['token']
+                
+                # Simpan token ke DB
+                cur.execute("UPDATE orders SET midtrans_transaction_id = %s WHERE id = %s", (snap_token, order_db_id))
+                conn.commit()
             except Exception as e:
-                print("Midtrans request error:", e)
-        else:
-            print("MIDTRANS_SERVER_KEY tidak di-set, skip panggilan Snap (mode lokal).")
+                print(f"Midtrans Error: {e}")
 
-        # 9) Response ke frontend
+        cur.close()
+        
+        # Return JSON untuk Frontend JS
         if is_json:
-            return jsonify(
-                success=True,
-                snap_token=snap_token,
-                order_id=order_id_str,
-                message=None if snap_token else "Order dibuat tanpa Snap (cek konfigurasi Midtrans / mode lokal)."
-            )
+            return jsonify(success=True, snap_token=snap_token, order_id=order_id_str)
         else:
-            if snap_token:
-                flash("Order berhasil dibuat, silakan lanjutkan pembayaran.", "success")
-            else:
-                flash("Order berhasil dibuat tanpa Snap (mode lokal).", "success")
-            return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id))
+            flash("Order berhasil dibuat.", "success")
+            return redirect(url_for('eggmart_controller.eggmartHistory'))
 
-    except mysql.connector.Error as e:
-        conn.rollback()
-        print("create_transaction DB error:", e)
-        if is_json:
-            return jsonify(success=False, message="Error database."), 500
-        flash("Terjadi kesalahan di database.", "error")
-        return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id or 0))
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Transaction Error: {e}")
+        if is_json: return jsonify(success=False, message="Terjadi kesalahan server"), 500
+        flash("Terjadi kesalahan server.", "error")
+        return redirect(url_for('eggmart_controller.eggmart'))
     finally:
-        conn.close()
+        if conn: conn.close()
 
 @eggmart_controller.route('/dashboard')
 @login_required
@@ -1440,8 +1354,6 @@ def eggmartHistory():
         midtrans_client_key=current_app.config.get("MIDTRANS_CLIENT_KEY") 
     )
 
-    
-
 @eggmart_controller.route('/seller-chat/<int:session_id>', methods=['GET', 'POST'])
 @login_required
 def seller_chat_thread(session_id):
@@ -1561,4 +1473,3 @@ def seller_chat_thread(session_id):
         return jsonify(success=False, message="Kesalahan database."), 500
     finally:
         conn.close()
-

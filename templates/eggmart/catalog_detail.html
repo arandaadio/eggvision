@@ -18,17 +18,14 @@
     isDetectingLocation: false,
     
     shopDropdownOpen: false,
-    allShops: [], // To store list of other shops
+    allShops: [], 
 
     formatRupiah(num) {
         return 'Rp ' + parseInt(num).toLocaleString('id-ID');
     },
 
     init() {
-        // Fetch all shops for the dropdown
         this.fetchShops();
-        
-        // Auto-detect location if empty
         if (!this.profileLocation || this.profileLocation === 'None') {
             this.detectLocation(true);
         }
@@ -36,7 +33,6 @@
 
     async fetchShops() {
         try {
-            // Reusing the catalog API to get list of sellers
             const res = await fetch(`{{ url_for('eggmart_controller.api_filter_catalog') }}`);
             const data = await res.json();
             if(data.success) {
@@ -48,6 +44,8 @@
     },
     
     addToCart(id, price, maxStock) {
+        // Ensure ID is treated as a string key
+        id = String(id);
         if (!this.cart[id]) this.cart[id] = { qty: 0, price: price };
         if (this.cart[id].qty < maxStock) {
             this.cart[id].qty++;
@@ -57,9 +55,28 @@
     },
     
     removeFromCart(id) {
+        id = String(id);
         if (this.cart[id] && this.cart[id].qty > 0) {
             this.cart[id].qty--;
             if (this.cart[id].qty === 0) delete this.cart[id];
+        }
+    },
+
+    // ADDED THIS: You were calling this in HTML but it was missing in JS
+    manualInput(id, value, price, maxStock) {
+        id = String(id);
+        let val = parseInt(value);
+        if (isNaN(val) || val < 0) val = 0;
+        
+        if (val > maxStock) {
+            alert('Stok melebihi ketersediaan.');
+            val = maxStock;
+        }
+
+        if (val === 0) {
+            delete this.cart[id];
+        } else {
+            this.cart[id] = { qty: val, price: price };
         }
     },
     
@@ -79,26 +96,6 @@
         return sum;
     },
 
-    manualInput(gradeKey, value, price, maxStock, listingId) {
-        let qty = parseInt(value);
-        
-        if (isNaN(qty) || qty < 0) qty = 0;
-        
-        if (qty > maxStock) {
-            alert('Stok maksimum tercapai (' + maxStock + ').');
-            qty = maxStock;
-        }
-        
-        if (!this.cart[gradeKey]) {
-            this.cart[gradeKey] = { qty: 0, price: price, listingId: listingId };
-        }
-        
-        this.cart[gradeKey].qty = qty;
-        
-        // Force refresh (kadang input field tidak update visualnya tanpa ini)
-        this.cart = { ...this.cart };
-    },
-
     async checkout() {
         const items = Object.entries(this.cart).filter(([_, val]) => val.qty > 0);
         if (items.length === 0) {
@@ -106,7 +103,7 @@
             return;
         }
         
-        // Take the first item (current logic handles 1 transaction per checkout)
+        // listingId will now be the numerical ID (e.g. '15') not 'Grade A'
         const [listingId, item] = items[0];
         this.isLoading = true;
 
@@ -395,7 +392,7 @@
                                 
                                 {% if not is_disabled %}
                                 <div class="flex items-center gap-1 bg-gray-50 dark:bg-white/5 rounded-lg p-1 border border-gray-200 dark:border-dark-border">
-                                    <button @click="removeFromCart('{{ product.grade }}')" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-white/10 transition-colors text-gray-500 hover:text-black dark:hover:text-white">
+                                    <button @click="removeFromCart('{{ product.id }}')" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-white/10 transition-colors text-gray-500 hover:text-black dark:hover:text-white">
                                         <i data-lucide="minus" class="w-4 h-4"></i>
                                     </button>
                                     
@@ -403,10 +400,10 @@
                                            min="0" 
                                            max="{{ product.stock }}"
                                            class="w-12 text-center font-mono text-sm font-bold bg-transparent focus:outline-none text-ink dark:text-white"
-                                           x-bind:value="cart['{{ product.grade }}'] ? cart['{{ product.grade }}'].qty : 0"
-                                           @input="manualInput('{{ product.grade }}', $event.target.value, {{ product.price }}, {{ product.stock }}, {{ product.id }})">
+                                           x-bind:value="cart['{{ product.id }}'] ? cart['{{ product.id }}'].qty : 0"
+                                           @input="manualInput('{{ product.id }}', $event.target.value, {{ product.price }}, {{ product.stock }})">
                                     
-                                    <button @click="addToCart('{{ product.grade }}', {{ product.price }}, {{ product.stock }}, {{ product.id }})" class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-white/10 shadow-sm hover:text-primary transition-colors">
+                                    <button @click="addToCart('{{ product.id }}', {{ product.price }}, {{ product.stock }})" class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-white/10 shadow-sm hover:text-primary transition-colors">
                                         <i data-lucide="plus" class="w-4 h-4"></i>
                                     </button>
                                 </div>
@@ -421,6 +418,7 @@
                     {% endfor %}
                 </div>
             </div>
+
 
             <div class="w-full lg:w-96 flex-shrink-0">
                 <div class="sticky top-28 bg-paper dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-lg">
