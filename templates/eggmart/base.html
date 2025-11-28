@@ -52,6 +52,18 @@
     .dark ::-webkit-scrollbar-thumb { background-color: #333; }
     
     [x-cloak] { display: none !important; }
+
+    /* Remove arrows in Chrome, Edge, Safari */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Remove arrows in Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-paper dark:bg-dark-background text-ink dark:text-white font-jakarta transition-colors duration-300 antialiased">

@@ -79,6 +79,26 @@
         return sum;
     },
 
+    manualInput(gradeKey, value, price, maxStock, listingId) {
+        let qty = parseInt(value);
+        
+        if (isNaN(qty) || qty < 0) qty = 0;
+        
+        if (qty > maxStock) {
+            alert('Stok maksimum tercapai (' + maxStock + ').');
+            qty = maxStock;
+        }
+        
+        if (!this.cart[gradeKey]) {
+            this.cart[gradeKey] = { qty: 0, price: price, listingId: listingId };
+        }
+        
+        this.cart[gradeKey].qty = qty;
+        
+        // Force refresh (kadang input field tidak update visualnya tanpa ini)
+        this.cart = { ...this.cart };
+    },
+
     async checkout() {
         const items = Object.entries(this.cart).filter(([_, val]) => val.qty > 0);
         if (items.length === 0) {
@@ -324,7 +344,6 @@
         </div>
 
         <div class="flex flex-col lg:flex-row gap-8 items-start">
-            
             <div class="flex-1 w-full bg-paper dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-dark-border">
                     <h2 class="font-canela font-normal text-3xl text-ink dark:text-white">Katalog Produk</h2>
@@ -333,8 +352,10 @@
                 <div class="space-y-4">
                     {% for product in seller.products %}
                     {% set is_out_of_stock = product.stock <= 0 or product.id == 0 %}
+                    {% set is_no_price = product.price <= 0 %}
+                    {% set is_disabled = is_out_of_stock or is_no_price %}
                     
-                    <div class="group bg-white dark:bg-black/20 border border-gray-200 dark:border-dark-border p-4 sm:p-6 rounded-xl hover:border-primary/50 transition-all duration-300 flex flex-col sm:flex-row sm:items-center gap-6 {{ 'opacity-60 grayscale' if is_out_of_stock else '' }}">
+                    <div class="group bg-white dark:bg-black/20 border border-gray-200 dark:border-dark-border p-4 sm:p-6 rounded-xl hover:border-primary/50 transition-all duration-300 flex flex-col sm:flex-row sm:items-center gap-6 {{ 'opacity-60 grayscale' if is_disabled else '' }}">
                         
                         <div class="w-full sm:w-32 h-32 bg-gray-100 dark:bg-black rounded-xl flex items-center justify-center flex-shrink-0 relative overflow-hidden">
                             <div class="text-center">
@@ -343,9 +364,11 @@
                             </div>
                             {% if is_out_of_stock %}
                                 <div class="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                    <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">
-                                        {{ 'BELUM ADA' if product.id == 0 else 'HABIS' }}
-                                    </span>
+                                    <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">HABIS</span>
+                                </div>
+                            {% elif is_no_price %}
+                                <div class="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                    <span class="bg-gray-500 text-white text-xs font-bold px-2 py-1 rounded">HARGA -</span>
                                 </div>
                             {% endif %}
                         </div>
@@ -353,39 +376,46 @@
                         <div class="flex-1">
                             <div class="flex justify-between items-start mb-2">
                                 <h3 class="font-bold text-lg">Telur Ayam Grade {{ product.grade }}</h3>
-                                <span class="px-2 py-1 {{ 'bg-red-100 text-red-600' if is_out_of_stock else 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' }} text-xs font-bold rounded-md">
-                                    {{ 'Stok Habis' if is_out_of_stock else 'Stok: ' ~ product.stock }}
+                                <span class="px-2 py-1 {{ 'bg-red-100 text-red-600' if is_out_of_stock else ('bg-gray-200 text-gray-600' if is_no_price else 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400') }} text-xs font-bold rounded-md">
+                                    {% if is_out_of_stock %} Stok Habis
+                                    {% elif is_no_price %} Harga Belum Diset
+                                    {% else %} Stok: {{ product.stock }} {% endif %}
                                 </span>
                             </div>
                             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ product.description }}</p>
                             
                             <div class="flex items-center justify-between">
-                              <div class="text-xl font-mono font-bold text-ink dark:text-white">
-                                  {% if product.price > 0 %}
-                                      Rp {{ "{:,.0f}".format(product.price).replace(',', '.') }} <span class="text-xs text-gray-400 font-sans font-normal">/ butir</span>
-                                  {% else %}
-                                      <span class="text-sm text-gray-400 font-sans font-normal">-</span>
-                                  {% endif %}
-                              </div>
-                          
-                              {% if not is_out_of_stock %}
-                                  <div class="flex items-center gap-3 bg-gray-50 dark:bg-white/5 rounded-lg p-1 border border-gray-200 dark:border-dark-border">
-                                      <button @click="removeFromCart('{{ product.id }}')" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-white/10 transition-colors" :class="!cart['{{ product.id }}'] || cart['{{ product.id }}'].qty === 0 ? 'text-gray-300' : 'text-ink dark:text-white'">
-                                          <i data-lucide="minus" class="w-4 h-4"></i>
-                                      </button>
-                                      
-                                      <span class="w-8 text-center font-mono text-sm font-bold" x-text="cart['{{ product.id }}'] ? cart['{{ product.id }}'].qty : 0">0</span>
-                                      
-                                      <button @click="addToCart('{{ product.id }}', {{ product.price }}, {{ product.stock }})" class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-white/10 shadow-sm hover:text-primary transition-colors">
-                                          <i data-lucide="plus" class="w-4 h-4"></i>
-                                      </button>
-                                  </div>
-                              {% else %}
-                                  <button disabled class="px-4 py-2 bg-gray-200 dark:bg-white/10 text-gray-400 text-xs font-bold rounded-lg cursor-not-allowed">
-                                      {{ 'Belum Tersedia' if product.id == 0 else 'Stok Habis' }}
-                                  </button>
-                              {% endif %}
-                          </div>
+                                <div class="text-xl font-mono font-bold text-ink dark:text-white">
+                                    {% if is_no_price %}
+                                        <span class="text-sm text-gray-400 italic">Hubungi Penjual</span>
+                                    {% else %}
+                                        Rp {{ "{:,.0f}".format(product.price).replace(',', '.') }} <span class="text-xs text-gray-400 font-sans font-normal">/ butir</span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if not is_disabled %}
+                                <div class="flex items-center gap-1 bg-gray-50 dark:bg-white/5 rounded-lg p-1 border border-gray-200 dark:border-dark-border">
+                                    <button @click="removeFromCart('{{ product.grade }}')" class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-white/10 transition-colors text-gray-500 hover:text-black dark:hover:text-white">
+                                        <i data-lucide="minus" class="w-4 h-4"></i>
+                                    </button>
+                                    
+                                    <input type="number" 
+                                           min="0" 
+                                           max="{{ product.stock }}"
+                                           class="w-12 text-center font-mono text-sm font-bold bg-transparent focus:outline-none text-ink dark:text-white"
+                                           x-bind:value="cart['{{ product.grade }}'] ? cart['{{ product.grade }}'].qty : 0"
+                                           @input="manualInput('{{ product.grade }}', $event.target.value, {{ product.price }}, {{ product.stock }}, {{ product.id }})">
+                                    
+                                    <button @click="addToCart('{{ product.grade }}', {{ product.price }}, {{ product.stock }}, {{ product.id }})" class="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-white/10 shadow-sm hover:text-primary transition-colors">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                {% else %}
+                                <button disabled class="px-4 py-2 bg-gray-200 dark:bg-white/10 text-gray-400 text-xs font-bold rounded-lg cursor-not-allowed">
+                                    Tidak Tersedia
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                     {% endfor %}

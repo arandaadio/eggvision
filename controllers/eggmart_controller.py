@@ -1440,6 +1440,8 @@ def eggmartHistory():
         midtrans_client_key=current_app.config.get("MIDTRANS_CLIENT_KEY") 
     )
 
+    
+
 @eggmart_controller.route('/seller-chat/<int:session_id>', methods=['GET', 'POST'])
 @login_required
 def seller_chat_thread(session_id):
