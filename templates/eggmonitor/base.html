@@ -4,26 +4,256 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}EggVision{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logoegg.png') }}">
 
-  <!-- Tailwind CDN -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Theme mapping untuk class kustom -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}" />
-  {% block head %}{% endblock %}
-</head>
-<body class="min-h-screen bg-background text-foreground">
-  {% block body %}{% endblock %}
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   <script>
-    // Render lucide icons
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+            'canela': ['Canela Bold', 'serif'],
+          },
+          colors: {
+            primary: '#bead66', 
+            'primary-foreground': '#000000',
+            paper: '#FDFBF7',
+            ink: '#1a1a1a',
+            
+            background: '#f8f9fa',
+            foreground: '#1a1a1a',
+            sidebar: '#ffffff',
+            'sidebar-border': '#e5e7eb',
+            card: '#ffffff',
+            border: '#e5e7eb',
+            
+            dark: {
+                background: '#0a0a0a', 
+                surface: '#161616',
+                border: '#262626',
+                text: '#ffffff',
+                muted: '#A1A1AA'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 20px; }
+    .dark ::-webkit-scrollbar-thumb { background-color: #333; }
+    
+    [x-cloak] { display: none !important; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+
+<body class="min-h-screen font-jakarta antialiased overflow-x-hidden bg-background text-foreground dark:bg-dark-background dark:text-dark-text transition-colors duration-300" 
+      x-data="{ mobileMenuOpen: false, profileOpen: false }">
+
+  <div class="lg:hidden flex items-center justify-between p-4 border-b border-border dark:border-dark-border bg-sidebar dark:bg-dark-surface sticky top-0 z-50 transition-colors duration-300">
+      <div class="flex items-center gap-2">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" class="w-8 h-8 object-contain">
+        <span class="text-primary font-canela font-bold">EGGVISION</span>
+      </div>
+      <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-white/5 text-ink dark:text-white">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+  </div>
+
+  <aside class="fixed inset-y-0 left-0 z-40 w-[250px] lg:w-[130px] bg-sidebar dark:bg-dark-surface border-r border-sidebar-border dark:border-dark-border flex flex-col transform transition-transform duration-300 lg:translate-x-0"
+         :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'">
+    
+    <div class="hidden lg:flex p-6 border-b border-sidebar-border dark:border-dark-border flex-col items-center gap-2">
+        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+           <img src="{{ url_for('static', filename='img/logo.png') }}" class="w-8 h-8 object-contain">
+        </div>
+        <span class="text-primary text-sm font-canela font-normal">EGGVISION</span>
+    </div>
+
+    <div class="lg:hidden p-4 flex justify-end border-b border-sidebar-border dark:border-dark-border text-ink dark:text-white">
+        <button @click="mobileMenuOpen = false"><i data-lucide="x" class="w-6 h-6"></i></button>
+    </div>
+
+    <nav class="flex-1 py-4 overflow-y-auto">
+      {% set menu = [
+        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/eggmonitor/index"},
+        {"id":"laporan","icon":"database","label":"Laporan","href":"/eggmonitor/laporan"},
+        {"id":"detail","icon":"grid-3x3","label":"Detail Alat","href":"/eggmonitor/detail"},
+        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"/eggmonitor/seller"}
+      ] %}
+      {% for item in menu %}
+        {% set is_active = (item.id == active_menu) %}
+        <a href="{{ item.href }}"
+           class="w-full px-4 py-4 flex lg:flex-col items-center gap-4 lg:gap-2 transition-all duration-200
+           {{ 'text-primary bg-primary/5 border-l-4 border-primary' if is_active else 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-50 dark:hover:bg-white/5' }}">
+          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
+          <span class="text-sm lg:text-[10px] uppercase tracking-wider font-bold">{{ item.label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    </aside>
+
+  <div x-show="mobileMenuOpen" @click="mobileMenuOpen = false" class="fixed inset-0 bg-black/50 z-30 lg:hidden" x-transition.opacity style="display: none;"></div>
+
+  <main class="lg:ml-[130px] p-4 md:p-8 transition-all duration-300">
+    
+  <header class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+      <div>
+          <h1 class="font-canela font-normal text-3xl md:text-4xl mb-1 text-ink dark:text-white">{% block page_title %}Dashboard{% endblock %}</h1>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">{% block page_subtitle %}Overview Produksi{% endblock %}</p>
+      </div>
+
+      <div class="flex items-center gap-4 md:gap-6 self-end md:self-auto">
+          
+          <div class="hidden md:flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-dark-surface px-4 py-2 rounded-full border border-border dark:border-dark-border shadow-sm">
+              <div class="flex items-center gap-2">
+                  <i data-lucide="calendar" class="w-4 h-4"></i>
+                  <span id="live-date">--/--/--</span>
+              </div>
+              <div class="w-px h-4 bg-gray-300 dark:bg-gray-600"></div>
+              <div class="flex items-center gap-2">
+                  <i data-lucide="clock" class="w-4 h-4"></i>
+                  <span id="live-time">--:--</span>
+              </div>
+          </div>
+
+          <div @click="profileOpen = true" class="flex items-center gap-3 pl-0 md:pl-6 md:border-l border-gray-200 dark:border-gray-700 cursor-pointer group">
+              <div class="text-right hidden sm:block">
+                  <div class="text-sm font-bold text-ink dark:text-white group-hover:text-primary transition-colors">{{ current_user.name }}</div>
+                  <div class="text-[10px] uppercase text-gray-500 tracking-wider">Pengusaha</div>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden border border-border dark:border-dark-border group-hover:border-primary transition-all">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name }}" class="w-full h-full object-cover" />
+              </div>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors"></i>
+          </div>
+
+           <button onclick="toggleDarkMode()" class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-primary transition-colors border border-transparent hover:border-border dark:hover:border-dark-border">
+              <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+              <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+          </button>
+
+      </div>
+  </header>
+
+    {% block content %}{% endblock %}
+
+  </main>
+
+  <div x-cloak x-show="profileOpen" class="relative z-50" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    
+    <div x-show="profileOpen" 
+         x-transition:enter="ease-in-out duration-500" 
+         x-transition:enter-start="opacity-0" 
+         x-transition:enter-end="opacity-100" 
+         x-transition:leave="ease-in-out duration-500" 
+         x-transition:leave-start="opacity-100" 
+         x-transition:leave-end="opacity-0" 
+         class="fixed inset-0 bg-gray-900/75 transition-opacity"
+         @click="profileOpen = false"></div>
+
+    <div class="fixed inset-0 overflow-hidden">
+      <div class="absolute inset-0 overflow-hidden">
+        <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+          
+          <div x-show="profileOpen" 
+               x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700" 
+               x-transition:enter-start="translate-x-full" 
+               x-transition:enter-end="translate-x-0" 
+               x-transition:leave="transform transition ease-in-out duration-500 sm:duration-700" 
+               x-transition:leave-start="translate-x-0" 
+               x-transition:leave-end="translate-x-full"
+               class="pointer-events-auto w-screen max-w-md">
+            
+            <div class="flex h-full flex-col overflow-y-scroll bg-white dark:bg-dark-surface shadow-xl border-l border-border dark:border-dark-border">
+              <div class="px-4 py-6 sm:px-6 bg-primary/10 dark:bg-white/5 border-b border-border dark:border-dark-border">
+                <div class="flex items-start justify-between">
+                  <h2 class="text-lg font-canela font-semibold text-ink dark:text-white" id="slide-over-title">Profil Pengusaha</h2>
+                  <div class="ml-3 flex h-7 items-center">
+                    <button @click="profileOpen = false" type="button" class="relative rounded-md text-gray-400 hover:text-gray-500 focus:outline-none">
+                      <span class="absolute -inset-2.5"></span>
+                      <span class="sr-only">Close panel</span>
+                      <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="mt-4 flex flex-col items-center">
+                    <div class="w-20 h-20 rounded-full border-2 border-primary overflow-hidden mb-3 bg-gray-100">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name }}" class="w-full h-full object-cover" />
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ current_user.email }}</p>
+                </div>
+              </div>
+
+              <div class="relative flex-1 px-4 py-6 sm:px-6">
+                <form action="{{ url_for('eggmonitor_controller.update_profile') }}" method="POST" class="space-y-6">
+                    
+                    <div>
+                        <label for="name" class="block text-sm font-medium leading-6 text-ink dark:text-white">Nama Pengusaha / Farm</label>
+                        <div class="mt-2">
+                            <input type="text" name="name" id="name" value="{{ current_user.name }}" 
+                                   class="block w-full rounded-md border-0 py-2.5 px-3 text-ink shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-dark-background dark:ring-gray-700 dark:text-white sm:text-sm sm:leading-6">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="location" class="block text-sm font-medium leading-6 text-ink dark:text-white">Lokasi Farm</label>
+                        <div class="mt-2">
+                            <input type="text" name="location" id="location" value="{{ current_user.farm_location or '' }}" placeholder="Contoh: Bogor, Jawa Barat"
+                                   class="block w-full rounded-md border-0 py-2.5 px-3 text-ink shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-dark-background dark:ring-gray-700 dark:text-white sm:text-sm sm:leading-6">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-medium leading-6 text-ink dark:text-white">Deskripsi Singkat</label>
+                        <div class="mt-2">
+                            <textarea id="description" name="description" rows="4" 
+                                      class="block w-full rounded-md border-0 py-2.5 px-3 text-ink shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-dark-background dark:ring-gray-700 dark:text-white sm:text-sm sm:leading-6">{{ current_user.farm_description or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="pt-4">
+                        <button type="submit" class="flex w-full justify-center rounded-md bg-primary px-3 py-2.5 text-sm font-semibold text-black shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-18 pt-6">
+                    <a href="{{ url_for('auth_controller.auth_logout') }}" 
+                       class="flex w-full items-center justify-center gap-2 rounded-md bg-red-50 dark:bg-red-900/20 px-3 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        Keluar dari Akun
+                    </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Lucide Icons ---
     document.addEventListener("DOMContentLoaded", () => {
       if (window.lucide) lucide.createIcons();
 
-      // jam real-time di header
+      // --- Clock ---
       const timeEl = document.getElementById("live-time");
       const dateEl = document.getElementById("live-date");
       function pad(n){ return n.toString().padStart(2,"0"); }
@@ -33,12 +263,31 @@
         const mIdx = now.getMonth();
         const y = now.getFullYear();
         const months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-        if (dateEl) dateEl.textContent = `${d}/${months[mIdx]}/${y}`;
+        if (dateEl) dateEl.textContent = `${d} ${months[mIdx]} ${y}`;
         if (timeEl) timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
       }
-      tick();
-      setInterval(tick, 1000);
+      tick(); setInterval(tick, 1000);
+
+      // --- Dark Mode Init ---
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     });
+
+    // --- Dark Mode Toggle ---
+    function toggleDarkMode() {
+        const html = document.documentElement;
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            localStorage.theme = 'light';
+        } else {
+            html.classList.add('dark');
+            localStorage.theme = 'dark';
+        }
+        setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 50);
+    }
   </script>
   {% block scripts %}{% endblock %}
 </body>

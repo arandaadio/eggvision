@@ -195,9 +195,8 @@ def eggmin_chats():
         flash('Hanya Admin yang dapat mengakses halaman chat.', 'error')
         return redirect(url_for('comprof_controller.comprof_beranda'))
     
-    # Ambil parameter filter dari URL
-    filter_role = request.args.get('role', 'all')     # all, pembeli, pengusaha, guest
-    filter_status = request.args.get('status', 'all') # all, unread, archived
+    filter_role = request.args.get('role', 'all')
+    filter_status = request.args.get('status', 'all')
     search_query = request.args.get('q', '').strip()
 
     conn = get_db_connection()
@@ -207,12 +206,16 @@ def eggmin_chats():
         try:
             cur = conn.cursor(dictionary=True)
             
-            # Base Query
+            # Query Logic
             query = '''
                 SELECT cs.id as conversation_id, 
                        COALESCE(u.name, cs.guest_name) as name,
                        COALESCE(u.email, cs.guest_email) as email,
-                       CASE WHEN cs.user_id IS NOT NULL THEN u.role ELSE 'guest' END as role,
+                       CASE 
+                           WHEN cs.user_id IS NOT NULL AND u.role = 'pengusaha' THEN 'pengusaha'
+                           WHEN cs.user_id IS NOT NULL AND u.role = 'pembeli' THEN 'pembeli'
+                           ELSE 'guest' 
+                       END as role,
                        cs.last_message,
                        cs.last_message_at as last_message_time,
                        cs.is_pinned,
@@ -221,7 +224,7 @@ def eggmin_chats():
                            SELECT COUNT(*) FROM chat_messages cm 
                            WHERE cm.session_id = cs.id 
                            AND cm.status = 'unread' 
-                           AND cm.message_type != 'admin_to_user'
+                           AND cm.message_type IN ('guest_to_admin', 'pengusaha_to_admin')
                        ) as unread_count
                 FROM chat_sessions cs
                 LEFT JOIN users u ON cs.user_id = u.id
@@ -229,7 +232,10 @@ def eggmin_chats():
             '''
             params = []
 
-            # Filter by Role
+            # 1. Show only Admin related chats (Not marketplace direct chats)
+            query += " AND (cs.seller_id IS NULL)" 
+
+            # 2. Filter by Role
             if filter_role != 'all':
                 if filter_role == 'guest':
                     query += " AND cs.user_id IS NULL"
@@ -237,31 +243,23 @@ def eggmin_chats():
                     query += " AND u.role = %s"
                     params.append(filter_role)
 
-            # Filter by Status (Archived vs Active)
+            # 3. Filter by Status
             if filter_status == 'archived':
                 query += " AND cs.is_archived = TRUE"
             else:
-                query += " AND cs.is_archived = FALSE" # Default tampilkan yang tidak di-archive
+                query += " AND cs.is_archived = FALSE"
 
-            # Filter by Search (Name or Email)
+            # 4. Filter by Search
             if search_query:
                 query += " AND (COALESCE(u.name, cs.guest_name) LIKE %s OR COALESCE(u.email, cs.guest_email) LIKE %s)"
                 params.extend([f"%{search_query}%", f"%{search_query}%"])
 
-            # Filter Unread Only (Logika di having atau subquery, tapi untuk simpel kita filter di Python atau tambah kondisi unread > 0)
-            # Jika filter_status == 'unread', kita tambahkan kondisi di bawah.
-            
-            # Sorting: Pinned first, then Unread messages, then Most Recent
-            query += '''
-                ORDER BY 
-                cs.is_pinned DESC, 
-                last_message_time DESC
-            '''
+            # Sorting
+            query += ''' ORDER BY cs.is_pinned DESC, cs.last_message_at DESC '''
 
             cur.execute(query, tuple(params))
             all_rows = cur.fetchall()
             
-            # Manual filtering for 'unread' status if requested (karena unread_count adalah subquery)
             if filter_status == 'unread':
                 conversations = [c for c in all_rows if c['unread_count'] > 0]
             else:
@@ -276,11 +274,7 @@ def eggmin_chats():
     return render_template('eggmin/chats.html', 
                            conversations=conversations,
                            active_menu='chats',
-                           current_filters={
-                               'role': filter_role,
-                               'status': filter_status,
-                               'q': search_query
-                           },
+                           current_filters={'role': filter_role, 'status': filter_status, 'q': search_query},
                            now=datetime.now())
 
 # ==================== API ROUTES UNTUK CHAT ADMIN ====================
@@ -297,30 +291,23 @@ def eggmin_api_chat_action(action, session_id):
 
     try:
         cur = conn.cursor()
-        
+        msg = "Berhasil"
         if action == 'pin':
-            # Toggle Pin
             cur.execute("UPDATE chat_sessions SET is_pinned = NOT is_pinned WHERE id = %s", (session_id,))
             msg = "Status Pin diperbarui"
-            
         elif action == 'archive':
-            # Toggle Archive
             cur.execute("UPDATE chat_sessions SET is_archived = NOT is_archived WHERE id = %s", (session_id,))
             msg = "Status Arsip diperbarui"
-            
         elif action == 'delete':
-            # Delete session and all related messages
             cur.execute("DELETE FROM chat_messages WHERE session_id = %s", (session_id,))
             cur.execute("DELETE FROM chat_sessions WHERE id = %s", (session_id,))
             msg = "Percakapan berhasil dihapus"
-            
         else:
             return jsonify({'success': False, 'error': 'Invalid action'}), 400
 
         conn.commit()
         cur.close()
         return jsonify({'success': True, 'message': msg})
-
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
@@ -337,7 +324,7 @@ def eggmin_api_chat_history(session_id):
     try:
         cur = conn.cursor(dictionary=True)
         
-        # Ambil pesan berdasarkan session_id
+        # Fetch messages
         cur.execute("""
             SELECT id, message, message_type, created_at, status 
             FROM chat_messages 
@@ -347,17 +334,18 @@ def eggmin_api_chat_history(session_id):
         
         raw_messages = cur.fetchall()
         
-        # Format waktu dan masukkan ke list
         for msg in raw_messages:
             if msg['created_at']:
                 msg['created_at'] = msg['created_at'].strftime('%d %b %Y %H:%M')
             messages.append(msg)
             
-        # Tandai semua pesan user/guest di sesi ini sebagai 'read'
+        # Update Read Status
         cur.execute("""
             UPDATE chat_messages 
             SET status='read' 
-            WHERE session_id=%s AND message_type != 'admin_to_user'
+            WHERE session_id=%s 
+            AND message_type IN ('guest_to_admin', 'pengusaha_to_admin')
+            AND status='unread'
         """, (session_id,))
         
         conn.commit()
@@ -368,11 +356,16 @@ def eggmin_api_chat_history(session_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
-        conn.close()
+        if conn: conn.close()
 
 @eggmin_controller.route('/api/chats/reply/<int:session_id>', methods=['POST'])
 @login_required
 def eggmin_api_chat_reply(session_id):
+    """
+    Handles Admin replies.
+    FIXED: Dynamically determines if the recipient is a 'guest' or 'pengusaha' 
+    and sets the correct message_type.
+    """
     if current_user.role != 'admin':
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
         
@@ -384,21 +377,41 @@ def eggmin_api_chat_reply(session_id):
     try:
         cur = conn.cursor(dictionary=True)
         
-        # Ambil info user/guest dari sesi untuk mengisi kolom redundan di chat_messages (jika perlu)
-        cur.execute("SELECT user_id, guest_email, guest_name FROM chat_sessions WHERE id = %s", (session_id,))
+        # 1. Get Session Info to determine User Role
+        # We join with users table to get the role
+        cur.execute("""
+            SELECT cs.user_id, cs.guest_email, cs.guest_name, u.role as user_role
+            FROM chat_sessions cs
+            LEFT JOIN users u ON cs.user_id = u.id
+            WHERE cs.id = %s
+        """, (session_id,))
         session_data = cur.fetchone()
         
         if not session_data:
             return jsonify({'success': False, 'error': 'Sesi tidak ditemukan'}), 404
 
-        # Insert balasan Admin
+        # 2. Determine Message Type
+        # If user is Pengusaha -> admin_to_pengusaha
+        # Else (Guest or standard user) -> admin_to_guest
+        msg_type = 'admin_to_guest'
+        if session_data['user_role'] == 'pengusaha':
+            msg_type = 'admin_to_pengusaha'
+
+        # 3. Insert Message with CORRECT Type
         cur.execute("""
             INSERT INTO chat_messages 
             (session_id, user_id, guest_name, guest_email, message, message_type, created_at, status)
-            VALUES (%s, %s, %s, %s, %s, 'admin_to_user', NOW(), 'read')
-        """, (session_id, session_data['user_id'], session_data['guest_name'], session_data['guest_email'], message_text))
+            VALUES (%s, %s, %s, %s, %s, %s, NOW(), 'read')
+        """, (
+            session_id, 
+            session_data['user_id'], 
+            session_data['guest_name'], 
+            session_data['guest_email'], 
+            message_text,
+            msg_type # <--- Using the dynamic variable here
+        ))
         
-        # Update last message di tabel sesi
+        # 4. Update Session Last Message
         cur.execute("""
             UPDATE chat_sessions 
             SET last_message = %s, last_message_at = NOW() 
@@ -411,6 +424,7 @@ def eggmin_api_chat_reply(session_id):
         return jsonify({'success': True})
 
     except Exception as e:
+        print(f"Reply Error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         if conn:

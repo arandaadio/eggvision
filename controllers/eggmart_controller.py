@@ -5,7 +5,6 @@ import mysql.connector
 import time
 import base64
 import requests
-
 from utils.db import get_db_connection
 import midtransclient
 
@@ -1096,25 +1095,23 @@ def get_chat_for_seller(seller_id):
         if not seller:
             return jsonify(success=False, message="Penjual tidak ditemukan"), 404
 
-        # Cari session antara buyer ini dan seller ini
-        # Kita pakai guest_email sebagai 'kunci' seller: seller:<seller_id>
+        # Cari session. Kita cek berdasarkan user_id AND seller_id
         cur.execute("""
             SELECT id
             FROM chat_sessions
-            WHERE user_id = %s
-              AND guest_email = %s
+            WHERE user_id = %s AND seller_id = %s
             LIMIT 1
-        """, (buyer_id, f"seller:{seller_id}"))
+        """, (buyer_id, seller_id))
         row = cur.fetchone()
 
         if row:
             session_id = row['id']
         else:
-            # Belum ada session → buat baru
+            # === FIX: Create session dengan mengisi kolom SELLER_ID ===
             cur.execute("""
-                INSERT INTO chat_sessions (user_id, guest_email, guest_name, status, last_message_at, created_at)
-                VALUES (%s, %s, %s, 'active', NOW(), NOW())
-            """, (buyer_id, f"seller:{seller_id}", seller['name']))
+                INSERT INTO chat_sessions (user_id, seller_id, guest_email, guest_name, status, last_message_at, created_at)
+                VALUES (%s, %s, %s, %s, 'active', NOW(), NOW())
+            """, (buyer_id, seller_id, f"seller:{seller_id}", seller['name']))
             session_id = cur.lastrowid
             conn.commit()
 
@@ -1129,13 +1126,15 @@ def get_chat_for_seller(seller_id):
         msgs = []
         for m in cur.fetchall():
             mtype = m['message_type']
-            if mtype in ('user_to_admin', 'guest_to_admin'):
+            # === FIX: Logic penentuan sender 'self' ===
+            # Jika tipe pesan adalah pembeli_to_pengusaha, itu adalah 'self' (karena yg login pembeli)
+            if mtype == 'pembeli_to_pengusaha' or mtype == 'user_to_admin':
                 sender = 'self'
             else:
                 sender = 'seller'
 
             msgs.append({
-                "id": m["id"],   # <--- PENTING: Tambahkan ID ini
+                "id": m["id"],
                 "sender": sender,
                 "text": m["message"],
                 "time": m["created_at"].strftime("%H:%M") if m["created_at"] else ""
@@ -1181,39 +1180,42 @@ def send_chat_to_seller(seller_id):
         if not seller:
             return jsonify(success=False, message="Penjual tidak ditemukan"), 404
 
-        # Cari / buat session
+        # Cari session berdasarkan seller_id (Recommended) atau guest_email (Legacy fallback)
         cur.execute("""
             SELECT id
             FROM chat_sessions
-            WHERE user_id = %s
-              AND guest_email = %s
+            WHERE user_id = %s AND (seller_id = %s OR guest_email = %s)
             LIMIT 1
-        """, (buyer_id, f"seller:{seller_id}"))
+        """, (buyer_id, seller_id, f"seller:{seller_id}"))
         row = cur.fetchone()
 
         if row:
             session_id = row['id']
+            # Optional: Pastikan seller_id terisi jika sebelumnya NULL (untuk data lama)
+            cur.execute("UPDATE chat_sessions SET seller_id = %s WHERE id = %s AND seller_id IS NULL", (seller_id, session_id))
         else:
+            # === FIX: Insert SELLER_ID agar muncul di dashboard Pengusaha ===
             cur.execute("""
-                INSERT INTO chat_sessions (user_id, guest_email, guest_name, status, last_message_at, created_at)
-                VALUES (%s, %s, %s, 'active', NOW(), NOW())
-            """, (buyer_id, f"seller:{seller_id}", seller['name']))
+                INSERT INTO chat_sessions (user_id, seller_id, guest_email, guest_name, status, last_message_at, created_at)
+                VALUES (%s, %s, %s, %s, 'active', NOW(), NOW())
+            """, (buyer_id, seller_id, f"seller:{seller_id}", seller['name']))
             session_id = cur.lastrowid
 
-        # Insert pesan (buyer -> seller)
+        # === FIX: Gunakan message_type 'pembeli_to_pengusaha' ===
+        # Ini penting agar API dashboard seller bisa menghitung unread_count dengan benar
         cur.execute("""
             INSERT INTO chat_messages (
                 session_id, user_id, message, message_type, status, created_at
             )
-            VALUES (%s, %s, %s, 'user_to_admin', 'unread', NOW())
+            VALUES (%s, %s, %s, 'pembeli_to_pengusaha', 'unread', NOW())
         """, (session_id, buyer_id, text))
 
         # Update last_message_at session
         cur.execute("""
             UPDATE chat_sessions
-            SET last_message_at = NOW()
+            SET last_message = %s, last_message_at = NOW()
             WHERE id = %s
-        """, (session_id,))
+        """, (text, session_id))
 
         conn.commit()
         cur.close()
@@ -1343,204 +1345,139 @@ def eggmartHistory():
         midtrans_client_key=current_app.config.get("MIDTRANS_CLIENT_KEY") 
     )
 
-@eggmart_controller.route('/seller-chat/<int:session_id>', methods=['GET', 'POST'])
+@eggmart_controller.route('/chat/start/<int:seller_id>')
 @login_required
-def seller_chat_thread(session_id):
+def start_chat(seller_id):
     """
-    API chat untuk PENJUAL di dashboard.
-    GET  -> ambil semua pesan di sesi ini
-    POST -> kirim balasan dari penjual
+    Buyer starts or resumes a chat with a specific seller from the catalog.
     """
-    # Boleh kamu ganti logic role, tapi minimal pastikan bukan guest
-    if current_user.role not in ('pengusaha', 'admin'):
-        return jsonify(success=False, message="Hanya penjual yang dapat mengakses chat ini."), 403
+    if current_user.role != 'pembeli':
+        flash("Hanya pembeli yang bisa memulai chat.", "error")
+        return redirect(url_for('eggmart_controller.eggmart'))
 
     conn = get_db_connection()
-    if not conn:
-        return jsonify(success=False, message="Gagal koneksi database."), 500
-
+    session_id = None
+    
     try:
         cur = conn.cursor(dictionary=True)
-
-        seller_key = f"seller:{current_user.id}"
-
-        # Pastikan sesi chat milik seller ini
+        
+        # 1. Check if a session already exists
+        # We use a unique constraint logic: user_id + seller_id
         cur.execute("""
-            SELECT cs.id, cs.user_id AS buyer_id, u.name AS buyer_name
-            FROM chat_sessions cs
-            LEFT JOIN users u ON u.id = cs.user_id
-            WHERE cs.id = %s
-              AND cs.guest_email = %s
-        """, (session_id, seller_key))
-        sess = cur.fetchone()
-
-        if not sess:
-            return jsonify(success=False, message="Sesi chat tidak ditemukan."), 404
-
-        # ===================== GET: ambil pesan =====================
-        if request.method == 'GET':
+            SELECT id FROM chat_sessions 
+            WHERE user_id = %s AND seller_id = %s
+        """, (current_user.id, seller_id))
+        row = cur.fetchone()
+        
+        if row:
+            session_id = row['id']
+        else:
+            # 2. Get Seller Info for the guest_name/email fallback (optional)
+            cur.execute("SELECT name, email FROM users WHERE id=%s", (seller_id,))
+            seller = cur.fetchone()
+            
+            # 3. Create new session
+            # Note: guest_email/name is technically redundant for registered users 
+            # but good for fallback. We set status='active'.
             cur.execute("""
-                SELECT id, message, message_type, status, created_at
-                FROM chat_messages
-                WHERE session_id = %s
-                ORDER BY created_at ASC
-            """, (session_id,))
-            rows = cur.fetchall()
-
-            messages = []
-            unread_ids = []
-            for row in rows:
-                mtype = row["message_type"]
-                if mtype in ("user_to_admin", "guest_to_admin"):
-                    sender = "buyer"
-                    if row["status"] == "unread":
-                        unread_ids.append(row["id"])
-                else:
-                    sender = "seller"
-
-                messages.append({
-                    "id": row["id"],      # <--- PENTING: Tambahkan ini
-                    "sender": sender,
-                    "text": row["message"],
-                    "time": row["created_at"].strftime("%H:%M") if row["created_at"] else ""
-                })
-
-            # tandai pesan buyer sebagai 'read'
-            if unread_ids:
-                placeholders = ",".join(["%s"] * len(unread_ids))
-                cur.execute(f"""
-                    UPDATE chat_messages
-                    SET status = 'read'
-                    WHERE id IN ({placeholders})
-                """, unread_ids)
-                conn.commit()
-
-            buyer_name = sess["buyer_name"] or f"Pembeli #{sess['buyer_id'] or session_id}"
-
-            return jsonify(
-                success=True,
-                session_id=session_id,
-                buyer_name=buyer_name,
-                messages=messages
-            )
-
-        # ===================== POST: kirim balasan seller =====================
-        data = request.get_json(silent=True) or {}
-        text = (data.get("message") or "").strip()
-        if not text:
-            return jsonify(success=False, message="Pesan tidak boleh kosong."), 400
-
-        # Insert pesan dari penjual
-        cur.execute("""
-            INSERT INTO chat_messages (
-                session_id, user_id, message, message_type, status, created_at
-            )
-            VALUES (%s, %s, %s, 'admin_to_user', 'unread', NOW())
-        """, (session_id, current_user.id, text))
-
-        # Update last_message_at session
-        cur.execute("""
-            UPDATE chat_sessions
-            SET last_message_at = NOW()
-            WHERE id = %s
-        """, (session_id,))
-        conn.commit()
-
-        now_time = datetime.now().strftime("%H:%M")
-
-        return jsonify(
-            success=True,
-            message={
-                "sender": "seller",
-                "text": text,
-                "time": now_time
-            }
-        )
-
-    except mysql.connector.Error as e:
-        conn.rollback()
-        print("seller_chat_thread error:", e)
-        return jsonify(success=False, message="Kesalahan database."), 500
+                INSERT INTO chat_sessions (user_id, seller_id, status, created_at, last_message_at)
+                VALUES (%s, %s, 'active', NOW(), NOW())
+            """, (current_user.id, seller_id))
+            conn.commit()
+            session_id = cur.lastrowid
+            
+        cur.close()
     finally:
         conn.close()
 
+    # Redirect to the chat room UI
+    return redirect(url_for('eggmart_controller.chat_room', session_id=session_id))
 
-@eggmart_controller.route('/api/chat/threads', methods=['GET'])
+@eggmart_controller.route('/chat/room/<int:session_id>')
 @login_required
-def api_get_chat_threads():
+def chat_room(session_id):
     """
-    API untuk mengambil daftar chat thread di sidebar kiri (Seller Dashboard).
-    Digunakan oleh AJAX Polling di JavaScript.
+    The UI for the Buyer to chat.
     """
-    # 1. Cek Role
-    if current_user.role not in ('pengusaha', 'admin'):
-        return jsonify(success=False, threads=[])
+    if current_user.role != 'pembeli':
+        return redirect(url_for('eggmart_controller.eggmart'))
 
     conn = get_db_connection()
-    if not conn:
-        return jsonify(success=False, message="Database error"), 500
-
+    messages = []
+    seller_info = {}
+    
     try:
         cur = conn.cursor(dictionary=True)
-        seller_key = f"seller:{current_user.id}"
-
-        # 2. Query Daftar Chat
-        # Mengambil: ID Session, Nama Buyer, Last Message, Unread Count
-        # Kita perlu JOIN ke users untuk nama buyer.
-        # Kita perlu SUBQUERY untuk pesan terakhir dan jumlah unread.
-        query = """
-            SELECT 
-                cs.id,
-                u.name AS buyer_name,
-                cs.last_message_at,
-                (
-                    SELECT message 
-                    FROM chat_messages 
-                    WHERE session_id = cs.id 
-                    ORDER BY created_at DESC LIMIT 1
-                ) AS last_message_text,
-                (
-                    SELECT COUNT(*) 
-                    FROM chat_messages 
-                    WHERE session_id = cs.id 
-                      AND status = 'unread' 
-                      AND message_type IN ('user_to_admin', 'guest_to_admin')
-                ) AS unread_count
+        
+        # 1. Verify Session Ownership & Get Seller Details
+        cur.execute("""
+            SELECT cs.*, u.name as seller_name, u.farm_name 
             FROM chat_sessions cs
-            LEFT JOIN users u ON cs.user_id = u.id
-            WHERE cs.guest_email = %s
-            ORDER BY cs.last_message_at DESC
-        """
-        cur.execute(query, (seller_key,))
+            JOIN users u ON cs.seller_id = u.id
+            WHERE cs.id = %s AND cs.user_id = %s
+        """, (session_id, current_user.id))
+        session_data = cur.fetchone()
+        
+        if not session_data:
+            flash("Chat tidak ditemukan.", "error")
+            return redirect(url_for('eggmart_controller.eggmart'))
+            
+        seller_info = {
+            'name': session_data['farm_name'] or session_data['seller_name'],
+            'id': session_data['seller_id']
+        }
+
+        # 2. Get Messages
+        cur.execute("""
+            SELECT * FROM chat_messages 
+            WHERE session_id = %s 
+            ORDER BY created_at ASC
+        """, (session_id,))
         rows = cur.fetchall()
-
-        results = []
-        for row in rows:
-            # Format nama & inisial
-            b_name = row['buyer_name'] if row['buyer_name'] else f"Guest #{row['id']}"
-            initials = "".join([x[0] for x in b_name.split()[:2]]).upper()
-
-            # Format waktu (HH:MM)
-            time_str = ""
-            if row['last_message_at']:
-                time_str = row['last_message_at'].strftime('%H:%M')
-
-            results.append({
-                'id': row['id'],
-                'name': b_name,
-                'initials': initials,
-                'last_message': row['last_message_text'] or 'Belum ada pesan',
-                'last_time': time_str,
-                'unread': row['unread_count'],
-                # URL ini menghubungkan list ke controller detail yang SUDAH ANDA PUNYA
-                'fetch_url': url_for('eggmart_controller.seller_chat_thread', session_id=row['id'])
+        
+        for r in rows:
+            # Determine sender for UI class (me vs them)
+            sender = 'me' if r['message_type'] == 'pembeli_to_pengusaha' else 'them'
+            messages.append({
+                'text': r['message'],
+                'sender': sender,
+                'time': r['created_at'].strftime('%H:%M')
             })
-
-        return jsonify(success=True, threads=results)
-
-    except Exception as e:
-        print(f"Error api_get_chat_threads: {e}")
-        return jsonify(success=False, message=str(e)), 500
+        
+        cur.close()
     finally:
-        if conn:
-            conn.close()
+        conn.close()
+
+    return render_template('eggmart/chat_room.html', session_id=session_id, messages=messages, seller=seller_info)
+
+@eggmart_controller.route('/api/chat/send', methods=['POST'])
+@login_required
+def api_buyer_send_chat():
+    """API for Buyer sending message"""
+    session_id = request.form.get('session_id')
+    message = request.form.get('message')
+    
+    if not message or not session_id:
+        return jsonify({'success': False, 'error': 'Empty data'}), 400
+
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+        
+        # Insert message (Type: pembeli_to_pengusaha)
+        cur.execute("""
+            INSERT INTO chat_messages (session_id, user_id, message, message_type, status, created_at)
+            VALUES (%s, %s, %s, 'pembeli_to_pengusaha', 'unread', NOW())
+        """, (session_id, current_user.id, message))
+        
+        # Update session timestamp
+        cur.execute("""
+            UPDATE chat_sessions SET last_message = %s, last_message_at = NOW()
+            WHERE id = %s
+        """, (message, session_id))
+        
+        conn.commit()
+        cur.close()
+        return jsonify({'success': True})
+    finally:
+        conn.close()

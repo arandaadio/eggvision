@@ -11,6 +11,7 @@ def get_db_connection():
         print(f"Database connection error: {e}")
         return None
 
+
 def init_db():
     """Initialize database with required tables and data"""
     conn = get_db_connection()
@@ -44,6 +45,7 @@ def init_db():
 
         # =========================================
         # 2. EGG_SCANS (hasil upload & prediksi ML)
+        #    Sumber stok EggMart + histori EggMonitor
         # =========================================
         cur.execute('''
             CREATE TABLE IF NOT EXISTS egg_scans (
@@ -99,7 +101,7 @@ def init_db():
 
 
         # =====================================
-        # 3. ORDERS (UPDATED ENUM per Migration)
+        # 3. ORDERS (Transaksi, sinkron Midtrans)
         # =====================================
         cur.execute('''
             CREATE TABLE IF NOT EXISTS orders (
@@ -113,7 +115,7 @@ def init_db():
                 midtrans_order_id VARCHAR(100),
                 midtrans_transaction_id VARCHAR(100),
 
-                status ENUM('pending','paid','settlement','capture',
+                status ENUM('pending','paid','settlement',
                             'cancelled','expired','refunded')
                     DEFAULT 'pending',
 
@@ -179,6 +181,7 @@ def init_db():
 
         def insert_dummy_reviews(seller_id, cur):
             for rating, review, buyer_name in dummy_reviews:
+                # buyer_id NULL, order_id NULL, bisa tambahkan kolom buyer_name kalau mau tracking
                 cur.execute(
                     "INSERT INTO seller_ratings (seller_id, buyer_name, rating, review) VALUES (%s, %s, %s, %s)",
                     (seller_id, buyer_name, rating, review)
@@ -203,13 +206,11 @@ def init_db():
         # ==========================
         # 7. CHAT_SESSIONS (UPDATED)
         # ==========================
-        # UPDATED: Added seller_id foreign key
+        # Ditambahkan: last_message, is_pinned, is_archived
         cur.execute('''
             CREATE TABLE IF NOT EXISTS chat_sessions (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NULL,
-                seller_id INT NULL, 
-                
                 guest_email VARCHAR(100) NULL,
                 guest_name VARCHAR(100) NULL,
                 
@@ -222,16 +223,14 @@ def init_db():
                 is_archived BOOLEAN DEFAULT FALSE,
                 
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-                FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE SET NULL
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             )
         ''')
 
         # ==========================
         # 8. CHAT_MESSAGES (UPDATED)
         # ==========================
-        # UPDATED: New ENUM types
+        # Pastikan ada kolom session_id
         cur.execute('''
             CREATE TABLE IF NOT EXISTS chat_messages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -240,16 +239,12 @@ def init_db():
                 guest_name VARCHAR(100) NULL,
                 guest_email VARCHAR(100) NULL,
                 message TEXT NOT NULL,
-                
                 message_type ENUM(
                     'guest_to_admin',
                     'admin_to_guest',
-                    'pembeli_to_pengusaha',
-                    'pengusaha_to_pembeli',
-                    'pengusaha_to_admin',
-                    'admin_to_pengusaha'
+                    'admin_to_user',
+                    'user_to_admin'
                 ) DEFAULT 'guest_to_admin',
-                
                 status ENUM('unread', 'read', 'replied') DEFAULT 'unread',
                 parent_message_id INT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -271,7 +266,7 @@ def init_db():
             eggmin_pwd = generate_password_hash('eggmin123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('Sandbox EggMin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
+                ('Sanbox EggMin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
             )
 
             # Pengusaha
@@ -310,39 +305,34 @@ def init_db():
         # ==========================
         # SEED BERITA DUMMY
         # ==========================
-        try:
-            from utils.news_data import get_dummy_news_data
+        from utils.news_data import get_dummy_news_data
+        
+        cur.execute("SELECT COUNT(*) FROM news")
+        news_count = cur.fetchone()[0]
+        
+        if news_count == 0:
+            print("📝 Seeding dummy news data...")
+            dummy_news = get_dummy_news_data()
             
-            cur.execute("SELECT COUNT(*) FROM news")
-            news_count = cur.fetchone()[0]
-            
-            if news_count == 0:
-                print("📝 Seeding dummy news data...")
-                dummy_news = get_dummy_news_data()
-                
-                for item in dummy_news:
-                    cur.execute('''
-                        INSERT INTO news (title, content, image_url, tags, is_published, published_at)
-                        VALUES (%s, %s, %s, %s, TRUE, %s)
-                    ''', (
-                        item['title'], 
-                        item['content'], 
-                        item['image_url'], 
-                        item['tags'], 
-                        item['published_at']
-                    ))
-        except ImportError:
-            print("⚠️ utils.news_data not found, skipping news seed.")
+            for item in dummy_news:
+                cur.execute('''
+                    INSERT INTO news (title, content, image_url, tags, is_published, published_at)
+                    VALUES (%s, %s, %s, %s, TRUE, %s)
+                ''', (
+                    item['title'], 
+                    item['content'], 
+                    item['image_url'], 
+                    item['tags'], 
+                    item['published_at']
+                ))
+            conn.commit()
 
         conn.commit()
         cur.close()
-        print("✅ Database initialized successfully with updated schemas!")
+        print("✅ Database initialized successfully!")
 
     except mysql.connector.Error as e:
         print(f"❌ Database initialization failed: {e}")
     finally:
         if conn:
             conn.close()
-
-if __name__ == "__main__":
-    init_db()

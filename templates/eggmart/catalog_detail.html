@@ -517,35 +517,98 @@
         const chatInput = document.getElementById('chatInput');
         const messagesBox = document.getElementById('chatMessages');
 
-        fetch(chatUrl).then(res=>res.json()).then(data => {
-            if(data.success && data.messages) {
-                messagesBox.innerHTML = '';
-                data.messages.forEach(msg => {
-                    const div = document.createElement('div');
-                    div.className = `p-3 rounded-xl text-xs max-w-[80%] mb-2 ${msg.sender === 'self' ? 'bg-primary text-black ml-auto rounded-br-none' : 'bg-gray-100 dark:bg-white/10 dark:text-white mr-auto rounded-bl-none'}`;
-                    div.innerText = msg.text;
-                    messagesBox.appendChild(div);
-                });
+        // Ensure container is a flex column for alignment to work properly
+        messagesBox.classList.add('flex', 'flex-col');
+
+        let renderedMessageIds = new Set();
+
+        function appendMessageBubble(msg, scrollToBottom = true) {
+            if (renderedMessageIds.has(msg.id)) return;
+            renderedMessageIds.add(msg.id);
+
+            const div = document.createElement('div');
+            
+            // UI Logic
+            const isSelf = (msg.sender === 'self');
+            
+            // LOGIC CHANGE HERE:
+            // 1. 'w-fit': Makes the bubble only as wide as the text
+            // 2. 'max-w-[80%]': Forces wrapping if text is too long
+            // 3. 'break-words': Breaks long words to prevent overflow
+            // 4. 'whitespace-pre-wrap': Preserves newlines and wraps text naturally
+            const sizing = "w-fit max-w-[80%] break-words whitespace-pre-wrap"; 
+            
+            const alignment = isSelf ? 'ml-auto rounded-br-none' : 'mr-auto rounded-bl-none';
+            const colors = isSelf 
+                ? 'bg-primary text-black' 
+                : 'bg-gray-100 dark:bg-white/10 dark:text-white';
+
+            div.className = `p-3 rounded-xl text-xs mb-2 ${sizing} ${colors} ${alignment}`;
+            
+            const textP = document.createElement('p');
+            textP.innerText = msg.text;
+            div.appendChild(textP);
+
+            if (msg.time) {
+                const timeSpan = document.createElement('div');
+                // Ensure time stays right-aligned relative to the bubble content
+                timeSpan.className = `text-[9px] mt-1 text-right ${isSelf ? 'text-black/60' : 'text-gray-500 dark:text-gray-400'}`;
+                timeSpan.innerText = msg.time;
+                div.appendChild(timeSpan);
             }
-        });
+
+            messagesBox.appendChild(div);
+
+            if (scrollToBottom) {
+                messagesBox.scrollTop = messagesBox.scrollHeight;
+            }
+        }
+
+        function fetchChatMessages() {
+            fetch(chatUrl)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.messages) {
+                        let hasNew = false;
+                        data.messages.forEach(msg => {
+                            if (!renderedMessageIds.has(msg.id)) {
+                                appendMessageBubble(msg, true);
+                                hasNew = true;
+                            }
+                        });
+                        if(hasNew) messagesBox.scrollTop = messagesBox.scrollHeight;
+                    }
+                })
+                .catch(err => console.error("Chat polling error:", err));
+        }
+
+        // Initial Fetch
+        fetchChatMessages();
+
+        // Poll every 3 seconds
+        const pollingInterval = setInterval(fetchChatMessages, 3000);
 
         chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const text = chatInput.value;
-            if(!text) return;
-            
-            const div = document.createElement('div');
-            div.className = `p-3 rounded-xl text-xs max-w-[80%] mb-2 bg-primary text-black ml-auto rounded-br-none`;
-            div.innerText = text;
-            messagesBox.appendChild(div);
+            const text = chatInput.value.trim();
+            if (!text) return;
+
             chatInput.value = '';
-            messagesBox.scrollTop = messagesBox.scrollHeight;
 
             fetch(postUrl, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({message: text})
-            });
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    fetchChatMessages();
+                } else {
+                    alert("Gagal mengirim pesan: " + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(err => console.error("Send error:", err));
         });
     });
 </script>

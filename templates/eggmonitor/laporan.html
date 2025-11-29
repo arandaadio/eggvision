@@ -1,237 +1,527 @@
 {% extends "eggmonitor/base.html" %}
-{% block title %}Laporan · EggVision{% endblock %}
 
-{% block body %}
-<div class="min-h-screen bg-background">
-  <!-- Sidebar -->
- <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
-    <!-- Logo -->
-    <div class="p-6 border-b border-sidebar-border">
-      <div class="flex flex-col items-center gap-2">
-        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <div class="text-primary font-bold text-xs">EV</div>
-        </div>
-        <span class="text-primary text-sm font-semibold">EGGVISION</span>
-      </div>
-    </div>
+{% block page_title %}Laporan Produksi{% endblock %}
+{% block page_subtitle %}Rekapitulasi data grading dan analisis kualitas.{% endblock %}
 
-    <!-- Menu -->
-    <nav class="flex-1 py-4">
-      {% set menu = [
-        {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":"/eggmonitor/index"},
-        {"id":"laporan","icon":"database","label":"Laporan","href":"/eggmonitor/laporan"},
-        {"id":"detail","icon":"grid-3x3","label":"Detail Alat","href":"#"},
-        {"id":"eggmart","icon":"shopping-cart","label":"EggMart","href":"/eggmart/dashboard"},
-        {"id":"settings","icon":"settings","label":"Pengaturan","href":"#"}
-      ] %}
-      {% for item in menu %}
-        {% set is_active = (item.id == active_menu) %}
-        <a href="{{ item.href }}"
-           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
-           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
-          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
-          <span class="text-xs">{{ item.label }}</span>
-        </a>
-      {% endfor %}
-    </nav>
+{% block head %}
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+{% endblock %}
 
-    <!-- Profile -->
-    <div class="p-4 border-t border-sidebar-border">
-      <a href="/profile" class="w-full flex flex-col items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground">
-        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
-          <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
-            alt="Profile"
-            class="w-full h-full object-cover" />
-        </div>
-        <span class="text-xs">Profil</span>
-    </a>
-    </div>
-  </aside>
+{% block content %}
+<div x-data="laporanData">
 
-  <!-- Main -->
-  <main class="ml-[130px] p-6 md:p-8">
-    <!-- Top bar -->
-    <div class="flex items-center justify-between">
-      <h1 class="text-4xl font-bold text-foreground">Laporan</h1>
-
-      <div class="flex-1 mx-8 hidden md:block">
-        <!-- Search / filter field (dummy) -->
-        <input class="input-dark w-full" placeholder="Cari / filter data..."/>
-      </div>
-
-      <!-- User info -->
-      <div class="flex items-center gap-3">
-        <div class="text-right">
-          <div class="text-sm font-semibold text-foreground">{{ header.user_name }}</div>
-          <div class="text-xs text-muted-foreground">{{ header.egg_vision_count }} EggVision</div>
-        </div>
-        <div class="relative">
-          <img class="w-10 h-10 rounded-full object-cover" src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ header.avatar_seed }}" alt="avatar">
-          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-[#0a0a0a]"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Histori Data (Tabel) -->
-    <section class="mt-6">
-      <div class="flex justify-between">
-        <h3 class="text-lg font-semibold text-foreground mb-3">Histori Data</h3>
-
-      <button class="bg-blue-500 text-white py-2 px-4 rounded">Export Data</button>
-
-      </div>
-<br>
-      <!-- toolbar -->
-      <div class="bg-card border border-border rounded-t-lg px-4 py-3 flex items-center justify-between">
-        <div class="text-sm text-muted-foreground">{{ table_meta.total_records }}</div>
-        <div class="text-sm text-muted-foreground">No of row in table: {{ table_meta.rows_shown }}</div>
-        <div>
-          <button class="flex items-center gap-2 text-foreground hover:text-primary">
-            Sort by <i data-lucide="chevron-down" class="w-4 h-4"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="border-x border-b border-border rounded-b-lg overflow-hidden">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="bg-secondary">
-              <th class="th">No.</th>
-              <th class="th">ID Numerik</th>
-              <th class="th">Tanggal</th>
-              <th class="th">Ketebalan</th>
-              <th class="th">Kebersihan</th>
-              <th class="th">Keutuhan</th>
-              <th class="th">Kesegaran</th>
-              <th class="th">Berat Telur</th>
-              <th class="th">Kategori Mutu</th>
-              <th class="th">Parameter (–)</th>
-              <th class="th">Keterangan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in records %}
-            <tr class="border-t border-border hover:bg-secondary/50">
-              <td class="td">{{ r.no }}</td>
-              <td class="td">{{ r.idNumerik }}</td>
-              <td class="td">{{ r.tanggal }}</td>
-              <td class="td">{{ r.ketebalan }}</td>
-              <td class="td">{{ r.kebersihan }}</td>
-              <td class="td">{{ r.keutuhan }}</td>
-              <td class="td">{{ r.kesegaran }}</td>
-              <td class="td">{{ r.beratTelur }}</td>
-              <td class="td">{{ r.kategori }}</td>
-              <td class="td">{{ r.parameter }}</td>
-              <td class="td">{{ r.keterangan }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Histori Data (Grafik) -->
-    <section class="mt-8">
-      <h3 class="text-lg font-semibold text-foreground mb-3">Histori Data (Grafik)</h3>
-
-      <div class="card-gradient rounded-lg border border-border overflow-hidden">
-        <!-- canvas bar chart di atas gradient -->
-        <div class="p-4 md:p-5">
-          <canvas id="histChart" height="300"></canvas>
-        </div>
-
-        <!-- Ringkasan kategori -->
-        <div class="p-4 md:p-5 grid grid-cols-1 md:grid-cols-4 gap-4 bg-card border-t border-border">
-          {% for g in grade_summary %}
-          <div class="flex items-start gap-3">
-            <label class="switch-blue sm mt-1">
-              <input type="checkbox" checked />
-              <span class="slider"></span>
-            </label>
-            <div class="flex-1">
-              <div class="text-sm font-semibold text-foreground">{{ g.label }}</div>
-              <div class="text-xs text-muted-foreground">{{ g.count }} butir</div>
-              <div class="progress mt-2">
-                <div class="progress-fill" style="width: {{ g.pct }}%"></div>
-              </div>
+    <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-5 mb-8 shadow-sm flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 transition-colors duration-300">
+        
+        <div class="flex flex-col md:flex-row gap-4 w-full xl:w-auto">
+            <div class="relative flex-1 md:flex-none">
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                <input type="text" x-model="searchQuery" placeholder="Cari ID, Grade..." 
+                       class="pl-10 pr-4 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all w-full md:w-64 placeholder-gray-500 dark:text-white">
             </div>
-          </div>
-          {% endfor %}
+            
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <input type="date" x-model="startDate" class="flex-1 px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-700 dark:text-gray-300 dark:[color-scheme:dark]">
+                <span class="text-gray-400">-</span>
+                <input type="date" x-model="endDate" class="flex-1 px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-700 dark:text-gray-300 dark:[color-scheme:dark]">
+            </div>
         </div>
-      </div>
-    </section>
 
-  </main>
+        <div class="flex flex-wrap gap-3 w-full xl:w-auto justify-end">
+            
+            <select x-model.number="pageSize" class="px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:outline-none text-gray-700 dark:text-gray-300 cursor-pointer">
+                <option value="10">10 baris</option>
+                <option value="30">30 baris</option>
+                <option value="50">50 baris</option>
+                <option value="100">100 baris</option>
+            </select>
+
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" @click.outside="open = false"
+                        class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-gray-700 dark:text-gray-200">
+                    <i data-lucide="columns" class="w-4 h-4"></i>
+                    <span>Tampilan Kolom</span>
+                </button>
+                
+                <div x-show="open" x-transition class="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl shadow-xl z-50 p-3">
+                    <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 dark:border-dark-border">
+                        <span class="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Tampilkan Kolom</span>
+                        <button @click="toggleAllColumns()" class="text-xs text-primary hover:underline">Semua</button>
+                    </div>
+                    <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                        <template x-for="(col, key) in columns" :key="key">
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 p-1 rounded transition-colors">
+                                <input type="checkbox" x-model="col.visible" class="rounded border-gray-300 text-primary focus:ring-primary bg-transparent">
+                                <span class="text-sm text-gray-700 dark:text-gray-300" x-text="col.label"></span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <button @click="openExportModal()"
+                    class="flex items-center gap-2 px-5 py-2 bg-primary text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors shadow-sm">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Export</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl overflow-hidden shadow-sm mb-8 transition-colors duration-300">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 dark:bg-[#1a1a1a] text-xs uppercase text-gray-500 dark:text-gray-400 font-bold border-b border-gray-200 dark:border-dark-border">
+                    <tr>
+                        <template x-for="(col, key) in columns" :key="key">
+                            <th x-show="col.visible" 
+                                @click="sortBy(key)"
+                                class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 transition-colors select-none group whitespace-nowrap">
+                                <div class="flex items-center gap-1">
+                                    <span x-text="col.label"></span>
+                                    <i data-lucide="arrow-up-down" class="w-3 h-3 opacity-30 group-hover:opacity-100 transition-opacity"
+                                       :class="{'opacity-100 text-primary': sortCol === key}"></i>
+                                </div>
+                            </th>
+                        </template>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-dark-border">
+                    <template x-for="r in paginatedRows" :key="r.idNumerik">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+                            <td class="px-6 py-4 font-mono text-gray-400 dark:text-gray-500" x-show="columns.no.visible" x-text="r.no"></td>
+                            <td class="px-6 py-4 font-bold font-mono text-gray-900 dark:text-gray-200" x-show="columns.idNumerik.visible" x-text="r.idNumerik"></td>
+                            <td class="px-6 py-4 text-gray-500 dark:text-gray-400" x-show="columns.tanggal.visible" x-text="r.tanggal"></td>
+                            <td class="px-6 py-4" x-show="columns.kategori.visible">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-yellow-700 dark:text-yellow-500 border border-primary/20" x-text="r.kategori"></span>
+                            </td>
+                            <td class="px-6 py-4 font-mono text-gray-700 dark:text-gray-300" x-show="columns.beratTelur.visible" x-text="r.beratTelur"></td>
+                            <td class="px-6 py-4 text-gray-700 dark:text-gray-300" x-show="columns.kebersihan.visible" x-text="r.kebersihan"></td>
+                            <td class="px-6 py-4 text-gray-700 dark:text-gray-300" x-show="columns.keutuhan.visible" x-text="r.keutuhan"></td>
+                            <td class="px-6 py-4 text-right" x-show="columns.status.visible">
+                                <span class="text-xs font-bold text-green-600 dark:text-green-400">OK</span>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="filteredRows.length === 0">
+                        <td :colspan="Object.values(columns).filter(c => c.visible).length" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
+                            Tidak ada data yang cocok dengan filter.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-dark-border bg-gray-50/50 dark:bg-[#1a1a1a] flex flex-col sm:flex-row justify-between items-center gap-4">
+            
+            <div class="flex items-center gap-4">
+                <select x-model.number="pageSize" class="px-2 py-1 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded text-xs focus:outline-none text-gray-700 dark:text-gray-300">
+                    <option value="10">10</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span class="text-xs text-gray-500 dark:text-gray-400">
+                    Menampilkan <span x-text="paginationStart"></span> - <span x-text="paginationEnd"></span> dari <span x-text="filteredRows.length"></span> data
+                </span>
+            </div>
+
+            <div class="flex gap-2">
+                <button @click="currentPage--" :disabled="currentPage === 1" class="p-1.5 rounded border border-gray-200 dark:border-dark-border hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+                <div class="flex items-center gap-1 px-2">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200" x-text="currentPage"></span>
+                    <span class="text-xs text-gray-400">/ <span x-text="totalPages"></span></span>
+                </div>
+                <button @click="currentPage++" :disabled="currentPage >= totalPages" class="p-1.5 rounded border border-gray-200 dark:border-dark-border hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-sm mb-8 transition-colors duration-300">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="font-canela font-normal text-xl text-gray-900 dark:text-white">Visualisasi Data</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Tren produksi berdasarkan Grade (Data Terfilter).</p>
+            </div>
+        </div>
+        
+        <div class="h-[300px] w-full">
+            <canvas id="histChart"></canvas>
+        </div>
+    </div>
+
+    <div x-show="exportModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;" x-cloak>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="exportModalOpen = false" x-transition.opacity></div>
+        
+        <div class="relative w-full max-w-lg bg-white dark:bg-dark-surface rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-gray-200 dark:border-dark-border"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+            
+            <div class="p-6 border-b border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-[#1a1a1a] flex justify-between items-center">
+                <h3 class="font-canela font-normal text-xl text-gray-900 dark:text-white">Export Data Laporan</h3>
+                <button @click="exportModalOpen = false" class="text-gray-500 hover:text-black dark:hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6 bg-white dark:bg-dark-surface">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Rentang Waktu Data</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-xs text-gray-400 mb-1 block">Dari</span>
+                            <input type="date" x-model="exportConfig.start" class="w-full px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm text-gray-700 dark:text-white focus:outline-none focus:border-primary dark:[color-scheme:dark]">
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-400 mb-1 block">Sampai</span>
+                            <input type="date" x-model="exportConfig.end" class="w-full px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm text-gray-700 dark:text-white focus:outline-none focus:border-primary dark:[color-scheme:dark]">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Pilih Kolom untuk Export</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <template x-for="(col, key) in columns" :key="key">
+                            <label class="flex items-center gap-2 cursor-pointer p-2 border border-gray-200 dark:border-dark-border rounded hover:bg-gray-50 dark:hover:bg-white/5 transition-colors" :class="{'border-primary bg-primary/5 dark:bg-primary/10': exportConfig.cols.includes(key)}">
+                                <input type="checkbox" :value="key" x-model="exportConfig.cols" class="rounded text-primary focus:ring-primary bg-transparent">
+                                <span class="text-xs font-medium text-gray-700 dark:text-gray-300" x-text="col.label"></span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Format File</label>
+                    <div class="flex gap-3">
+                        <button @click="exportConfig.format = 'xlsx'" class="flex-1 py-3 border rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2" 
+                                :class="exportConfig.format === 'xlsx' ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'">
+                            <i data-lucide="sheet" class="w-4 h-4"></i> Excel
+                        </button>
+                        <button @click="exportConfig.format = 'pdf'" class="flex-1 py-3 border rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2" 
+                                :class="exportConfig.format === 'pdf' ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' : 'border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'">
+                            <i data-lucide="file" class="w-4 h-4"></i> PDF
+                        </button>
+                        <button @click="exportConfig.format = 'csv'" class="flex-1 py-3 border rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2" 
+                                :class="exportConfig.format === 'csv' ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' : 'border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'">
+                            <i data-lucide="file-text" class="w-4 h-4"></i> CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-[#1a1a1a] flex justify-end gap-3">
+                <button @click="exportModalOpen = false" class="px-5 py-2.5 border border-gray-200 dark:border-dark-border rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">Batal</button>
+                <button @click="executeExport()" class="px-5 py-2.5 bg-primary text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors shadow-lg shadow-primary/20">
+                    Unduh Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script>
-    // BAR CHART di atas gradient biru-hijau, bar putih
-    const ctx = document.getElementById('histChart').getContext('2d');
-    const grad = ctx.createLinearGradient(0,0,ctx.canvas.width,0);
-    grad.addColorStop(0, '#22c55e');   // green
-    grad.addColorStop(1, '#22d3ee');   // cyan
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('laporanData', () => ({
+            // State Filters
+            startDate: '',
+            endDate: '',
+            searchQuery: '',
+            
+            // Data Table
+            allRows: {{ records | tojson }},
+            
+            // Pagination
+            pageSize: 10,
+            currentPage: 1,
+            
+            // Sorting
+            sortCol: 'no',
+            sortAsc: true,
 
-    // background gradient di canvas via plugin
-    const bgPlugin = {
-      id: 'bgGradient',
-      beforeDraw(chart, args, opts) {
-        const {ctx, chartArea} = chart;
-        const {top, bottom, left, right, width, height} = chartArea;
-        const gradient = ctx.createLinearGradient(left, 0, right, 0);
-        gradient.addColorStop(0, '#22c55e');
-        gradient.addColorStop(1, '#22d3ee');
-        ctx.save();
-        ctx.fillStyle = gradient;
-        ctx.fillRect(left, top, width, height);
-        ctx.restore();
-      }
-    };
+            // Column Config
+            columns: {
+                no: { label: 'No', visible: true },
+                idNumerik: { label: 'ID Numerik', visible: true },
+                tanggal: { label: 'Waktu Scan', visible: true },
+                kategori: { label: 'Grade', visible: true },
+                beratTelur: { label: 'Berat (g)', visible: true },
+                kebersihan: { label: 'Kebersihan', visible: true },
+                keutuhan: { label: 'Keutuhan', visible: true },
+                status: { label: 'Status', visible: true },
+            },
 
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: {{ hist_labels|tojson }},
-        datasets: [{
-          label: 'Butir',
-          data: {{ hist_values|tojson }},
-          borderWidth: 0,
-          borderRadius: 6,
-          backgroundColor: '#ffffff',   // bar putih
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: { padding: 12 },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            backgroundColor: 'rgba(0,0,0,.8)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            borderWidth: 0
-          }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: '#e5e5e5', font: { size: 11 } }
-          },
-          y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(255,255,255,.08)' },
-            ticks: { color: '#e5e5e5', font: { size: 11 } }
-          }
-        }
-      },
-      plugins: [bgPlugin]
+            // Export State
+            exportModalOpen: false,
+            exportConfig: {
+                start: '',
+                end: '',
+                cols: ['no', 'idNumerik', 'tanggal', 'kategori', 'beratTelur', 'kebersihan', 'keutuhan'],
+                format: 'xlsx'
+            },
+
+            // --- INIT ---
+            init() {
+                // Set default date range for export to match current filter or last 30 days
+                const today = new Date();
+                const lastMonth = new Date();
+                lastMonth.setDate(today.getDate() - 30);
+                
+                this.startDate = ''; // Default show all
+                this.endDate = '';
+
+                this.exportConfig.start = lastMonth.toISOString().split('T')[0];
+                this.exportConfig.end = today.toISOString().split('T')[0];
+
+                // Watchers to update chart
+                this.$watch('filteredRows', () => this.updateChart());
+            },
+
+            // --- COMPUTED PROPERTIES ---
+            get filteredRows() {
+                let data = this.allRows;
+
+                // 1. Date Filter
+                if (this.startDate) {
+                    const start = new Date(this.startDate);
+                    start.setHours(0,0,0,0);
+                    data = data.filter(r => {
+                        let dateStr = r.tanggal;
+                        if (dateStr.includes('/')) {
+                            const parts = dateStr.split(' ')[0].split('/');
+                            if (parts.length === 3) dateStr = `${parts[1]}/${parts[0]}/${parts[2]}`;
+                        }
+                        const rDate = new Date(dateStr);
+                        return rDate >= start;
+                    });
+                }
+                if (this.endDate) {
+                    const end = new Date(this.endDate);
+                    end.setHours(23,59,59,999);
+                    data = data.filter(r => {
+                        let dateStr = r.tanggal;
+                        if (dateStr.includes('/')) {
+                            const parts = dateStr.split(' ')[0].split('/');
+                            if (parts.length === 3) dateStr = `${parts[1]}/${parts[0]}/${parts[2]}`;
+                        }
+                        const rDate = new Date(dateStr);
+                        return rDate <= end;
+                    });
+                }
+
+                // 2. Search Filter
+                if (this.searchQuery) {
+                    const q = this.searchQuery.toLowerCase();
+                    data = data.filter(row => {
+                        return Object.values(row).some(val => String(val).toLowerCase().includes(q));
+                    });
+                }
+
+                // 3. Sorting
+                return data.sort((a, b) => {
+                    let valA = a[this.sortCol];
+                    let valB = b[this.sortCol];
+                    
+                    // Numeric check
+                    if (!isNaN(parseFloat(valA)) && isFinite(valA)) {
+                        valA = parseFloat(valA);
+                        valB = parseFloat(valB);
+                    } else {
+                        valA = String(valA).toLowerCase();
+                        valB = String(valB).toLowerCase();
+                    }
+
+                    if (valA < valB) return this.sortAsc ? -1 : 1;
+                    if (valA > valB) return this.sortAsc ? 1 : -1;
+                    return 0;
+                });
+            },
+
+            get paginatedRows() {
+                const start = (this.currentPage - 1) * this.pageSize;
+                const end = start + this.pageSize;
+                return this.filteredRows.slice(start, end);
+            },
+
+            get totalPages() {
+                return Math.ceil(this.filteredRows.length / this.pageSize) || 1;
+            },
+
+            get paginationStart() {
+                if (this.filteredRows.length === 0) return 0;
+                return (this.currentPage - 1) * this.pageSize + 1;
+            },
+
+            get paginationEnd() {
+                return Math.min(this.currentPage * this.pageSize, this.filteredRows.length);
+            },
+
+            // --- ACTIONS ---
+            sortBy(key) {
+                if (this.sortCol === key) {
+                    this.sortAsc = !this.sortAsc;
+                } else {
+                    this.sortCol = key;
+                    this.sortAsc = true;
+                }
+            },
+
+            toggleAllColumns() {
+                const allVisible = Object.values(this.columns).every(c => c.visible);
+                Object.keys(this.columns).forEach(key => {
+                    this.columns[key].visible = !allVisible;
+                });
+            },
+
+            openExportModal() {
+                this.exportConfig.start = this.startDate || new Date().toISOString().split('T')[0];
+                this.exportConfig.end = this.endDate || new Date().toISOString().split('T')[0];
+                this.exportModalOpen = true;
+            },
+
+            // --- EXPORT LOGIC ---
+            executeExport() {
+                // 1. Filter Data based on export Modal Dates (not main filter)
+                let dataToExport = this.allRows;
+                
+                const start = new Date(this.exportConfig.start); start.setHours(0,0,0,0);
+                const end = new Date(this.exportConfig.end); end.setHours(23,59,59,999);
+
+                dataToExport = dataToExport.filter(r => {
+                    let dateStr = r.tanggal;
+                    if (dateStr.includes('/')) {
+                         const parts = dateStr.split(' ')[0].split('/');
+                         if (parts.length === 3) dateStr = `${parts[1]}/${parts[0]}/${parts[2]}`;
+                    }
+                    const rDate = new Date(dateStr);
+                    return rDate >= start && rDate <= end;
+                });
+
+                // 2. Map to selected columns
+                const finalData = dataToExport.map(row => {
+                    const mapped = {};
+                    this.exportConfig.cols.forEach(key => {
+                        mapped[this.columns[key].label] = row[key];
+                    });
+                    return mapped;
+                });
+
+                if (finalData.length === 0) {
+                    alert("Tidak ada data pada rentang tanggal tersebut.");
+                    return;
+                }
+
+                const filename = `Laporan_EggVision_${this.exportConfig.start}_to_${this.exportConfig.end}`;
+
+                if (this.exportConfig.format === 'xlsx') {
+                    const ws = XLSX.utils.json_to_sheet(finalData);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Laporan');
+                    XLSX.writeFile(wb, `${filename}.xlsx`);
+                } else if (this.exportConfig.format === 'csv') {
+                    const ws = XLSX.utils.json_to_sheet(finalData);
+                    const csv = XLSX.utils.sheet_to_csv(ws);
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `${filename}.csv`;
+                    link.click();
+                } else if (this.exportConfig.format === 'pdf') {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    doc.text('Laporan Produksi EggVision', 14, 15);
+                    doc.text(`Periode: ${this.exportConfig.start} - ${this.exportConfig.end}`, 14, 22);
+                    
+                    const headers = [this.exportConfig.cols.map(key => this.columns[key].label)];
+                    const body = finalData.map(obj => Object.values(obj));
+
+                    doc.autoTable({
+                        head: headers,
+                        body: body,
+                        startY: 30,
+                    });
+                    doc.save(`${filename}.pdf`);
+                }
+
+                this.exportModalOpen = false;
+            },
+
+            // --- CHART UPDATE ---
+            chartInstance: null,
+            
+            initChart() {
+                const ctx = document.getElementById('histChart').getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, '#FFD700');
+                gradient.addColorStop(1, 'rgba(255, 215, 0, 0.1)');
+
+                // Check for Dark Mode on Init
+                const isDark = document.documentElement.classList.contains('dark');
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(200, 200, 200, 0.1)';
+                const tickColor = isDark ? '#666' : '#888';
+
+                this.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: [], // populated dynamically
+                        datasets: [{
+                            label: 'Jumlah Butir',
+                            data: [],
+                            backgroundColor: gradient,
+                            borderRadius: 6,
+                            barThickness: 40,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                grid: { color: gridColor }, 
+                                ticks: { color: tickColor } 
+                            },
+                            x: { 
+                                grid: { display: false }, 
+                                ticks: { color: tickColor } 
+                            }
+                        }
+                    }
+                });
+                this.updateChart();
+            },
+
+            updateChart() {
+                if (!this.chartInstance) return;
+
+                // Aggregate grades from filteredRows
+                const counts = {};
+                this.filteredRows.forEach(r => {
+                    const g = r.kategori || 'Unknown';
+                    counts[g] = (counts[g] || 0) + 1;
+                });
+
+                this.chartInstance.data.labels = Object.keys(counts);
+                this.chartInstance.data.datasets[0].data = Object.values(counts);
+                this.chartInstance.update();
+            }
+        }));
     });
-  </script>
+
+    // Start Chart after Alpine init
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const el = document.querySelector('[x-data="laporanData"]');
+            if (el) el.__x.$data.initChart();
+        }, 200);
+    });
+</script>
 {% endblock %}

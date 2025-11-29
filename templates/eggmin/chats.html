@@ -177,23 +177,19 @@
 
   // --- MOBILE VIEW LOGIC ---
   function showChatMobile() {
-      // Hide sidebar list, show main chat
       document.getElementById('chat-sidebar').classList.add('hidden', 'lg:flex');
       document.getElementById('main-chat-area').classList.remove('hidden');
       document.getElementById('main-chat-area').classList.add('flex');
   }
 
   function closeChat() {
-      // Show sidebar list, hide main chat
       document.getElementById('chat-sidebar').classList.remove('hidden', 'lg:flex');
       document.getElementById('main-chat-area').classList.add('hidden');
       document.getElementById('main-chat-area').classList.remove('flex');
       
-      // Reset state
       currentConversationId = null;
       if (adminPollingInterval) clearInterval(adminPollingInterval);
       
-      // Reset highlighting in desktop view
       document.querySelectorAll('.conversation-item').forEach(el => {
           el.classList.remove('bg-white', 'dark:bg-[#1a1a1a]', 'shadow-sm');
           el.classList.add('hover:bg-white');
@@ -202,7 +198,7 @@
       });
   }
 
-  // --- FILTERING & ACTIONS (Same as before) ---
+  // --- FILTERING & ACTIONS ---
   function applyFilters() {
       const role = document.getElementById('roleFilter').value;
       const status = document.getElementById('statusFilter').value;
@@ -230,12 +226,11 @@
   function loadChat(convId, name, email, role) {
       currentConversationId = convId;
 
-      // Handle UI transitions
       if (window.innerWidth < 1024) {
-          showChatMobile(); // Mobile specific transition
+          showChatMobile();
       }
       
-      // General UI cleanup
+      // UI Cleanup
       document.getElementById('chat-placeholder').classList.add('hidden');
       const chatContainer = document.getElementById('active-chat-container');
       chatContainer.classList.remove('hidden');
@@ -246,14 +241,25 @@
       document.getElementById('header-email').textContent = email;
       document.getElementById('header-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.toLowerCase().replace(' ', '')}`;
 
-      // Highlight Active Item (Desktop Visuals)
+      // --- NEW LOGIC: Update Sidebar Items ---
       document.querySelectorAll('.conversation-item').forEach(el => {
           const indicator = el.querySelector('.active-indicator');
+          
           if(el.dataset.id === convId) {
+              // 1. Highlight Active Item
               el.classList.add('bg-white', 'dark:bg-[#1a1a1a]', 'shadow-sm');
               el.classList.remove('hover:bg-white');
               if(indicator) indicator.classList.remove('hidden');
+
+              // 2. REMOVE UNREAD BADGE IMMEDIATELY
+              // Find the badge inside this conversation item and hide/remove it
+              const badge = el.querySelector('.bg-red-500'); // Assuming this class is unique to the unread badge
+              if (badge) {
+                  badge.remove(); // Or badge.classList.add('hidden');
+              }
+
           } else {
+              // Reset other items
               el.classList.remove('bg-white', 'dark:bg-[#1a1a1a]', 'shadow-sm');
               el.classList.add('hover:bg-white');
               if(indicator) indicator.classList.add('hidden');
@@ -299,18 +305,22 @@
 
           const isMe = msg.message_type.startsWith('admin_to');
           const alignment = isMe ? 'justify-end' : 'justify-start';
-          const bubbleColor = isMe ? 'bg-primary text-black rounded-br-none shadow-md shadow-primary/10' : 'bg-white dark:bg-[#262626] border border-gray-200 dark:border-gray-700 rounded-bl-none shadow-sm text-gray-800 dark:text-gray-200';
+          
+          // Colors
+          const bubbleColor = isMe 
+            ? 'bg-primary text-black rounded-br-none shadow-md shadow-primary/10' 
+            : 'bg-white dark:bg-[#262626] border border-gray-200 dark:border-gray-700 rounded-bl-none shadow-sm text-gray-800 dark:text-gray-200';
+          
           const timeColor = isMe ? 'text-black/60' : 'text-gray-400';
 
+          // Bubble Structure
           const html = `
               <div class="flex ${alignment} mb-4 group animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div class="max-w-[85%] lg:max-w-[75%]">
-                      <div class="${bubbleColor} px-5 py-3 rounded-2xl relative">
-                          <p class="text-sm leading-relaxed whitespace-pre-wrap">${msg.message}</p>
-                          <div class="flex items-center justify-end gap-1.5 mt-1.5">
-                              <span class="text-[10px] font-medium ${timeColor}">${timeString}</span>
-                              ${isMe ? `<i data-lucide="check-check" class="w-3 h-3 ${timeColor}"></i>` : ''}
-                          </div>
+                  <div class="${bubbleColor} px-5 py-3 rounded-2xl relative max-w-[50%] w-fit break-words">
+                      <p class="text-sm leading-relaxed whitespace-pre-wrap">${msg.message}</p>
+                      <div class="flex items-center justify-end gap-1.5 mt-1.5">
+                          <span class="text-[10px] font-medium ${timeColor}">${timeString}</span>
+                          ${isMe ? `<i data-lucide="check-check" class="w-3 h-3 ${timeColor}"></i>` : ''}
                       </div>
                   </div>
               </div>`;
@@ -335,6 +345,7 @@
       .then(data => {
           if(data.success) {
               input.value = '';
+              input.style.height = ''; // Reset height
               fetchMessages(currentConversationId, false);
           } else alert('Error: ' + data.error);
       });
