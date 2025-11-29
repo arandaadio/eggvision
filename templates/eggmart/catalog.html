@@ -1,183 +1,503 @@
 {% extends "eggmart/base.html" %}
-{% block title %}Marketplace Telur · EggMart{% endblock %}
 
-{% block body %}
-<div class="min-h-screen bg-background">
-  <!-- Sidebar -->
- <aside class="fixed left-0 top-0 h-screen w-[130px] bg-sidebar border-r border-sidebar-border flex flex-col">
-    <!-- Logo -->
-    <div class="p-6 border-b border-sidebar-border">
-      <div class="flex flex-col items-center gap-2">
-        <div class="w-12 h-12 rounded-full bg-premium-gold flex items-center justify-center">
-          <div class="text-primary-black font-bold text-xs">EM</div>
-        </div>
-        <span class="text-premium-gold text-sm font-semibold">EGGMART</span>
-      </div>
-    </div>
-
-    <!-- Menu -->
-    <nav class="flex-1 py-4">
-  {% if current_user.role == 'pengusaha' %}
-    {% set menu = [
-      {"id":"dashboard", "icon":"layout-dashboard", "label":"Dashboard", "href":url_for('eggmart_controller.eggmartDashboard')},
-      {"id":"history",   "icon":"history",          "label":"History", "href":url_for('eggmart_controller.eggmartHistory')},
-      {"id":"eggmonitor","icon":"scan",             "label":"EggMonitor", "href":"/eggmonitor/index"}
-    ] %}
-
-  {# PEMBELI: Catalog + History #}
-  {% elif current_user.role == 'pembeli' %}
-    {% set menu = [
-      {"id":"catalog", "icon":"egg",     "label":"Catalog", "href":url_for('eggmart_controller.eggmart')},
-      {"id":"history", "icon":"history", "label":"History", "href":url_for('eggmart_controller.eggmartHistory')}
-    ] %}
-
-  {# ROLE LAIN (admin, dll) -> fallback bebas #}
-  {% else %}
-    {% set menu = [
-      {"id":"dashboard","icon":"layout-dashboard","label":"Dashboard","href":url_for('eggmart_controller.eggmartDashboard')},
-      {"id":"catalog", "icon":"egg",            "label":"Catalog",   "href":url_for('eggmart_controller.eggmart')},
-      {"id":"history", "icon":"history",        "label":"History","href":url_for('eggmart_controller.eggmartHistory')}
-    ] %}
-  {% endif %}
-
-
-      {% for item in menu %}
-        {% set is_active = (item.id == active_menu) %}
-        <a href="{{ item.href }}"
-           class="w-full px-4 py-4 flex flex-col items-center gap-2 transition-colors
-           {{ 'text-sidebar-accent-foreground bg-sidebar-accent' if is_active else 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50' }}">
-          <i data-lucide="{{ item.icon }}" class="w-6 h-6"></i>
-          <span class="text-xs">{{ item.label }}</span>
-        </a>
-      {% endfor %}
-    </nav>
-
-    <!-- Profile -->
-    <div class="p-4 border-t border-sidebar-border">
-      <div class="w-full flex flex-col items-center gap-2 text-sidebar-foreground">
-        <div class="w-10 h-10 rounded-full bg-muted overflow-hidden">
-          <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
-            alt="Profile"
-            class="w-full h-full object-cover" />
-        </div>
-        <span class="text-xs">{{current_user.role}}</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <main class="ml-[130px] p-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-4xl font-bold mb-1">Marketplace Telur</h1>
-        <p class="text-muted-foreground">Temukan penjual telur terpercaya</p>
-      </div>
-
-      <div class="flex items-center gap-8">
-        <!-- User Info -->
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-full bg-muted overflow-hidden">
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin"
-              alt="Admin"
-              class="w-full h-full object-cover" />
-          </div>
-          <div>
-            <div class="text-sm font-semibold">{{ current_user.name if current_user else 'Admin' }}</div>
-            <div class="text-xs text-muted-foreground">{{ current_user.role if current_user else '' }}</div>
-          </div>
-        </div>
-
-        <!-- Date & Time -->
-        <div class="flex items-center gap-4 text-sm">
-          <div class="flex items-center gap-2">
-            <i data-lucide="calendar" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-date">{{ now.strftime('%d/%b/%Y') if now else '' }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
-            <span id="live-time">{{ now.strftime('%H:%M:%S') if now else '' }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================== BUYER MARKETPLACE LIST ================== -->
-    <div id="buyer-marketplace">
-      <div class="flex min-h-[600px] rounded-xl border border-border overflow-hidden bg-background">
-        <!-- Main Marketplace -->
-        <section class="flex-1 flex flex-col">
-          <!-- Header -->
-          <header class="border-b border-border bg-card/50 backdrop-blur-sm">
-            <div class="p-6">
-              <h2 class="text-2xl font-bold text-foreground">Daftar Penjual</h2>
-              <p class="text-muted-foreground">Pilih penjual untuk melihat detail dan melakukan pemesanan</p>
+{% block content %}
+<div x-data="catalogData">
+    <header class="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-dark-border bg-paper/90 dark:bg-dark-surface/90 backdrop-blur-md transition-colors duration-300">
+        <div class="container mx-auto px-4 h-20 flex items-center justify-between">
+            
+            <div class="flex-shrink-0">
+                <a href="{{ url_for('eggmart_controller.eggmart') }}" class="flex items-center gap-3 sm:gap-4 group">
+                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-8 sm:h-10 w-auto">
+                    <div class="h-5 sm:h-6 w-px bg-gray-300 dark:bg-gray-700 hidden xs:block"></div>
+                    <span class="font-canela font-normal text-xl sm:text-2xl text-ink dark:text-white tracking-wide group-hover:text-primary transition-colors hidden xs:block">
+                        EggMart
+                    </span>
+                </a>
             </div>
-          </header>
 
-          <div class="p-6 flex-1 overflow-auto">
-            <!-- Seller List -->
-            <div id="sellerListSection">
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for seller in sellers %}
-                <div class="p-6 rounded-xl border bg-card hover:border-primary/50 transition-all">
-                  <div class="flex items-start justify-between mb-4">
-                    <div class="flex items-center gap-3">
-                      <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span class="text-lg font-medium text-primary">
-                          {{ seller.code }}
-                        </span>
+            <div class="hidden lg:flex items-center gap-6 bg-white dark:bg-white/5 px-6 py-2 rounded-full border border-gray-200 dark:border-dark-border shadow-sm hover:shadow-md transition-all">
+                <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:text-primary transition-colors"
+                    @click="profileModalOpen = true; profileTab = 'location'">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-primary"></i>
+                    <span class="truncate max-w-[200px]" x-text="profileLocation || 'Atur Lokasi'"></span> 
+                </div>
+                <div class="h-4 w-px bg-gray-300 dark:bg-gray-700"></div>
+                <div class="flex items-center gap-3 cursor-pointer" @click="profileModalOpen = true; profileTab = 'info'">
+                    <div class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name }}" alt="User" class="w-full h-full">
+                    </div>
+                    <span class="text-sm font-medium truncate max-w-[100px]">{{ current_user.name }}</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                
+                <a href="{{ url_for('eggmart_controller.eggmartHistory') }}" 
+                  class="flex items-center gap-2 p-2.5 sm:px-4 sm:py-2 rounded-full bg-transparent sm:bg-gray-100 sm:dark:bg-white/10 hover:bg-gray-100 dark:hover:bg-white/10 sm:hover:bg-gray-200 sm:dark:hover:bg-white/20 text-gray-600 dark:text-gray-300 sm:text-gray-700 sm:dark:text-gray-200 transition-all group"
+                  title="Riwayat Transaksi">
+                    <i data-lucide="history" class="w-5 h-5 sm:w-4 sm:h-4 group-hover:text-primary transition-colors"></i>
+                    <span class="text-sm font-bold hidden xl:block">Riwayat</span>
+                </a>
+
+                <button 
+                    onclick="toggleDarkMode()" 
+                    class="relative inline-flex items-center w-12 h-6 sm:w-14 sm:h-7 rounded-full transition-colors duration-300 ease-in-out 
+                        bg-gray-300 dark:bg-gray-600 hover:ring-2 hover:ring-premium-gold focus:outline-none"
+                    aria-label="Toggle dark mode"
+                >
+                    <span 
+                        class="absolute left-0.5 top-0.5 w-5 h-5 sm:left-1 sm:top-1 sm:w-5 sm:h-5 rounded-full bg-white dark:bg-primary-black transform transition-transform duration-300 ease-in-out 
+                            dark:translate-x-6 sm:dark:translate-x-7"
+                    ></span>
+                    
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="absolute left-1.5 w-3 h-3 sm:w-4 sm:h-4 text-gray-700 dark:hidden" 
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M12 3v1m0 16v1m8.66-9H21M3 12H2m15.36-6.36l.7.7M6.34 17.66l.7.7M17.66 17.66l.7-.7M6.34 6.34l.7-.7M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                    </svg>
+                    
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="absolute right-1.5 w-3 h-3 sm:w-4 sm:h-4 hidden dark:block text-yellow-400" 
+                        fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a8 8 0 107.446 5.032A6 6 0 0110 2z"/>
+                    </svg>
+                </button>
+
+                <button 
+                    @click="profileModalOpen = true; profileTab = 'info'"
+                    class="lg:hidden w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700 ml-1">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name }}" alt="User" class="w-full h-full">
+                </button>
+
+                <button @click="mobileFiltersOpen = true" class="lg:hidden p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-ink dark:text-white">
+                    <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+                </button>
+
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-10">
+
+            <aside class="hidden lg:block w-72 flex-shrink-0">
+                <div class="sticky top-28 space-y-8">
+                    
+                    <div class="space-y-3">
+                        <label class="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Pencarian</label>
+                        <div class="relative group">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors"></i>
+                            <input type="text" x-model="searchQuery" @input="debounceSearch()" placeholder="Cari toko..." 
+                                   class="w-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-sm">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h3 class="font-canela font-normal text-xl">Lokasi Toko</h3>
+                        <div class="space-y-2">
+                            <template x-for="loc in ['Terdekat', 'Jabodetabek', 'Jawa Barat', 'Jawa Timur', 'Bali']">
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <input type="checkbox" :value="loc" @change="toggleArrayItem(selectedLocations, loc)" :checked="selectedLocations.includes(loc)" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary bg-transparent">
+                                    <span class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-ink dark:group-hover:text-white transition-colors" x-text="loc"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="h-px w-full bg-gray-200 dark:bg-dark-border"></div>
+
+                    <div class="space-y-3">
+                        <h3 class="font-canela font-normal text-xl">Produk yang Tersedia</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="grade in ['A', 'B', 'C']">
+                                <label class="cursor-pointer">
+                                    <input type="checkbox" class="peer sr-only" @change="toggleArrayItem(selectedGrades, grade)" :checked="selectedGrades.includes(grade)">
+                                    <span class="px-4 py-1.5 rounded-full border border-gray-200 dark:border-dark-border text-xs bg-white dark:bg-transparent peer-checked:bg-primary peer-checked:text-black peer-checked:border-primary hover:border-primary transition-all select-none" x-text="'Grade ' + grade"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="h-px w-full bg-gray-200 dark:bg-dark-border"></div>
+
+                    <div class="space-y-4">
+                      <h3 class="font-canela font-normal text-xl">Rentang Harga per Butir</h3>
+                      <div class="flex items-center gap-2">
+                          <div class="relative flex-1">
+                              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">Max</span>
+                              <input type="number" x-model="maxPrice" class="w-full pl-10 pr-2 py-2 bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:border-primary focus:ring-0 transition-all">
+                          </div>
                       </div>
                       <div>
-                        <h3 class="text-lg font-semibold text-foreground flex items-center gap-2">
-                          {{ seller.name }}
-                          <i data-lucide="shield" class="w-4 h-4 text-success"></i>
-                        </h3>
-                        <div class="flex items-center gap-1 text-sm text-muted-foreground">
-                          <i data-lucide="map-pin" class="w-3 h-3"></i>
-                          <span>{{ seller.location }}</span>
-                        </div>
+                          <input type="range" min="0" max="5000" step="100" x-model="maxPrice"
+                                 class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary">
+                          <div class="flex justify-between text-[10px] text-gray-400 mt-2">
+                              <span>Rp 0</span>
+                              <span>Rp 5.000</span>
+                          </div>
                       </div>
-                    </div>
                   </div>
-
-                  <div class="flex items-center gap-2 mb-4">
-                    <div class="flex items-center gap-1">
-                      <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
-                      <span class="text-sm font-medium text-foreground">{{ seller.rating }}</span>
-                    </div>
-                    <span class="text-sm text-muted-foreground">({{ seller.review_count }} ulasan)</span>
-                  </div>
-
-                  <div class="space-y-2 mb-4">
-                    <p class="text-sm font-medium text-foreground">Produk Tersedia:</p>
-                    {% for product in seller.products %}
-                    <div class="flex items-center justify-between text-sm">
-                      <span class="text-muted-foreground">Grade {{ product.grade }}</span>
-                      <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs">
-                        {{ product.stock }} butir
-                      </span>
-                    </div>
-                    {% endfor %}
-                  </div>
-
-                  <a
-                    href="{{ url_for('eggmart_controller.eggmartDetail', seller_id=seller.id) }}"
-                    class="w-full inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-3 py-2 text-sm font-medium hover:bg-primary/90">
-                    Lihat Detail
-                  </a>
                 </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-    <!-- ================== END BUYER MARKETPLACE LIST ================== -->
+            </aside>
 
-  </main>
+            <div class="flex-1">
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Menampilkan <span class="font-bold text-ink dark:text-white" x-text="sellerList.length"></span> toko terverifikasi</p>
+                </div>
+
+                <div x-show="isLoading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <template x-for="i in 3">
+                        <div class="h-80 bg-gray-200 dark:bg-white/5 rounded-2xl animate-pulse"></div>
+                    </template>
+                </div>
+
+                <div x-show="!isLoading && sellerList.length === 0" class="text-center py-20" x-cloak>
+                    <div class="w-20 h-20 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="store" class="w-10 h-10 text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Tidak ada toko ditemukan</h3>
+                    <p class="text-gray-500 mt-2 text-sm">Coba ubah filter pencarian Anda.</p>
+                </div>
+
+                <div x-show="!isLoading && sellerList.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <template x-for="seller in sellerList" :key="seller.id">
+                        <a :href="seller.detail_url" class="group relative flex flex-col bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full">
+                            
+                            <div class="h-32 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-[#222] dark:to-[#1a1a1a] relative p-6">
+                                <div class="absolute top-4 right-4 flex gap-2">
+                                    <div class="px-2 py-1 bg-white/90 dark:bg-black/60 backdrop-blur rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+                                        <i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400"></i>
+                                        <span x-text="seller.rating"></span>
+                                    </div>
+                                </div>
+                                <div class="absolute -bottom-6 left-6">
+                                    <div class="w-16 h-16 rounded-2xl bg-white dark:bg-[#222] shadow-lg flex items-center justify-center border-4 border-white dark:border-dark-surface text-2xl font-canela font-normal text-primary" x-text="seller.code"></div>
+                                </div>
+                            </div>
+
+                            <div class="pt-10 p-6 flex flex-col flex-1">
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors flex items-center gap-2">
+                                        <span x-text="seller.name"></span>
+                                        <i data-lucide="badge-check" class="w-4 h-4 text-blue-500"></i>
+                                    </h3>
+                                    <p class="text-sm text-gray-500 flex items-center gap-1">
+                                        <i data-lucide="map-pin" class="w-3 h-3"></i> <span x-text="seller.location"></span>
+                                    </p>
+                                </div>
+
+                                <div class="space-y-2 mb-6 bg-gray-50 dark:bg-white/5 p-3 rounded-xl border border-dashed border-gray-200 dark:border-dark-border">
+                                    <template x-for="product in seller.products.slice(0, 2)" :key="product.id">
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="text-gray-600 dark:text-gray-300 font-medium" x-text="'Grade ' + product.grade"></span>
+                                            <span class="font-mono font-bold text-gray-900 dark:text-white" x-text="formatRupiah(product.price)"></span>
+                                        </div>
+                                    </template>
+                                    <div x-show="seller.products.length > 2" class="text-[10px] text-center text-gray-400 pt-1 italic" x-text="'+ ' + (seller.products.length - 2) + ' varian lainnya'"></div>
+                                </div>
+
+                                <div class="mt-auto">
+                                    <button class="w-full py-2.5 rounded-xl bg-ink dark:bg-white text-white dark:text-black font-bold text-xs uppercase tracking-widest group-hover:bg-primary group-hover:text-black dark:group-hover:bg-primary dark:group-hover:text-black transition-all flex items-center justify-center gap-2">
+                                        Kunjungi Toko <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </a>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="mobileFiltersOpen" class="fixed inset-0 z-50 lg:hidden" style="display: none;">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="mobileFiltersOpen = false"></div>
+        <div class="absolute right-0 top-0 bottom-0 w-full sm:w-96 bg-paper dark:bg-dark-surface p-6 overflow-y-auto shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="font-canela font-normal text-3xl">Filter</h2>
+                <button @click="mobileFiltersOpen = false" class="p-2 bg-gray-100 dark:bg-white/10 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <div class="space-y-8 flex-1">
+                <div class="space-y-3">
+                    <label class="text-xs font-bold uppercase tracking-widest text-gray-500">Pencarian</label>
+                    <input type="text" x-model="searchQuery" @input="debounceSearch()" placeholder="Cari toko..." class="w-full bg-white dark:bg-black border border-gray-200 dark:border-dark-border rounded-xl py-3 px-4 text-sm">
+                </div>
+                
+                <div class="space-y-3">
+                    <h3 class="font-canela text-xl">Produk</h3>
+                    <div class="flex gap-2 flex-wrap">
+                         <button @click="toggleArrayItem(selectedGrades, 'A')" :class="selectedGrades.includes('A') ? 'bg-primary border-primary text-black' : ''" class="px-4 py-2 rounded-full border text-xs">Grade A</button>
+                         <button @click="toggleArrayItem(selectedGrades, 'B')" :class="selectedGrades.includes('B') ? 'bg-primary border-primary text-black' : ''" class="px-4 py-2 rounded-full border text-xs">Grade B</button>
+                         <button @click="toggleArrayItem(selectedGrades, 'C')" :class="selectedGrades.includes('C') ? 'bg-primary border-primary text-black' : ''" class="px-4 py-2 rounded-full border text-xs">Grade C</button>
+                    </div>
+                </div>
+
+                <button class="w-full py-4 bg-primary text-black font-bold rounded-xl" @click="applyFilters()">Terapkan Filter</button>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="profileModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;" x-cloak>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="profileModalOpen = false"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"></div>
+
+        <div class="relative w-full max-w-md bg-white dark:bg-[#1a1a1a] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+            
+            <div class="p-6 border-b border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-black/20 flex justify-between items-center">
+                <h3 class="font-canela font-normal text-2xl text-gray-900 dark:text-white">Pengaturan Akun</h3>
+                <button @click="profileModalOpen = false" class="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="flex border-b border-gray-100 dark:border-dark-border">
+                <button @click="profileTab = 'info'" 
+                        class="flex-1 py-4 text-sm font-bold uppercase tracking-wider transition-colors relative"
+                        :class="profileTab === 'info' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
+                    Profil Saya
+                    <div x-show="profileTab === 'info'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+                </button>
+                <button @click="profileTab = 'location'" 
+                        class="flex-1 py-4 text-sm font-bold uppercase tracking-wider transition-colors relative"
+                        :class="profileTab === 'location' ? 'text-primary' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'">
+                    Lokasi
+                    <div x-show="profileTab === 'location'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+                </button>
+            </div>
+
+            <div class="p-8 overflow-y-auto custom-scrollbar">
+                <div x-show="profileTab === 'info'" class="space-y-6">
+                    <div class="flex justify-center">
+                        <div class="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border-4 border-white dark:border-dark-border shadow-lg relative">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ current_user.name }}" class="w-full h-full">
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Nama Lengkap</label>
+                            <input type="text" x-model="profileName" class="w-full p-3 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-dark-border rounded-xl text-sm focus:border-primary focus:ring-0 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Email</label>
+                            <input type="email" x-model="profileEmail" class="w-full p-3 bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-dark-border rounded-xl text-sm focus:border-primary focus:ring-0 outline-none">
+                        </div>
+                    </div>
+                    <button id="saveProfileBtn" @click="saveProfile()" class="w-full py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary hover:text-black dark:hover:bg-primary transition-colors">
+                        Simpan Perubahan
+                    </button>
+                    <a href="{{ url_for('auth_controller.auth_logout') }}" class="block text-center text-sm text-red-500 hover:underline">Log Out</a>
+                </div>
+
+                <div x-show="profileTab === 'location'" class="space-y-4">
+                    
+                    <div class="p-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-dark-border rounded-xl mb-4">
+                        <p class="text-xs font-bold uppercase text-gray-500 mb-1">Lokasi Saat Ini</p>
+                        <p class="text-sm text-ink dark:text-white font-medium" x-text="profileLocation || 'Belum diset'"></p>
+                    </div>
+
+                    <div class="p-4 border border-gray-200 dark:border-dark-border rounded-xl cursor-pointer hover:border-primary transition-colors"
+                         @click="locationMode = 'manual'" :class="locationMode === 'manual' ? 'bg-primary/5 border-primary' : ''">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center" :class="locationMode === 'manual' ? 'border-primary' : 'border-gray-400'">
+                                <div class="w-2.5 h-2.5 bg-primary rounded-full" x-show="locationMode === 'manual'"></div>
+                            </div>
+                            <h4 class="font-bold text-sm">Input Manual</h4>
+                        </div>
+                        <input type="text" x-model="profileLocation" placeholder="Masukkan alamat lengkap..." 
+                               class="w-full p-2 bg-white dark:bg-black border border-gray-200 dark:border-dark-border rounded text-sm focus:outline-none" 
+                               :disabled="locationMode !== 'manual'">
+                    </div>
+
+                    <div class="p-4 border border-gray-200 dark:border-dark-border rounded-xl cursor-pointer hover:border-primary transition-colors"
+                         @click="locationMode = 'gps'" :class="locationMode === 'gps' ? 'bg-primary/5 border-primary' : ''">
+                         <div class="flex items-center gap-3">
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center" :class="locationMode === 'gps' ? 'border-primary' : 'border-gray-400'">
+                                <div class="w-2.5 h-2.5 bg-primary rounded-full" x-show="locationMode === 'gps'"></div>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-sm">Gunakan GPS</h4>
+                                <p class="text-xs text-gray-500">Otomatis deteksi lokasi saya</p>
+                            </div>
+                            <button @click.stop="detectLocation()" class="px-3 py-1 bg-gray-100 dark:bg-white/10 rounded text-xs font-bold hover:bg-primary transition-colors" :disabled="isDetectingLocation">
+                                <span x-show="!isDetectingLocation">Deteksi</span>
+                                <span x-show="isDetectingLocation">Mencari...</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button @click="saveProfile()" class="w-full py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary hover:text-black dark:hover:bg-primary transition-colors">
+                        Simpan Lokasi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('catalogData', () => ({
+        mobileFiltersOpen: false, 
+        profileModalOpen: false,
+        profileTab: 'info', 
+        minPrice: 0,
+        maxPrice: 5000,
+        locationMode: 'manual',
+        searchQuery: '',
+        
+        selectedGrades: [],
+        selectedLocations: [],
+        
+        sellerList: [],
+        isLoading: false,
+        
+        // Data Profil
+        profileName: '{{ current_user.name }}',
+        profileEmail: '{{ current_user.email }}',
+        profileLocation: '{{ current_user.farm_location or "" }}', 
+        isDetectingLocation: false,
+
+        formatRupiah(num) {
+            return 'Rp ' + parseInt(num).toLocaleString('id-ID').replace(',', '.');
+        },
+
+        init() {
+            this.fetchSellers();
+            this.$watch('maxPrice', () => this.debounceSearch());
+
+            if (!this.profileLocation || this.profileLocation === 'None') {
+                this.detectLocation(true);
+            }
+        },
+
+        async fetchSellers() {
+            this.isLoading = true;
+            const params = new URLSearchParams();
+            
+            if (this.searchQuery) params.append('q', this.searchQuery);
+            if (this.maxPrice < 100000) params.append('price_max', this.maxPrice);
+            
+            this.selectedGrades.forEach(g => params.append('grade', g));
+            this.selectedLocations.forEach(l => params.append('location', l));
+            
+            try {
+                const res = await fetch(`{{ url_for('eggmart_controller.api_filter_catalog') }}?${params.toString()}`);
+                const data = await res.json();
+                if(data.success) {
+                    this.sellerList = data.sellers;
+                }
+            } catch(err) {
+                console.error('Filter error:', err);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        debounceSearch() {
+            clearTimeout(this._searchTimer);
+            this._searchTimer = setTimeout(() => {
+                this.fetchSellers();
+            }, 300);
+        },
+
+        toggleArrayItem(arr, item) {
+            if (arr.includes(item)) {
+                const index = arr.indexOf(item);
+                arr.splice(index, 1);
+            } else {
+                arr.push(item);
+            }
+            this.fetchSellers(); 
+        },
+        
+        detectLocation(isAuto = false) {
+            if (!navigator.geolocation) {
+                alert('Browser Anda tidak mendukung Geolocation.');
+                return;
+            }
+
+            this.isDetectingLocation = true;
+            if (!isAuto) this.locationMode = 'gps';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const address = data.display_name; 
+                            this.profileLocation = address;
+                            this.isDetectingLocation = false;
+                            
+                            if (isAuto) {
+                                this.saveProfile(true); 
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            this.isDetectingLocation = false;
+                            if (!isAuto) alert('Gagal mendapatkan detail alamat.');
+                        });
+                },
+                (error) => {
+                    console.error('Error GPS:', error);
+                    this.isDetectingLocation = false;
+                    if (!isAuto) alert('Gagal mendeteksi lokasi. Pastikan GPS aktif.');
+                }
+            );
+        },
+
+        saveProfile(silent = false) {
+            const btn = document.getElementById('saveProfileBtn');
+            let originalText = "";
+            
+            if (!silent && btn) {
+                originalText = btn.innerText;
+                btn.innerText = 'Menyimpan...';
+                btn.disabled = true;
+            }
+            
+            fetch('{{ url_for("eggmart_controller.update_profile") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    name: this.profileName, 
+                    email: this.profileEmail,
+                    location: this.profileLocation 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    if (!silent) {
+                        alert('Profil berhasil diperbarui!');
+                        window.location.reload();
+                    } else {
+                        console.log("Lokasi otomatis diperbarui.");
+                    }
+                } else {
+                    if (!silent) alert('Gagal: ' + data.message);
+                }
+            })
+            .catch(err => {
+                if (!silent) alert('Terjadi kesalahan koneksi.');
+            })
+            .finally(() => {
+                if (!silent && btn) {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            });
+        }
+    }));
+});
+</script>
 {% endblock %}
