@@ -266,7 +266,7 @@ def init_db():
             eggmin_pwd = generate_password_hash('eggmin123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('EggMin Admin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
+                ('Sanbox EggMin', 'eggmin@eggvision.com', eggmin_pwd, 'admin')
             )
 
             # Pengusaha
@@ -279,7 +279,7 @@ def init_db():
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ''',
                 (
-                    'Fulan Setiawan',
+                    'Sandbox EggMonitor',
                     'pengusaha@eggvision.com',
                     pengusaha_pwd,
                     'pengusaha',
@@ -299,7 +299,7 @@ def init_db():
             pembeli_pwd = generate_password_hash('pembeli123', method='pbkdf2:sha256')
             cur.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                ('Rina Saraswati', 'pembeli@eggvision.com', pembeli_pwd, 'pembeli')
+                ('Sandbox EggMart', 'pembeli@eggvision.com', pembeli_pwd, 'pembeli')
             )
 
         # ==========================
