@@ -12,8 +12,8 @@
 {% block content %}
 <div x-data="{ 
     tab: 'all',
-    invoiceOpen: {{ 'true' if new_order else 'false' }},
-    activeInvoice: {{ new_order | tojson if new_order else '{}' }},
+    invoiceOpen: false,
+    activeInvoice: {},
     
     // Format Currency
     formatRupiah(num) {
@@ -42,6 +42,13 @@
             onError: function(result){ console.log('error'); },
             onClose: function(){ console.log('customer closed the popup without finishing the payment'); }
         });
+    },
+
+    // Get status category for filtering
+    getStatusCategory(status) {
+        if (status === 'pending') return 'pending';
+        if (['paid', 'settlement', 'capture'].includes(status)) return 'success';
+        return 'failed';
     }
 }">
     
@@ -52,7 +59,7 @@
                     <i data-lucide="arrow-left" class="w-5 h-5 text-ink dark:text-white"></i>
                 </div>
                 <div class="h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-8 w-auto">
+                <img src="{{ url_for('static', filename='img/logomart.png') }}" alt="Logo" class="h-8 w-auto">
                 <span class="font-canela font-normal text-xl text-ink dark:text-white tracking-wide group-hover:text-primary transition-colors hidden sm:block">
                     EggMart
                 </span>
@@ -88,12 +95,8 @@
         {% if orders %}
         <div class="space-y-4">
             {% for order in orders %}
-            
-            {% set js_status = 'pending' if order.status == 'pending' else ('success' if order.status in ['paid','settlement','capture'] else 'failed') %}
-
-            <div x-show="tab === 'all' || tab === '{{ js_status }}'"
-                 class="group bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 hover:shadow-lg transition-all duration-300"
-                 x-transition>
+            <div x-show="tab === 'all' || tab === getStatusCategory('{{ order.status }}')"
+                 class="group bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
                 
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                     <div class="flex items-center gap-4">
@@ -144,19 +147,11 @@
                                 Bayar Sekarang
                             </button>
                         {% elif order.status in ['paid', 'settlement', 'capture'] %}
-                            {# Convert Jinja object to JS object for the modal #}
-                            {% set order_json = {
-                                'code': order.code,
-                                'date': order.date.strftime('%Y-%m-%d %H:%M:%S'),
-                                'seller_name': order.seller_name,
-                                'total': order.total,
-                                'items': order.items
-                            } %}
-                            <button @click="viewInvoice({{ order_json | tojson | forceescape }})"
+                            <button @click="viewInvoice({{ order | tojson }})"
                                     class="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
                                 Lihat Nota
                             </button>
-                            <a href="{{ url_for('eggmart_controller.eggmartDetail', seller_id=order.seller_id) }}" class="px-6 py-2 bg-black dark:bg-white text-white dark:text-black font-bold text-sm rounded-lg hover:opacity-90 transition-colors">
+                            <a href="{{ url_for('eggmart_controller.eggmart') }}" class="px-6 py-2 bg-black dark:bg-white text-white dark:text-black font-bold text-sm rounded-lg hover:opacity-90 transition-colors">
                                 Beli Lagi
                             </a>
                         {% else %}
@@ -183,6 +178,19 @@
         {% endif %}
     </div>
 
+    <!-- TEMPORARY DEBUG - REMOVE LATER -->
+    <div class="bg-yellow-100 border border-yellow-400 p-4 rounded-lg mb-4">
+        <h3 class="font-bold text-yellow-800">Debug Info:</h3>
+        <p>Total Orders: {{ orders|length }}</p>
+        {% for order in orders %}
+        <div class="text-sm">
+            Order {{ order.id }}: Status="{{ order.status }}" | 
+            Category="<span x-text="getStatusCategory('{{ order.status }}')"></span>"
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Invoice Modal -->
     <div x-show="invoiceOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;" x-cloak>
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="invoiceOpen = false"
              x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"></div>
@@ -201,14 +209,14 @@
                         <i data-lucide="check" class="w-6 h-6"></i>
                     </div>
                     <h3 class="font-bold text-xl uppercase tracking-widest text-gray-400 mb-1">STRUK DIGITAL</h3>
-                    <p class="font-mono text-sm text-gray-800 dark:text-white font-bold" x-text="activeInvoice.code"></p>
+                    <p class="font-mono text-sm text-gray-800 dark:text-white font-bold" x-text="activeInvoice.midtrans_order_id || 'N/A'"></p>
                     <p class="text-xs text-gray-400 mt-1" x-text="formatDate(activeInvoice.date)"></p>
                 </div>
 
                 <div class="space-y-4 text-sm">
                     <div class="flex justify-between items-center">
                         <span class="text-gray-500">Penjual</span>
-                        <span class="font-bold text-ink dark:text-white" x-text="activeInvoice.seller_name"></span>
+                        <span class="font-bold text-ink dark:text-white" x-text="activeInvoice.seller_name || 'N/A'"></span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-gray-500">Status</span>
@@ -217,13 +225,15 @@
                 </div>
                 
                 <div class="border-t border-dashed border-gray-200 dark:border-gray-700 pt-4 space-y-2">
-                    <template x-for="item in activeInvoice.items" :key="item.grade">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-600 dark:text-gray-300">
-                                <span x-text="item.quantity"></span>x Grade <span x-text="item.grade"></span>
-                            </span>
-                            <span class="font-mono" x-text="formatRupiah(item.price * item.quantity)"></span>
-                        </div>
+                    <template x-if="activeInvoice.items">
+                        <template x-for="item in activeInvoice.items" :key="item.id">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600 dark:text-gray-300">
+                                    <span x-text="item.quantity"></span>x Grade <span x-text="item.grade"></span>
+                                </span>
+                                <span class="font-mono" x-text="formatRupiah(item.price * item.quantity)"></span>
+                            </div>
+                        </template>
                     </template>
                 </div>
 
@@ -240,4 +250,16 @@
     </div>
 
 </div>
+
+<script>
+// Initialize Lucide icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+
+// Debug: Check if orders are loading
+console.log('Orders data:', {{ orders | tojson }});
+</script>
 {% endblock %}
