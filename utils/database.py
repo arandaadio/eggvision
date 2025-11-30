@@ -336,7 +336,7 @@ def init_db():
 
         conn.commit()
         cur.close()
-        print("✅ Database initialized successfully!")
+        print("✅ Database initialized successfully !")
 
     except mysql.connector.Error as e:
         print(f"❌ Database initialization failed: {e}")
