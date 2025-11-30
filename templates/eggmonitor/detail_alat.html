@@ -1,124 +1,123 @@
 {% extends "eggmonitor/base.html" %}
 
-{% block page_title %}Detail Alat IoT{% endblock %}
-{% block page_subtitle %}Monitoring dan kontrol perangkat EggVision secara real-time{% endblock %}
+{% block page_title %}Detail Alat{% endblock %}
+{% block page_subtitle %}Monitoring Kamera & Simulasi IoT Realtime{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
+<div class="space-y-6 pb-12">
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
-        <div class="bg-white dark:bg-dark-surface border border-border dark:border-dark-border rounded-2xl p-6 shadow-sm flex flex-col justify-between transition-colors">
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-canela font-bold text-xl text-foreground dark:text-white">Status Koneksi</h3>
-                    <span class="relative flex h-3 w-3">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </span>
+        <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-sm flex flex-col h-full">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-primary/10 rounded-lg text-primary-foreground dark:text-primary">
+                        <i data-lucide="camera" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="font-canela text-xl text-ink dark:text-white">Kamera Deteksi</h3>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                    Perangkat ESP32 terhubung ke MQTT Broker dan siap menerima perintah.
-                </p>
+                <button id="btnStartCamera" class="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-primary text-black hover:bg-yellow-500 transition-colors shadow-lg shadow-primary/20">
+                    Mulai Kamera
+                </button>
             </div>
-            
-            <div class="space-y-3">
-                <div class="flex justify-between text-sm border-b border-dashed border-gray-200 dark:border-gray-700 pb-2">
-                    <span class="text-gray-500">Broker</span>
-                    <span class="font-mono font-bold text-primary">broker.emqx.io</span>
+
+            <div class="relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-dark-border bg-black aspect-video shadow-inner">
+                <video id="videoElement" class="w-full h-full object-cover" autoplay playsinline muted></video>
+                <div id="cameraOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden">
+                    <div class="w-[35%] h-[35%] border-2 border-primary/70 rounded-lg shadow-[0_0_15px_rgba(190,173,102,0.5)]"></div>
                 </div>
-                <div class="flex justify-between text-sm border-b border-dashed border-gray-200 dark:border-gray-700 pb-2">
-                    <span class="text-gray-500">Port</span>
-                    <span class="font-mono font-bold text-foreground dark:text-white">1883</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-500">Device ID</span>
-                    <span class="font-mono font-bold text-foreground dark:text-white">ESP32-EggVision-01</span>
+                <canvas id="colorCanvas" class="hidden"></canvas>
+            </div>
+
+            <div class="mt-6 p-4 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-dark-border rounded-xl flex items-center gap-4">
+                <div id="colorPreview" class="w-16 h-16 rounded-lg border-2 border-white dark:border-gray-600 shadow-md bg-gray-200"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Status Terdeteksi</p>
+                    <h4 id="colorName" class="text-2xl font-canela text-ink dark:text-white truncate">-</h4>
+                    <div class="flex gap-3 mt-1">
+                        <p id="colorRgb" class="text-[10px] font-mono text-gray-500 dark:text-gray-400">RGB: -, -, -</p>
+                        <p id="colorHex" class="text-[10px] font-mono text-gray-500 dark:text-gray-400">HEX: -</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="lg:col-span-2 bg-white dark:bg-dark-surface border border-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm h-[400px] relative group transition-colors">
-            <div class="absolute top-4 right-4 z-10 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
-                Simulasi Wokwi
+        <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-sm flex flex-col h-full">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
+                        <i data-lucide="cpu" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="font-canela text-xl text-ink dark:text-white">Simulasi ESP32</h3>
+                </div>
+                <a href="{{ wokwi_url | replace('?embed=1&view=diagram','') }}" target="_blank" class="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-primary transition-colors">
+                    Buka Tab Baru <i data-lucide="external-link" class="w-3 h-3"></i>
+                </a>
             </div>
-            <iframe src="{{ wokwi_url }}" 
-                    class="w-full h-full border-0 bg-gray-100 dark:bg-[#1a1a1a]" 
-                    title="Wokwi Simulation">
-            </iframe>
+
+            <div class="flex-1 rounded-xl overflow-hidden border border-gray-200 dark:border-dark-border bg-gray-100 relative shadow-inner h-[300px] xl:h-auto">
+                <iframe src="{{ wokwi_url }}" class="w-full h-full absolute inset-0" style="border:0;" loading="lazy" allowfullscreen></iframe>
+            </div>
         </div>
     </div>
 
-    <div class="bg-white dark:bg-dark-surface border border-border dark:border-dark-border rounded-2xl p-6 shadow-sm transition-colors">
-        <div class="mb-6">
-            <h3 class="font-canela font-bold text-2xl text-foreground dark:text-white mb-1">Kontrol Manual</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Kendallikan indikator LED pada alat secara manual untuk pengujian.</p>
+    <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+            <div>
+                <h3 class="font-canela text-xl text-ink dark:text-white">Kontrol Manual LED</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Uji coba aktuator pemilah telur secara manual.</p>
+            </div>
+            <div class="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 rounded-full text-xs font-bold flex items-center gap-2">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                </span>
+                MQTT Connected
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" x-data="iotControl">
-            
-            <div class="p-5 border border-border dark:border-dark-border rounded-xl bg-gray-50 dark:bg-white/5 flex flex-col items-center text-center hover:border-yellow-400 transition-colors">
-                <div class="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 flex items-center justify-center mb-3">
-                    <i data-lucide="sun" class="w-6 h-6"></i>
-                </div>
-                <h4 class="font-bold text-foreground dark:text-white mb-1">Light Brown</h4>
-                <p class="text-xs text-gray-500 mb-4">Indikator Telur Coklat Muda</p>
-                
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-white/5 flex items-center justify-between group hover:border-primary/50 transition-all">
                 <div class="flex items-center gap-3">
-                    <button @click="toggleLed('lightbrown', 'on')" 
-                            class="px-4 py-2 bg-white dark:bg-black/20 border border-border dark:border-dark-border rounded-lg text-xs font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-all active:scale-95">
-                        ON
-                    </button>
-                    <button @click="toggleLed('lightbrown', 'off')" 
-                            class="px-4 py-2 bg-white dark:bg-black/20 border border-border dark:border-dark-border rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all active:scale-95">
-                        OFF
-                    </button>
+                    <div class="w-10 h-10 rounded-full bg-[#EADDCA] border-2 border-gray-200 shadow-sm"></div>
+                    <div>
+                        <h4 class="font-bold text-sm text-ink dark:text-white">Light Brown</h4>
+                        <p class="text-xs text-gray-500">Grade A</p>
+                    </div>
                 </div>
+                <button class="led-toggle w-12 h-6 rounded-full bg-gray-300 dark:bg-gray-700 relative transition-colors duration-300 focus:outline-none"
+                        data-color="lightbrown" data-state="off">
+                    <div class="toggle-circle w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300 shadow-sm"></div>
+                </button>
             </div>
 
-            <div class="p-5 border border-border dark:border-dark-border rounded-xl bg-gray-50 dark:bg-white/5 flex flex-col items-center text-center hover:border-orange-400 transition-colors">
-                <div class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center mb-3">
-                    <i data-lucide="egg" class="w-6 h-6"></i>
-                </div>
-                <h4 class="font-bold text-foreground dark:text-white mb-1">Brown</h4>
-                <p class="text-xs text-gray-500 mb-4">Indikator Telur Coklat Sedang</p>
-                
+            <div class="p-4 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-white/5 flex items-center justify-between group hover:border-primary/50 transition-all">
                 <div class="flex items-center gap-3">
-                    <button @click="toggleLed('brown', 'on')" 
-                            class="px-4 py-2 bg-white dark:bg-black/20 border border-border dark:border-dark-border rounded-lg text-xs font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-all active:scale-95">
-                        ON
-                    </button>
-                    <button @click="toggleLed('brown', 'off')" 
-                            class="px-4 py-2 bg-white dark:bg-black/20 border border-border dark:border-dark-border rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all active:scale-95">
-                        OFF
-                    </button>
+                    <div class="w-10 h-10 rounded-full bg-[#CD7F32] border-2 border-gray-200 shadow-sm"></div>
+                    <div>
+                        <h4 class="font-bold text-sm text-ink dark:text-white">Brown</h4>
+                        <p class="text-xs text-gray-500">Grade B</p>
+                    </div>
                 </div>
+                <button class="led-toggle w-12 h-6 rounded-full bg-gray-300 dark:bg-gray-700 relative transition-colors duration-300 focus:outline-none"
+                        data-color="brown" data-state="off">
+                    <div class="toggle-circle w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300 shadow-sm"></div>
+                </button>
             </div>
 
-            <div class="p-5 border border-border dark:border-dark-border rounded-xl bg-gray-50 dark:bg-white/5 flex flex-col items-center text-center hover:border-amber-700 transition-colors">
-                <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/20 text-amber-800 flex items-center justify-center mb-3">
-                    <i data-lucide="moon" class="w-6 h-6"></i>
-                </div>
-                <h4 class="font-bold text-foreground dark:text-white mb-1">Dark Brown</h4>
-                <p class="text-xs text-gray-500 mb-4">Indikator Telur Coklat Tua</p>
-                
+            <div class="p-4 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-white/5 flex items-center justify-between group hover:border-primary/50 transition-all">
                 <div class="flex items-center gap-3">
-                    <button @click="toggleLed('darkbrown', 'on')" 
-                            class="px-4 py-2 bg-white dark:bg-black/20 border border-border dark:border-dark-border rounded-lg text-xs font-bold hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-all active:scale-95">
-                        ON
-                    </button>
-                    <button @click="toggleLed('darkbrown', 'off')" 
-                            class="px-4 py-2 bg-white dark:bg-black/20 border border-border dark:border-dark-border rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all active:scale-95">
-                        OFF
-                    </button>
+                    <div class="w-10 h-10 rounded-full bg-[#654321] border-2 border-gray-200 shadow-sm"></div>
+                    <div>
+                        <h4 class="font-bold text-sm text-ink dark:text-white">Dark Brown</h4>
+                        <p class="text-xs text-gray-500">Grade C</p>
+                    </div>
                 </div>
+                <button class="led-toggle w-12 h-6 rounded-full bg-gray-300 dark:bg-gray-700 relative transition-colors duration-300 focus:outline-none"
+                        data-color="darkbrown" data-state="off">
+                    <div class="toggle-circle w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300 shadow-sm"></div>
+                </button>
             </div>
-
-        </div>
-        
-        <div class="mt-6 p-4 bg-black text-green-400 font-mono text-xs rounded-lg h-32 overflow-y-auto border border-gray-800" id="consoleLog">
-            <p class="opacity-50">> System Ready...</p>
-            <p class="opacity-50">> Connected to MQTT Broker...</p>
         </div>
     </div>
 
@@ -127,37 +126,199 @@
 
 {% block scripts %}
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('iotControl', () => ({
-            logMessage(msg) {
-                const consoleEl = document.getElementById('consoleLog');
-                const p = document.createElement('p');
-                p.textContent = `> ${msg}`;
-                consoleEl.appendChild(p);
-                consoleEl.scrollTop = consoleEl.scrollHeight;
-            },
+  // -----------------------------
+  // Webcam + Deteksi Warna Telur
+  // -----------------------------
+  const btnStartCamera = document.getElementById('btnStartCamera');
+  const videoEl        = document.getElementById('videoElement');
+  const canvasEl       = document.getElementById('colorCanvas');
+  const colorPreview   = document.getElementById('colorPreview');
+  const colorNameEl    = document.getElementById('colorName');
+  const colorRgbEl     = document.getElementById('colorRgb');
+  const colorHexEl     = document.getElementById('colorHex');
+  const cameraOverlay  = document.getElementById('cameraOverlay');
 
-            toggleLed(device, state) {
-                this.logMessage(`Sending command: ${device} -> ${state.toUpperCase()}...`);
-                
-                fetch("{{ url_for('eggmonitor_controller.api_wokwi_control') }}", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ device: device, state: state })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.ok) {
-                        this.logMessage(`Success: ${device} is now ${state.toUpperCase()}`);
-                    } else {
-                        this.logMessage(`Error: ${data.error}`);
-                    }
-                })
-                .catch(err => {
-                    this.logMessage(`Connection Failed: ${err}`);
-                });
-            }
-        }));
+  let stream = null;
+  let detecting = false;
+  let lastLabel = null;
+  let lastSentAt = 0; // ms
+
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      videoEl.srcObject = stream;
+      detecting = true;
+      
+      // UI Updates
+      btnStartCamera.textContent = "Kamera Aktif";
+      btnStartCamera.disabled = true;
+      btnStartCamera.classList.remove('bg-primary', 'text-black', 'hover:bg-yellow-500');
+      btnStartCamera.classList.add('bg-green-500', 'text-white', 'cursor-default');
+      cameraOverlay.classList.remove('hidden'); // Show bounding box
+
+      detectLoop();
+    } catch (err) {
+      console.error(err);
+      alert("Tidak bisa mengakses kamera: " + err.message);
+    }
+  }
+
+  function detectLoop() {
+    if (!detecting) return;
+    
+    if (videoEl.readyState === videoEl.HAVE_ENOUGH_DATA) {
+      const w = 320;
+      const h = 240;
+      canvasEl.width = w;
+      canvasEl.height = h;
+
+      const ctx = canvasEl.getContext('2d');
+      ctx.drawImage(videoEl, 0, 0, w, h);
+
+      // Area tengah (Region of Interest) 35%
+      const roiW = Math.floor(w * 0.35);
+      const roiH = Math.floor(h * 0.35);
+      const roiX = Math.floor((w - roiW) / 2);
+      const roiY = Math.floor((h - roiH) / 2);
+
+      const frame = ctx.getImageData(roiX, roiY, roiW, roiH);
+      const {r, g, b} = averageColor(frame.data);
+      const eggLabel = classifyEggColor(r, g, b); 
+      const hex = rgbToHex(r, g, b);
+
+      // Update UI Info
+      let displayName = "Menunggu...";
+      if (eggLabel === "lightbrown") displayName = "Light Brown (A)";
+      else if (eggLabel === "brown") displayName = "Brown (B)";
+      else if (eggLabel === "darkbrown") displayName = "Dark Brown (C)";
+      else displayName = "Tidak Terdeteksi";
+
+      colorPreview.style.backgroundColor = hex;
+      colorNameEl.textContent = displayName;
+      colorNameEl.className = `text-2xl font-canela truncate ${eggLabel === 'unknown' ? 'text-gray-400' : 'text-primary'}`;
+      colorRgbEl.textContent  = `RGB: ${r}, ${g}, ${b}`;
+      colorHexEl.textContent  = `HEX: ${hex}`;
+
+      // Kirim ke Backend (Rate Limited 800ms)
+      const now = Date.now();
+      if (
+        eggLabel !== "unknown" &&
+        eggLabel !== null &&
+        eggLabel !== lastLabel &&
+        (now - lastSentAt) > 800
+      ) {
+        lastLabel = eggLabel;
+        lastSentAt = now;
+        sendEggColorToServer(eggLabel);
+      }
+    }
+    requestAnimationFrame(detectLoop);
+  }
+
+  function averageColor(data) {
+    let r = 0, g = 0, b = 0;
+    const step = 4 * 8; // Optimization: sample pixels
+    for (let i = 0; i < data.length; i += step) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+    }
+    const sampleCount = data.length / step;
+    return { 
+        r: Math.round(r / sampleCount), 
+        g: Math.round(g / sampleCount), 
+        b: Math.round(b / sampleCount) 
+    };
+  }
+
+  // Klasifikasi Sederhana berdasarkan HSV
+  function classifyEggColor(r, g, b) {
+    const hsv = rgbToHsv(r, g, b);
+    const h = hsv.h, s = hsv.s, v = hsv.v;
+
+    // Filter warna coklat/orange (Hue 10-50) & Saturasi cukup
+    const isBrownHue = (h >= 10 && h <= 50);
+    const isEnoughSaturation = s >= 0.25;
+
+    if (!isBrownHue || !isEnoughSaturation) return "unknown";
+
+    if (v >= 0.65) return "lightbrown";
+    else if (v <= 0.40) return "darkbrown";
+    else return "brown";
+  }
+
+  function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+  }
+
+  function rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const d = max - min;
+    let h = 0;
+    const s = max === 0 ? 0 : d / max;
+    const v = max;
+
+    if (max !== min) {
+        if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h /= 6;
+    }
+    return { h: h * 360, s, v };
+  }
+
+  async function sendEggColorToServer(label) {
+    try {
+      await fetch('/eggmonitor/api/egg-color', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label })
+      });
+      // console.log("Sent:", label);
+    } catch (err) {
+      console.error("API Error:", err);
+    }
+  }
+
+  if(btnStartCamera) btnStartCamera.addEventListener('click', startCamera);
+
+  // -----------------------------
+  // Logic Tombol Toggle LED
+  // -----------------------------
+  const ledButtons = document.querySelectorAll('.led-toggle');
+
+  ledButtons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const currentState = btn.getAttribute('data-state');
+      const newState = currentState === 'on' ? 'off' : 'on';
+      const color = btn.getAttribute('data-color'); 
+      const circle = btn.querySelector('.toggle-circle');
+
+      // Update UI Local
+      btn.setAttribute('data-state', newState);
+      if (newState === 'on') {
+        btn.classList.replace('bg-gray-300', 'bg-primary');
+        btn.classList.replace('dark:bg-gray-700', 'bg-primary');
+        circle.style.transform = 'translateX(150%)'; // Move circle right
+      } else {
+        btn.classList.remove('bg-primary');
+        btn.classList.add('bg-gray-300', 'dark:bg-gray-700');
+        circle.style.transform = 'translateX(0)'; // Move circle left
+      }
+
+      // API Call
+      try {
+        await fetch('/eggmonitor/api/wokwi/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ device: color, state: newState })
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Gagal koneksi ke server");
+      }
     });
+  });
 </script>
 {% endblock %}
