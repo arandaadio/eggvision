@@ -421,6 +421,7 @@ def eggmonitor_seller():
         total_unread_chats=total_unread_chats,
         sales_chart_labels=sales_chart_labels,
         sales_chart_data=sales_chart_data,
+        active_menu="eggmart"
     )
 
 #API endpoints to load and reply chats

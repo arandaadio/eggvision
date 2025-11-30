@@ -23,474 +23,6 @@ def get_midtrans_snap():
         client_key=current_app.config.get("MIDTRANS_CLIENT_KEY"),
     )
 
-@eggmart_controller.route('/transaction', methods=['POST'])
-@login_required
-def create_transaction():
-    """
-    Buat transaksi baru.
-    Logic update: Validasi fleksibel (bisa via listing_id ATAU grade+seller_id).
-    """
-    is_json = request.headers.get('Content-Type', '').startswith('application/json') or request.is_json
-    data = request.get_json(silent=True) if is_json else request.form
-
-    try:
-        # Ambil semua parameter yang mungkin dikirim
-        listing_id = int(data.get('listing_id', 0)) 
-        quantity = int(data.get('quantity', 0))
-        grade_input = data.get('grade') 
-        seller_id_input = int(data.get('seller_id', 0))
-    except (TypeError, ValueError):
-        listing_id = 0
-        quantity = 0
-        grade_input = None
-        seller_id_input = 0
-
-    # 1. Validasi Quantity
-    if quantity <= 0:
-        msg = "Jumlah pesanan minimal 1."
-        if is_json: return jsonify(success=False, message=msg), 400
-        flash(msg, "error")
-        return redirect(url_for('eggmart_controller.eggmart'))
-
-    # 2. Validasi Target: Harus ada Listing ID ATAU (Seller ID + Grade)
-    # Ini yang memperbaiki error "Listing tidak valid" sebelumnya
-    if listing_id <= 0 and (not grade_input or seller_id_input <= 0):
-        msg = "Data produk tidak valid (ID Listing atau Grade/Penjual hilang)."
-        if is_json: return jsonify(success=False, message=msg), 400
-        flash(msg, "error")
-        return redirect(url_for('eggmart_controller.eggmart'))
-
-    conn = get_db_connection()
-    if not conn:
-        if is_json: return jsonify(success=False, message="Gagal koneksi database."), 500
-        flash("Gagal koneksi database.", "error")
-        return redirect(url_for('eggmart_controller.eggmart'))
-
-    try:
-        cur = conn.cursor(dictionary=True)
-        
-        listing = None
-        
-        # A. Coba cari by Listing ID (jika ada)
-        if listing_id > 0:
-            cur.execute("SELECT * FROM egg_listings WHERE id = %s AND status='active'", (listing_id,))
-            listing = cur.fetchone()
-        
-        # B. Fallback: Cari listing by Seller + Grade (jika ID 0 atau tidak ketemu)
-        if not listing and grade_input and seller_id_input:
-            cur.execute("SELECT * FROM egg_listings WHERE seller_id = %s AND grade = %s AND status='active'", (seller_id_input, grade_input))
-            listing = cur.fetchone()
-
-        # Jika masih tidak ketemu, berarti penjual belum set harga di menu Listing
-        if not listing:
-            msg = "Produk ini belum diberi harga oleh penjual (Listing belum dibuat)."
-            if is_json: return jsonify(success=False, message=msg), 400
-            flash(msg, "error")
-            return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id_input))
-
-        # Ambil data final dari listing yang ditemukan
-        seller_id = listing['seller_id']
-        grade = listing['grade']
-        price = float(listing['price_per_egg'])
-        
-        # 3. Cek Stok REAL dari egg_scans
-        # Kita ambil ID telur spesifik yang akan dijual
-        cur.execute("""
-            SELECT id FROM egg_scans 
-            WHERE user_id = %s 
-              AND grade = %s 
-              AND status = 'available' 
-              AND (is_listed = FALSE OR is_listed IS NULL)
-            LIMIT %s
-        """, (seller_id, grade, quantity))
-        egg_rows = cur.fetchall()
-
-        if len(egg_rows) < quantity:
-            msg = f"Stok tidak mencukupi. Hanya tersisa {len(egg_rows)} butir."
-            if is_json: return jsonify(success=False, message=msg), 400
-            flash(msg, "error")
-            return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id))
-
-        egg_ids = [r['id'] for r in egg_rows]
-        total = price * quantity
-        order_id_str = f"EGG-{int(time.time())}-{current_user.id}"
-
-        # 4. Insert Order Header
-        cur.execute("""
-            INSERT INTO orders (buyer_id, seller_id, total, midtrans_order_id, status, payment_type, created_at)
-            VALUES (%s, %s, %s, %s, 'pending', 'midtrans_snap', NOW())
-        """, (current_user.id, seller_id, total, order_id_str))
-        order_db_id = cur.lastrowid
-
-        # 5. Insert Order Items & Update Status Telur
-        for eid in egg_ids:
-            cur.execute("INSERT INTO order_items (order_id, egg_scan_id, price, quantity) VALUES (%s, %s, %s, 1)", (order_db_id, eid, price))
-        
-        placeholders = ','.join(['%s'] * len(egg_ids))
-        cur.execute(f"UPDATE egg_scans SET status = 'sold' WHERE id IN ({placeholders})", egg_ids)
-
-        # 6. Update Listing Cache (Stok tampilan)
-        new_stock = max(0, listing['stock_eggs'] - quantity)
-        cur.execute("UPDATE egg_listings SET stock_eggs = %s WHERE id = %s", (new_stock, listing['id']))
-
-        conn.commit()
-
-        # 7. Midtrans Snap Request
-        snap_token = None
-        server_key = current_app.config.get("MIDTRANS_SERVER_KEY")
-        if server_key:
-            try:
-                snap = get_midtrans_snap()
-                param = {
-                    "transaction_details": {"order_id": order_id_str, "gross_amount": int(total)},
-                    "credit_card": {"secure": True},
-                    "customer_details": {"first_name": current_user.name, "email": current_user.email},
-                    "item_details": [{"id": str(listing['id']), "price": int(price), "quantity": quantity, "name": f"Telur Grade {grade}"}]
-                }
-                transaction = snap.create_transaction(param)
-                snap_token = transaction['token']
-                
-                # Simpan token ke DB
-                cur.execute("UPDATE orders SET midtrans_transaction_id = %s WHERE id = %s", (snap_token, order_db_id))
-                conn.commit()
-            except Exception as e:
-                print(f"Midtrans Error: {e}")
-
-        cur.close()
-        
-        # Return JSON untuk Frontend JS
-        if is_json:
-            return jsonify(success=True, snap_token=snap_token, order_id=order_id_str)
-        else:
-            flash("Order berhasil dibuat.", "success")
-            return redirect(url_for('eggmart_controller.eggmartHistory'))
-
-    except Exception as e:
-        if conn: conn.rollback()
-        print(f"Transaction Error: {e}")
-        if is_json: return jsonify(success=False, message="Terjadi kesalahan server"), 500
-        flash("Terjadi kesalahan server.", "error")
-        return redirect(url_for('eggmart_controller.eggmart'))
-    finally:
-        if conn: conn.close()
-
-@eggmart_controller.route('/dashboard')
-@login_required
-def eggmartDashboard():
-    """
-    Dashboard EggMart untuk PENGUSAHA / ADMIN:
-    - Telur ready per grade (egg_scans)
-    - Listing aktif (egg_listings)
-    - Kartu statistik hari ini
-    - Line chart penjualan 7 hari
-    - Kategori terlaris per grade 30 hari
-    - Transaksi terbaru
-    - Daftar chat + isi chat + performa chat
-    """
-    now = datetime.now()
-
-    available_by_grade = {}
-    listings = []
-
-    # Kartu statistik
-    cards = {
-        'today': {
-            'sold_eggs': 0,        # total butir terjual hari ini
-            'completed_orders': 0  # order selesai hari ini
-        }
-    }
-
-    # Rating toko
-    store_rating = {'avg_rating': 0.0, 'total_reviews': 0}
-
-    # Kategori terlaris (per grade)
-    best_grades = []
-
-    # Transaksi terbaru
-    recent_orders = []
-
-    # Chat dashboard
-    chat_threads = []         # list sesi chat (untuk list di kanan)
-    chat_response_rate = 0    # persen sesi yang sudah dibalas admin/seller
-    total_unread_chats = 0    # total pesan belum dibaca
-
-    # Data untuk line chart
-    sales_chart_labels = []   # ['Mon', 'Tue', ...]
-    sales_chart_data = []     # [10, 5, ...]
-
-    conn = get_db_connection()
-    if conn:
-        try:
-            cur = conn.cursor(dictionary=True)
-            seller_id = current_user.id
-
-            # ==========================
-            # 1) Telur ready (belum di-list) per grade
-            # ==========================
-            cur.execute("""
-                SELECT grade, COUNT(*) AS qty
-                FROM egg_scans
-                WHERE user_id = %s
-                  AND status = 'available'
-                  AND (is_listed = FALSE OR is_listed IS NULL)
-                GROUP BY grade
-            """, (seller_id,))
-            for row in cur.fetchall():
-                available_by_grade[row["grade"]] = row["qty"]
-
-            # ==========================
-            # 2) Listing aktif milik seller ini
-            # ==========================
-            cur.execute("""
-                SELECT id, grade, stock_eggs, price_per_egg, status
-                FROM egg_listings
-                WHERE seller_id = %s
-                ORDER BY grade
-            """, (seller_id,))
-            for row in cur.fetchall():
-                listings.append({
-                    "id": row["id"],
-                    "grade": row["grade"],
-                    "stock": row["stock_eggs"],
-                    "price": row["price_per_egg"],
-                    "status": row["status"],
-                })
-
-            # ==========================
-            # 3) Kartu statistik hari ini
-            # ==========================
-            today_start = datetime(now.year, now.month, now.day)
-            today_end = today_start + timedelta(days=1)
-
-            cur.execute("""
-                SELECT 
-                    COALESCE(SUM(oi.quantity), 0) AS eggs_sold,
-                    COUNT(DISTINCT o.id) AS orders_completed
-                FROM orders o
-                JOIN order_items oi ON oi.order_id = o.id
-                JOIN egg_scans es ON es.id = oi.egg_scan_id
-                WHERE o.seller_id = %s
-                  AND o.status IN ('paid','settlement')
-                  AND o.created_at >= %s
-                  AND o.created_at < %s
-            """, (seller_id, today_start, today_end))
-            row = cur.fetchone()
-            if row:
-                cards['today']['sold_eggs'] = int(row['eggs_sold'] or 0)
-                cards['today']['completed_orders'] = int(row['orders_completed'] or 0)
-
-            # ==========================
-            # 4) Rating toko (semua waktu)
-            # ==========================
-            cur.execute("""
-                SELECT 
-                    COALESCE(AVG(rating), 0) AS avg_rating,
-                    COUNT(*) AS total_reviews
-                FROM seller_ratings
-                WHERE seller_id = %s
-            """, (seller_id,))
-            row = cur.fetchone()
-            if row:
-                store_rating['avg_rating'] = float(row['avg_rating'] or 0)
-                store_rating['total_reviews'] = int(row['total_reviews'] or 0)
-
-            # ==========================
-            # 5) Kategori terlaris (grade) 30 hari terakhir
-            # ==========================
-            start_30 = now - timedelta(days=30)
-            cur.execute("""
-                SELECT es.grade, COALESCE(SUM(oi.quantity), 0) AS qty
-                FROM orders o
-                JOIN order_items oi ON oi.order_id = o.id
-                JOIN egg_scans es ON es.id = oi.egg_scan_id
-                WHERE o.seller_id = %s
-                  AND o.status IN ('paid','settlement')
-                  AND o.created_at >= %s
-                GROUP BY es.grade
-            """, (seller_id, start_30))
-            rows = cur.fetchall()
-            total_qty = sum(r['qty'] for r in rows) or 0
-            if total_qty == 0:
-                total_qty = 1  # hindari bagi 0
-
-            for r in rows:
-                pct = round((r['qty'] / total_qty) * 100)
-                best_grades.append({
-                    'label': f"Grade {r['grade']}",
-                    'grade': r['grade'],
-                    'qty': int(r['qty']),
-                    'percent': pct,
-                })
-
-            # ==========================
-            # 6) Line chart penjualan 7 hari terakhir
-            # ==========================
-            start_7 = now - timedelta(days=6)             # 6 hari ke belakang + hari ini
-            start_7_date = datetime(start_7.year, start_7.month, start_7.day)
-
-            cur.execute("""
-                SELECT DATE(o.created_at) AS d,
-                       COALESCE(SUM(oi.quantity),0) AS qty
-                FROM orders o
-                JOIN order_items oi ON oi.order_id = o.id
-                JOIN egg_scans es ON es.id = oi.egg_scan_id
-                WHERE o.seller_id = %s
-                  AND o.status IN ('paid','settlement')
-                  AND o.created_at >= %s
-                GROUP BY DATE(o.created_at)
-                ORDER BY d
-            """, (seller_id, start_7_date))
-            data_by_date = {}
-            for row in cur.fetchall():
-                key = row['d'].strftime('%Y-%m-%d')
-                data_by_date[key] = int(row['qty'] or 0)
-
-            day_cursor = start_7_date
-            for _ in range(7):
-                key = day_cursor.strftime('%Y-%m-%d')
-                label = day_cursor.strftime('%a')  # Mon, Tue, ...
-                sales_chart_labels.append(label)
-                sales_chart_data.append(data_by_date.get(key, 0))
-                day_cursor += timedelta(days=1)
-
-            # ==========================
-            # 7) Transaksi terbaru (5 terakhir)
-            # ==========================
-            cur.execute("""
-                SELECT 
-                    o.id,
-                    o.created_at,
-                    o.status,
-                    o.total,
-                    u.name AS buyer_name,
-                    COUNT(DISTINCT oi.egg_scan_id) AS eggs_count
-                FROM orders o
-                LEFT JOIN users u ON u.id = o.buyer_id
-                LEFT JOIN order_items oi ON oi.order_id = o.id
-                WHERE o.seller_id = %s
-                GROUP BY o.id, o.created_at, o.status, o.total, u.name
-                ORDER BY o.created_at DESC
-                LIMIT 5
-            """, (seller_id,))
-            for row in cur.fetchall():
-                recent_orders.append({
-                    'id': row['id'],
-                    'code': f"TRX{row['id']:03d}",
-                    'buyer_name': row['buyer_name'] or 'Guest',
-                    'eggs_count': int(row['eggs_count'] or 0),
-                    'total': float(row['total'] or 0),
-                    'status': row['status'],
-                    'created_at': row['created_at'],
-                })
-
-            # ==========================
-            # 8) Chat sessions khusus seller ini
-            #     guest_email diset sebagai 'seller:{seller_id}'
-            # ==========================
-            seller_key = f"seller:{seller_id}"
-
-            cur.execute("""
-                SELECT 
-                    cs.id,
-                    cs.user_id AS buyer_id,
-                    u.name AS buyer_name,
-                    cs.status,
-                    cs.last_message_at,
-                    (
-                        SELECT message
-                        FROM chat_messages cm
-                        WHERE cm.session_id = cs.id
-                        ORDER BY cm.created_at DESC
-                        LIMIT 1
-                    ) AS last_message,
-                    (
-                        SELECT COUNT(*)
-                        FROM chat_messages cm2
-                        WHERE cm2.session_id = cs.id
-                          AND cm2.status = 'unread'
-                          AND cm2.message_type IN ('guest_to_admin', 'user_to_admin')
-                    ) AS unread_count
-                FROM chat_sessions cs
-                LEFT JOIN users u ON u.id = cs.user_id
-                WHERE cs.guest_email = %s
-                ORDER BY cs.last_message_at DESC
-                LIMIT 10
-            """, (seller_key,))
-            session_rows = cur.fetchall()
-
-            for row in session_rows:
-                name = row['buyer_name'] or f"Pembeli #{row['buyer_id'] or row['id']}"
-                initials = ''.join([part[0].upper() for part in name.split()[:2]]) or 'PB'
-                unread = int(row['unread_count'] or 0)
-                total_unread_chats += unread
-
-                chat_threads.append({
-                    'id': row['id'],
-                    'name': name,
-                    'initials': initials,
-                    'status': row['status'],
-                    'last_message': row['last_message'] or '',
-                    'last_time': row['last_message_at'],
-                    'unread': unread,
-                    # dipakai JS untuk fetch pesan (GET/POST)
-                    'fetch_url': url_for('eggmart_controller.seller_chat_thread', session_id=row['id']),
-                })
-
-            # ==========================
-            # 9) Performa chat (response rate) per seller
-            # ==========================
-            cur.execute("""
-                SELECT COUNT(*) AS total_sessions
-                FROM chat_sessions
-                WHERE guest_email = %s
-            """, (seller_key,))
-            row = cur.fetchone()
-            total_sessions = row['total_sessions'] or 0
-
-            cur.execute("""
-                SELECT COUNT(*) AS responded_sessions
-                FROM chat_sessions cs
-                WHERE cs.guest_email = %s
-                  AND EXISTS (
-                    SELECT 1
-                    FROM chat_messages cm_g
-                    WHERE cm_g.session_id = cs.id
-                      AND cm_g.message_type IN ('guest_to_admin','user_to_admin')
-                  )
-                  AND EXISTS (
-                    SELECT 1
-                    FROM chat_messages cm_a
-                    WHERE cm_a.session_id = cs.id
-                      AND cm_a.message_type IN ('admin_to_guest','admin_to_user')
-                  )
-            """, (seller_key,))
-            row = cur.fetchone()
-            responded_sessions = row['responded_sessions'] or 0
-
-            if total_sessions > 0:
-                chat_response_rate = round(responded_sessions * 100 / total_sessions)
-
-            cur.close()
-        finally:
-            conn.close()
-
-    # Render ke template
-    return render_template(
-        'eggmart/index.html',
-        active_menu="dashboard",
-        now=now,
-        available_by_grade=available_by_grade,
-        listings=listings,
-        cards=cards,
-        store_rating=store_rating,
-        best_grades=best_grades,
-        recent_orders=recent_orders,
-        chat_threads=chat_threads,
-        chat_response_rate=chat_response_rate,
-        total_unread_chats=total_unread_chats,
-        sales_chart_labels=sales_chart_labels,
-        sales_chart_data=sales_chart_data,
-    )
 
 @eggmart_controller.route('/eggmart/listing/save', methods=['POST'])
 @login_required
@@ -636,7 +168,7 @@ def save_listing():
     return redirect(url_for('eggmart_controller.eggmartDashboard'))
 
 # ==============================================================================
-# 1. FUNGSI KATALOG DENGAN FILTER (YANG SEBELUMNYA SALAH/KURANG)
+# 1. KATALOG
 # ==============================================================================
 
 @eggmart_controller.route('/catalog')
@@ -795,8 +327,6 @@ def eggmart():
         filters=current_filters
     )
 
-# Di dalam file eggmart_controller.py
-
 @eggmart_controller.route('/api/catalog/filter', methods=['GET'])
 @login_required
 def api_filter_catalog():
@@ -927,7 +457,7 @@ def api_filter_catalog():
     return jsonify({'success': True, 'sellers': sellers})
     
 # ==============================================================================
-# 2. FUNGSI BARU: API UPDATE PROFILE (YANG HILANG)
+# 2. KATALOG = API UPDATE PROFILE 
 # ==============================================================================
 
 @eggmart_controller.route('/api/profile/update', methods=['POST'])
@@ -1071,7 +601,7 @@ def eggmartDetail(seller_id):
     )
 
 # ==========================
-# API CHAT BUYER <-> SELLER
+# 2. KATALOG = API CHAT BUYER <-> SELLER
 # ==========================
 
 @eggmart_controller.route('/chat/<int:seller_id>', methods=['GET'])
@@ -1235,116 +765,6 @@ def send_chat_to_seller(seller_id):
     finally:
         conn.close()
 
-@eggmart_controller.route('/history')
-@login_required
-def eggmartHistory():
-    """Halaman riwayat transaksi"""
-    now = datetime.now()
-    buyer_orders = []
-
-    conn = get_db_connection()
-    if not conn:
-        flash("Gagal koneksi ke database.", "error")
-        return redirect(url_for('eggmart_controller.eggmart'))
-
-    try:
-        cur = conn.cursor(dictionary=True)
-
-        # 1. AUTO-EXPIRE LOGIC - Use 'expired' instead of 'expire'
-        expiry_time = now - timedelta(hours=1) 
-        cur.execute("""
-            UPDATE orders 
-            SET status = 'expired' 
-            WHERE status = 'pending' AND created_at < %s
-        """, (expiry_time,))
-        conn.commit()
-
-        # 2. FETCH HISTORY (rest of your existing code remains the same)
-        cur.execute("""
-            SELECT 
-                o.id,
-                o.midtrans_order_id,
-                o.midtrans_transaction_id AS snap_token, 
-                o.total,
-                o.status,
-                o.created_at,
-                u.name AS seller_name,
-                u.farm_name,
-                u.farm_location,
-                COALESCE(SUM(oi.quantity), 0) AS total_eggs
-            FROM orders o
-            LEFT JOIN users u ON u.id = o.seller_id
-            LEFT JOIN order_items oi ON oi.order_id = o.id
-            WHERE o.buyer_id = %s
-            GROUP BY 
-                o.id, o.midtrans_order_id, o.midtrans_transaction_id, o.total, o.status, 
-                o.created_at, u.name, u.farm_name, u.farm_location
-            ORDER BY o.created_at DESC
-        """, (current_user.id,))
-        
-        rows = cur.fetchall()
-        print(f"DEBUG: Found {len(rows)} orders for user {current_user.id}")  # Debug line
-
-        # 3. Fetch Items Details
-        if rows:
-            order_ids = [str(r['id']) for r in rows]
-            placeholders = ','.join(order_ids)
-            
-            # Use format safely here since order_ids are integers generated by system
-            cur.execute(f"""
-                SELECT oi.order_id, oi.quantity, oi.price, es.grade
-                FROM order_items oi
-                JOIN egg_scans es ON es.id = oi.egg_scan_id
-                WHERE oi.order_id IN ({placeholders})
-            """)
-            items = cur.fetchall()
-            
-            items_map = {}
-            for item in items:
-                oid = item['order_id']
-                if oid not in items_map: items_map[oid] = []
-                items_map[oid].append(item)
-
-            for r in rows:
-                r_items = items_map.get(r['id'], [])
-                
-                grade_counts = {}
-                for i in r_items:
-                    g = i['grade']
-                    grade_counts[g] = grade_counts.get(g, 0) + i['quantity']
-                desc_parts = [f"Grade {g} ({q}x)" for g, q in grade_counts.items()]
-                
-                buyer_orders.append({
-                    "id": r['id'],
-                    "code": r['midtrans_order_id'],
-                    "snap_token": r['snap_token'],
-                    "seller_name": r['farm_name'] or r['seller_name'],
-                    "location": r['farm_location'],
-                    "total": float(r['total'] or 0),
-                    "status": r['status'], 
-                    "date": r['created_at'],
-                    "total_qty": int(r['total_eggs'] or 0),
-                    "description": ", ".join(desc_parts),
-                    "items": r_items
-                })
-
-        cur.close()
-    except mysql.connector.Error as e:
-        print("History DB Error:", e)
-    finally:
-        conn.close()
-
-    new_order_code = request.args.get('new_order_code')
-    new_order_data = next((o for o in buyer_orders if o['code'] == new_order_code), None)
-
-    return render_template(
-        'eggmart/history.html',
-        orders=buyer_orders,
-        new_order=new_order_data,
-        active_menu='history',
-        midtrans_client_key=current_app.config.get("MIDTRANS_CLIENT_KEY") 
-    )
-
 @eggmart_controller.route('/chat/start/<int:seller_id>')
 @login_required
 def start_chat(seller_id):
@@ -1481,3 +901,354 @@ def api_buyer_send_chat():
         return jsonify({'success': True})
     finally:
         conn.close()
+
+# ==============================================================================
+# 3. HISTORY
+# ==============================================================================
+
+@eggmart_controller.route('/history')
+@login_required
+def eggmartHistory():
+    """Halaman riwayat transaksi"""
+    now = datetime.now()
+    buyer_orders = []
+
+    conn = get_db_connection()
+    if not conn:
+        flash("Gagal koneksi ke database.", "error")
+        return redirect(url_for('eggmart_controller.eggmart'))
+
+    try:
+        cur = conn.cursor(dictionary=True)
+
+        # 1. AUTO-EXPIRE LOGIC - Use 'expired' instead of 'expire'
+        expiry_time = now - timedelta(hours=1) 
+        cur.execute("""
+            UPDATE orders 
+            SET status = 'expired' 
+            WHERE status = 'pending' AND created_at < %s
+        """, (expiry_time,))
+        conn.commit()
+
+        # 2. FETCH HISTORY (rest of your existing code remains the same)
+        cur.execute("""
+            SELECT 
+                o.id,
+                o.midtrans_order_id,
+                o.midtrans_transaction_id AS snap_token, 
+                o.total,
+                o.status,
+                o.created_at,
+                u.name AS seller_name,
+                u.farm_name,
+                u.farm_location,
+                COALESCE(SUM(oi.quantity), 0) AS total_eggs
+            FROM orders o
+            LEFT JOIN users u ON u.id = o.seller_id
+            LEFT JOIN order_items oi ON oi.order_id = o.id
+            WHERE o.buyer_id = %s
+            GROUP BY 
+                o.id, o.midtrans_order_id, o.midtrans_transaction_id, o.total, o.status, 
+                o.created_at, u.name, u.farm_name, u.farm_location
+            ORDER BY o.created_at DESC
+        """, (current_user.id,))
+        
+        rows = cur.fetchall()
+        print(f"DEBUG: Found {len(rows)} orders for user {current_user.id}")  # Debug line
+
+        # 3. Fetch Items Details
+        if rows:
+            order_ids = [str(r['id']) for r in rows]
+            placeholders = ','.join(order_ids)
+            
+            # Use format safely here since order_ids are integers generated by system
+            cur.execute(f"""
+                SELECT oi.order_id, oi.quantity, oi.price, es.grade
+                FROM order_items oi
+                JOIN egg_scans es ON es.id = oi.egg_scan_id
+                WHERE oi.order_id IN ({placeholders})
+            """)
+            items = cur.fetchall()
+            
+            items_map = {}
+            for item in items:
+                oid = item['order_id']
+                if oid not in items_map: items_map[oid] = []
+                items_map[oid].append(item)
+
+            for r in rows:
+                r_items = items_map.get(r['id'], [])
+                
+                grade_counts = {}
+                for i in r_items:
+                    g = i['grade']
+                    grade_counts[g] = grade_counts.get(g, 0) + i['quantity']
+                desc_parts = [f"Grade {g} ({q}x)" for g, q in grade_counts.items()]
+                
+                buyer_orders.append({
+                    "id": r['id'],
+                    "code": r['midtrans_order_id'],
+                    "snap_token": r['snap_token'],
+                    "seller_name": r['farm_name'] or r['seller_name'],
+                    "location": r['farm_location'],
+                    "total": float(r['total'] or 0),
+                    "status": r['status'], 
+                    "date": r['created_at'],
+                    "total_qty": int(r['total_eggs'] or 0),
+                    "description": ", ".join(desc_parts),
+                    "items": r_items
+                })
+
+        cur.close()
+    except mysql.connector.Error as e:
+        print("History DB Error:", e)
+    finally:
+        conn.close()
+
+    new_order_code = request.args.get('new_order_code')
+    new_order_data = next((o for o in buyer_orders if o['code'] == new_order_code), None)
+
+    return render_template(
+        'eggmart/history.html',
+        orders=buyer_orders,
+        new_order=new_order_data,
+        active_menu='history',
+        midtrans_client_key=current_app.config.get("MIDTRANS_CLIENT_KEY") 
+    )
+
+@eggmart_controller.route('/transaction', methods=['POST'])
+@login_required
+def create_transaction():
+    """
+    Buat transaksi baru.
+    Logic update: Validasi fleksibel (bisa via listing_id ATAU grade+seller_id).
+    """
+    is_json = request.headers.get('Content-Type', '').startswith('application/json') or request.is_json
+    data = request.get_json(silent=True) if is_json else request.form
+
+    try:
+        # Ambil semua parameter yang mungkin dikirim
+        listing_id = int(data.get('listing_id', 0)) 
+        quantity = int(data.get('quantity', 0))
+        grade_input = data.get('grade') 
+        seller_id_input = int(data.get('seller_id', 0))
+    except (TypeError, ValueError):
+        listing_id = 0
+        quantity = 0
+        grade_input = None
+        seller_id_input = 0
+
+    # 1. Validasi Quantity
+    if quantity <= 0:
+        msg = "Jumlah pesanan minimal 1."
+        if is_json: return jsonify(success=False, message=msg), 400
+        flash(msg, "error")
+        return redirect(url_for('eggmart_controller.eggmart'))
+
+    # 2. Validasi Target: Harus ada Listing ID ATAU (Seller ID + Grade)
+    # Ini yang memperbaiki error "Listing tidak valid" sebelumnya
+    if listing_id <= 0 and (not grade_input or seller_id_input <= 0):
+        msg = "Data produk tidak valid (ID Listing atau Grade/Penjual hilang)."
+        if is_json: return jsonify(success=False, message=msg), 400
+        flash(msg, "error")
+        return redirect(url_for('eggmart_controller.eggmart'))
+
+    conn = get_db_connection()
+    if not conn:
+        if is_json: return jsonify(success=False, message="Gagal koneksi database."), 500
+        flash("Gagal koneksi database.", "error")
+        return redirect(url_for('eggmart_controller.eggmart'))
+
+    try:
+        cur = conn.cursor(dictionary=True)
+        
+        listing = None
+        
+        # A. Coba cari by Listing ID (jika ada)
+        if listing_id > 0:
+            cur.execute("SELECT * FROM egg_listings WHERE id = %s AND status='active'", (listing_id,))
+            listing = cur.fetchone()
+        
+        # B. Fallback: Cari listing by Seller + Grade (jika ID 0 atau tidak ketemu)
+        if not listing and grade_input and seller_id_input:
+            cur.execute("SELECT * FROM egg_listings WHERE seller_id = %s AND grade = %s AND status='active'", (seller_id_input, grade_input))
+            listing = cur.fetchone()
+
+        # Jika masih tidak ketemu, berarti penjual belum set harga di menu Listing
+        if not listing:
+            msg = "Produk ini belum diberi harga oleh penjual (Listing belum dibuat)."
+            if is_json: return jsonify(success=False, message=msg), 400
+            flash(msg, "error")
+            return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id_input))
+
+        # Ambil data final dari listing yang ditemukan
+        seller_id = listing['seller_id']
+        grade = listing['grade']
+        price = float(listing['price_per_egg'])
+        
+        # 3. Cek Stok REAL dari egg_scans
+        # Kita ambil ID telur spesifik yang akan dijual
+        cur.execute("""
+            SELECT id FROM egg_scans 
+            WHERE user_id = %s 
+              AND grade = %s 
+              AND status = 'available' 
+              AND (is_listed = FALSE OR is_listed IS NULL)
+            LIMIT %s
+        """, (seller_id, grade, quantity))
+        egg_rows = cur.fetchall()
+
+        if len(egg_rows) < quantity:
+            msg = f"Stok tidak mencukupi. Hanya tersisa {len(egg_rows)} butir."
+            if is_json: return jsonify(success=False, message=msg), 400
+            flash(msg, "error")
+            return redirect(url_for('eggmart_controller.eggmartDetail', seller_id=seller_id))
+
+        egg_ids = [r['id'] for r in egg_rows]
+        total = price * quantity
+        order_id_str = f"EGG-{int(time.time())}-{current_user.id}"
+
+        # 4. Insert Order Header
+        cur.execute("""
+            INSERT INTO orders (buyer_id, seller_id, total, midtrans_order_id, status, payment_type, created_at)
+            VALUES (%s, %s, %s, %s, 'pending', 'midtrans_snap', NOW())
+        """, (current_user.id, seller_id, total, order_id_str))
+        order_db_id = cur.lastrowid
+
+        # 5. Insert Order Items & Update Status Telur
+        for eid in egg_ids:
+            cur.execute("INSERT INTO order_items (order_id, egg_scan_id, price, quantity) VALUES (%s, %s, %s, 1)", (order_db_id, eid, price))
+        
+        placeholders = ','.join(['%s'] * len(egg_ids))
+        cur.execute(f"UPDATE egg_scans SET status = 'sold' WHERE id IN ({placeholders})", egg_ids)
+
+        # 6. Update Listing Cache (Stok tampilan)
+        new_stock = max(0, listing['stock_eggs'] - quantity)
+        cur.execute("UPDATE egg_listings SET stock_eggs = %s WHERE id = %s", (new_stock, listing['id']))
+
+        conn.commit()
+
+        # 7. Midtrans Snap Request
+        snap_token = None
+        server_key = current_app.config.get("MIDTRANS_SERVER_KEY")
+        if server_key:
+            try:
+                snap = get_midtrans_snap()
+                param = {
+                    "transaction_details": {"order_id": order_id_str, "gross_amount": int(total)},
+                    "credit_card": {"secure": True},
+                    "customer_details": {"first_name": current_user.name, "email": current_user.email},
+                    "item_details": [{"id": str(listing['id']), "price": int(price), "quantity": quantity, "name": f"Telur Grade {grade}"}]
+                }
+                transaction = snap.create_transaction(param)
+                snap_token = transaction['token']
+                
+                # Simpan token ke DB
+                cur.execute("UPDATE orders SET midtrans_transaction_id = %s WHERE id = %s", (snap_token, order_db_id))
+                conn.commit()
+            except Exception as e:
+                print(f"Midtrans Error: {e}")
+
+        cur.close()
+        
+        # Return JSON untuk Frontend JS
+        if is_json:
+            return jsonify(success=True, snap_token=snap_token, order_id=order_id_str)
+        else:
+            flash("Order berhasil dibuat.", "success")
+            return redirect(url_for('eggmart_controller.eggmartHistory'))
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Transaction Error: {e}")
+        if is_json: return jsonify(success=False, message="Terjadi kesalahan server"), 500
+        flash("Terjadi kesalahan server.", "error")
+        return redirect(url_for('eggmart_controller.eggmart'))
+    finally:
+        if conn: conn.close()
+
+@eggmart_controller.route('/api/midtrans/notification', methods=['POST'])
+def midtrans_notification():
+    """
+    Webhook untuk menerima notification dari Midtrans
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            print("Midtrans Notification: No JSON data received")
+            return jsonify({'status': 'error', 'message': 'No data received'}), 400
+
+        order_id = data.get('order_id')
+        transaction_status = data.get('transaction_status')
+        fraud_status = data.get('fraud_status')
+
+        print(f"Midtrans Notification: {order_id} - {transaction_status} - Fraud: {fraud_status}")
+
+        conn = get_db_connection()
+        if not conn:
+            print("Midtrans Notification: Database connection failed")
+            return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
+
+        try:
+            cur = conn.cursor(dictionary=True)
+            
+            # Cari order berdasarkan midtrans_order_id
+            cur.execute("SELECT id, status FROM orders WHERE midtrans_order_id = %s", (order_id,))
+            order = cur.fetchone()
+            
+            if not order:
+                print(f"Midtrans Notification: Order not found: {order_id}")
+                return jsonify({'status': 'error', 'message': 'Order not found'}), 404
+
+            new_status = None
+            
+            # Update status berdasarkan notifikasi Midtrans
+            if transaction_status == 'capture':
+                if fraud_status == 'challenge':
+                    new_status = 'challenge'
+                else:
+                    new_status = 'paid'
+            elif transaction_status == 'settlement':
+                new_status = 'settlement'
+            elif transaction_status == 'pending':
+                new_status = 'pending'
+            elif transaction_status == 'deny':
+                new_status = 'denied'
+            elif transaction_status == 'expire':
+                new_status = 'expired'
+            elif transaction_status == 'cancel':
+                new_status = 'cancelled'
+
+            print(f"Current status: {order['status']}, New status: {new_status}")
+
+            if new_status and new_status != order['status']:
+                cur.execute("UPDATE orders SET status = %s, updated_at = NOW() WHERE id = %s", (new_status, order['id']))
+                conn.commit()
+                print(f"Order {order_id} status updated to: {new_status}")
+
+                # If payment is successful, also update egg_scans status if needed
+                if new_status in ['paid', 'settlement']:
+                    cur.execute("""
+                        UPDATE egg_scans es
+                        JOIN order_items oi ON oi.egg_scan_id = es.id
+                        JOIN orders o ON o.id = oi.order_id
+                        SET es.status = 'sold'
+                        WHERE o.id = %s AND es.status != 'sold'
+                    """, (order['id'],))
+                    conn.commit()
+                    print(f"Updated egg_scans to 'sold' for order {order['id']}")
+
+            cur.close()
+            return jsonify({'status': 'ok', 'message': 'Notification processed'})
+
+        except Exception as e:
+            conn.rollback()
+            print(f"Error processing Midtrans notification: {e}")
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+        finally:
+            if conn:
+                conn.close()
+
+    except Exception as e:
+        print(f"Midtrans notification error: {e}")
+        return jsonify({'status': 'error', 'message': 'Processing failed'}), 500

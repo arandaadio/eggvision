@@ -66,8 +66,7 @@
 
   <div class="lg:hidden flex items-center justify-between p-4 border-b border-border dark:border-dark-border bg-sidebar dark:bg-dark-surface sticky top-0 z-50 transition-colors duration-300">
       <div class="flex items-center gap-2">
-        <img src="{{ url_for('static', filename='img/logo.png') }}" class="w-8 h-8 object-contain">
-        <span class="text-primary font-canela font-bold">EGGVISION</span>
+        <img src="{{ url_for('static', filename='img/logomon-mob.png') }}" class="w-full h-auto max-w-[120px] object-contain">
       </div>
       <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-white/5 text-ink dark:text-white">
         <i data-lucide="menu" class="w-6 h-6"></i>
@@ -78,10 +77,8 @@
          :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'">
     
     <div class="hidden lg:flex p-6 border-b border-sidebar-border dark:border-dark-border flex-col items-center gap-2">
-        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-           <img src="{{ url_for('static', filename='img/logo.png') }}" class="w-8 h-8 object-contain">
+           <img src="{{ url_for('static', filename='img/logomon.png') }}" class="w-full h-auto max-w-[200px] object-contain">
         </div>
-        <span class="text-primary text-sm font-canela font-normal">EGGVISION</span>
     </div>
 
     <div class="lg:hidden p-4 flex justify-end border-b border-sidebar-border dark:border-dark-border text-ink dark:text-white">

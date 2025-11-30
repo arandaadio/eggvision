@@ -1,5 +1,4 @@
 {% extends "eggmart/base.html" %}
-
 {% block title %}Riwayat Transaksi · EggMart{% endblock %}
 
 {% block head %}
@@ -14,6 +13,7 @@
     tab: 'all',
     invoiceOpen: false,
     activeInvoice: {},
+    loading: false,
     
     // Format Currency
     formatRupiah(num) {
@@ -37,11 +37,51 @@
     payAgain(token) {
         if (!token) { alert('Token pembayaran tidak valid.'); return; }
         window.snap.pay(token, {
-            onSuccess: function(result){ window.location.reload(); },
-            onPending: function(result){ window.location.reload(); },
-            onError: function(result){ console.log('error'); },
-            onClose: function(){ console.log('customer closed the popup without finishing the payment'); }
+            onSuccess: function(result){ 
+                // Refresh page after successful payment
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            },
+            onPending: function(result){ 
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            },
+            onError: function(result){ 
+                console.log('payment error');
+            },
+            onClose: function(){ 
+                console.log('customer closed the popup without finishing the payment');
+            }
         });
+    },
+
+    // Manual status check
+    async checkStatus(orderId) {
+        this.loading = true;
+        try {
+            const response = await fetch('/api/orders/check-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ order_id: orderId })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                // Refresh the page to show updated status
+                window.location.reload();
+            } else {
+                alert('Gagal memeriksa status: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Status check error:', error);
+            alert('Terjadi kesalahan saat memeriksa status');
+        } finally {
+            this.loading = false;
+        }
     },
 
     // Get status category for filtering
@@ -49,8 +89,20 @@
         if (status === 'pending') return 'pending';
         if (['paid', 'settlement', 'capture'].includes(status)) return 'success';
         return 'failed';
+    },
+
+    // Auto-refresh pending orders
+    initAutoRefresh() {
+        // Refresh page every 30 seconds if there are pending orders
+        const hasPendingOrders = {{ orders | selectattr('status', 'equalto', 'pending') | list | length }} > 0;
+        if (hasPendingOrders) {
+            setInterval(() => {
+                window.location.reload();
+            }, 30000); // 30 seconds
+        }
     }
-}">
+}"
+x-init="initAutoRefresh()">
     
     <header class="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-dark-border bg-paper/90 dark:bg-dark-surface/90 backdrop-blur-md transition-colors duration-300">
         <div class="container mx-auto px-4 h-20 flex items-center justify-between">
@@ -80,6 +132,18 @@
     </header>
 
     <div class="container mx-auto px-4 py-8 max-w-4xl min-h-screen">
+
+        <!-- Auto-refresh notification -->
+        <template x-if="{{ orders | selectattr('status', 'equalto', 'pending') | list | length }} > 0">
+            <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin"></i>
+                    <p class="text-sm text-blue-700 dark:text-blue-300">
+                        Memantau status pembayaran... Halaman akan refresh otomatis.
+                    </p>
+                </div>
+            </div>
+        </template>
 
         <div class="flex items-center justify-between mb-8">
             <h2 class="font-canela font-normal text-3xl text-ink dark:text-white hidden sm:block">Daftar Pesanan</h2>
