@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, jsonify, session
+from flask import Blueprint, render_template, request, jsonify, session, current_app
 from flask_login import current_user
+from flask_mail import Message
 import datetime
 from datetime import timedelta
 from utils.database import get_db_connection
@@ -246,3 +247,60 @@ def comprof_get_chat_history():
         conn.close()
 
     return jsonify({'success': True, 'messages': messages})
+
+# -- Kontak kami connected to gmail
+@comprof_controller.route('/api/contact/submit', methods=['POST'])
+def submit_contact_form():
+    data = request.get_json()
+    
+    # 1. Get data from frontend
+    name = data.get('name')
+    email = data.get('email')
+    subject = data.get('subject')
+    message_body = data.get('message')
+
+    # 2. Validation
+    if not all([name, email, subject, message_body]):
+        return jsonify({'success': False, 'error': 'Semua field harus diisi.'}), 400
+
+    try:
+        # 3. Get the mail instance from the current app context
+        mail = current_app.extensions.get('mail')
+        
+        if not mail:
+            return jsonify({'success': False, 'error': 'Mail system not configured.'}), 500
+
+        # 4. Construct the email
+        # Email to YOU (The Admin)
+        msg = Message(
+            subject=f"[Kontak EggVision] {subject}",
+            recipients=['eggvision5@gmail.com'], # Where you want to receive the email
+            reply_to=email, # Allows you to click "Reply" and send to the user
+            body=f"""
+            Pesan Baru dari Website EggVision:
+            
+            Nama    : {name}
+            Email   : {email}
+            Subject : {subject}
+            
+            Pesan:
+            {message_body}
+            """
+        )
+
+        # 5. Send
+        mail.send(msg)
+
+        # Optional: Send auto-reply to the user
+        # auto_reply = Message(
+        #     subject="Kami telah menerima pesan Anda - EggVision",
+        #     recipients=[email],
+        #     body=f"Halo {name},\n\nTerima kasih telah menghubungi EggVision. Tim kami akan segera merespons pesan Anda.\n\nSalam,\nTim EggVision"
+        # )
+        # mail.send(auto_reply)
+
+        return jsonify({'success': True, 'message': 'Email sent successfully'})
+
+    except Exception as e:
+        print(f"Mail Error: {e}")
+        return jsonify({'success': False, 'error': 'Gagal mengirim email. Silakan coba lagi.'}), 500

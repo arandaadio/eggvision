@@ -4,7 +4,12 @@
 
 {% block head %}
 <style>
-    html, body { margin: 0; padding: 0; }
+    html, body { 
+        margin: 0; 
+        padding: 0; 
+        scroll-behavior: smooth; 
+    }
+    
     .hero-bg {
         background-image: url("{{ url_for('static', filename='img/eggnews.jpg') }}");
         background-size: cover;
@@ -14,20 +19,53 @@
     }
     .hero-overlay { background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 10%, rgba(255, 255, 255, 1) 100%); }
     .dark .hero-overlay { background: linear-gradient(to bottom, rgba(26, 26, 26, 0.65) 40%, rgba(26, 26, 26, 0.75) 60%, rgba(26, 26, 26, 1) 90%); }
+    
     .hero-section { margin-top: 0 !important; min-height: 90vh; }
     .transparent-nav { background: transparent !important; border-bottom-color: transparent !important; backdrop-filter: none; }
     .solid-nav { background: #000000 !important; border-bottom-color: #1a1a1a !important; backdrop-filter: blur(10px); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Article Typography */
     .newspaper-content { font-family: 'Georgia', 'Times New Roman', serif; line-height: 1.8; font-size: 1.125rem; text-align: justify; }
     .newspaper-content p { margin-bottom: 1.5rem; }
     .drop-cap::first-letter { font-size: 3.5rem; float: left; line-height: 0.8; margin-right: 0.5rem; font-weight: bold; color: #FFD700; }
+
+    /* --- ANIMATION STYLES --- */
+    
+    /* 1. Scroll Reveal (Items animate when scrolled into view) */
+    .reveal-on-scroll {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.8s cubic-bezier(0.5, 0, 0, 1), transform 0.8s cubic-bezier(0.5, 0, 0, 1);
+        will-change: opacity, transform;
+    }
+    
+    .reveal-on-scroll.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Stagger Delays for Grid Items */
+    .delay-0 { transition-delay: 0ms; }
+    .delay-100 { transition-delay: 100ms; }
+    .delay-200 { transition-delay: 200ms; }
+
+    /* 2. Hero Animations (Immediate load) */
+    @keyframes heroFadeUp {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-hero-1 { animation: heroFadeUp 1s cubic-bezier(0.5, 0, 0, 1) forwards; opacity: 0; }
+    .animate-hero-2 { animation: heroFadeUp 1s cubic-bezier(0.5, 0, 0, 1) 0.2s forwards; opacity: 0; }
+
 </style>
 {% endblock %}
 
 {% block content %}
 
-{# 1. PREPARE DATA FOR JAVASCRIPT (With ID included) #}
+{# 1. PREPARE DATA FOR JAVASCRIPT #}
 {% set js_news_list = [] %}
 {% for news in news_list %}
     {% set _ = js_news_list.append({
@@ -47,22 +85,17 @@
     activeNews: {}, 
 
     init() {
-        // Check URL for 'open_id' parameter for Deep Linking
+        // Deep Linking Logic
         const url = new URL(window.location.href);
         const openId = url.searchParams.get('open_id');
         
         if (openId) {
-            // Find the index of the news item with that ID (loose comparison for string/int)
             const index = this.allNews.findIndex(n => n.id == openId);
-            
             if (index !== -1) {
                 setTimeout(() => {
                     this.openNews(index);
-                    
-                    // Remove the 'open_id' from the URL without refreshing
                     url.searchParams.delete('open_id');
                     window.history.replaceState({}, '', url);
-                    
                 }, 300);
             }
         }
@@ -110,10 +143,10 @@
         <div class="hero-overlay absolute inset-0 z-0"></div>
 
         <div class="relative z-10 p-6 max-w-6xl mx-auto">
-            <h1 class="font-title text-7xl md:text-8xl mb-12 text-gray-900 dark:text-pure-white">
+            <h1 class="font-title text-7xl md:text-8xl mb-12 text-gray-900 dark:text-pure-white animate-hero-1">
                 Seputar EggVision
             </h1>      
-            <p class="font-sans text-lg md:text-xl mx-auto mb-12 text-gray-700 dark:text-gray-300">
+            <p class="font-sans text-lg md:text-xl mx-auto mb-12 text-gray-700 dark:text-gray-300 animate-hero-2">
                 Informasi perkembangan terbaru, pencapaian, dan ulasan pembeli dari EggVision
             </p>
         </div>
@@ -168,7 +201,7 @@
             {% if news_list %}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-12">
                 {% for news in news_list %}
-                <article class="group flex flex-col h-full cursor-pointer" @click="openNews({{ loop.index0 }})">
+                <article class="group flex flex-col h-full cursor-pointer reveal-on-scroll delay-{{ (loop.index0 % 3) * 100 }}" @click="openNews({{ loop.index0 }})">
                     <div class="w-full aspect-[3/2] overflow-hidden mb-4 bg-gray-200 dark:bg-gray-800">
                         {% if news.image_url %}
                             <img src="{{ news.image_url }}" alt="{{ news.title }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
@@ -194,7 +227,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="flex flex-col items-center justify-center py-24 text-center">
+            <div class="flex flex-col items-center justify-center py-24 text-center reveal-on-scroll">
                 <div class="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4"><i data-lucide="newspaper" class="w-8 h-8 text-gray-400"></i></div>
                 <h3 class="font-canela text-2xl text-gray-900 dark:text-white">Berita tidak ditemukan</h3>
                 <p class="text-gray-500 mt-2">Coba sesuaikan filter atau kata kunci pencarian Anda.</p>
@@ -258,12 +291,10 @@
                     <div class="newspaper-content drop-cap text-lg leading-relaxed text-gray-800 dark:text-gray-200" x-html="activeNews.content"></div>
 
                     <div class="mt-16 pt-8 border-t border-gray-300 dark:border-gray-700 text-center">
-                        
                         <div class="flex md:hidden justify-between gap-4 mb-6">
                             <button @click.stop="prevNews()" :disabled="currentIndex === 0" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-black dark:text-white disabled:opacity-30 rounded text-xs font-bold uppercase">Previous</button>
                             <button @click.stop="nextNews()" :disabled="currentIndex === allNews.length - 1" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-black dark:text-white disabled:opacity-30 rounded text-xs font-bold uppercase">Next</button>
                         </div>
-
                         <div class="flex justify-center gap-4">
                             <button @click="toggleUI(false)" class="px-8 py-3 bg-black dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-widest hover:bg-premium-gold hover:text-black dark:hover:bg-premium-gold transition-colors">
                                 Close Article
@@ -283,32 +314,22 @@
         const heroSection = document.querySelector('.hero-section');
         
         // --- 1. SCROLL RESTORATION LOGIC ---
-        // Check if we have a saved scroll position for this page
         const savedScrollPosition = sessionStorage.getItem('beritaScrollPos');
-        
         if (savedScrollPosition) {
-            // Restore the scroll position immediately
             window.scrollTo(0, parseInt(savedScrollPosition, 10));
-            // Clear it so it doesn't persist if the user navigates away and back later manually
             sessionStorage.removeItem('beritaScrollPos');
         }
 
-        // Listen for any click on filter links or form submissions
         const filterLinks = document.querySelectorAll('nav a, form select, form button');
-        
         filterLinks.forEach(element => {
-            // Triggers on click for links/buttons, and change for selects
             const eventType = element.tagName === 'SELECT' ? 'change' : 'click';
-            
             element.addEventListener(eventType, function() {
-                // Save current scroll position before the reload happens
                 sessionStorage.setItem('beritaScrollPos', window.scrollY);
             });
         });
 
-
-        // --- 2. NAVBAR TRANSPARENCY LOGIC (Existing) ---
-        const observer = new IntersectionObserver(
+        // --- 2. NAVBAR TRANSPARENCY LOGIC ---
+        const navObserver = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
                     if (!entry.isIntersecting) {
@@ -323,7 +344,26 @@
             { rootMargin: '-100px 0px 0px 0px', threshold: 0 }
         );
     
-        if (heroSection) { observer.observe(heroSection); }
+        if (heroSection) { navObserver.observe(heroSection); }
+
+        // --- 3. SCROLL REVEAL LOGIC (New) ---
+        const scrollObserverOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger animation when 10% of item is visible
+        };
+
+        const scrollObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target); // Animate only once
+                }
+            });
+        }, scrollObserverOptions);
+
+        const revealElements = document.querySelectorAll('.reveal-on-scroll');
+        revealElements.forEach(el => scrollObserver.observe(el));
     });
 </script>
 {% endblock %}

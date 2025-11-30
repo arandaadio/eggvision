@@ -8,6 +8,7 @@
     html, body {
         margin: 0;
         padding: 0;
+        scroll-behavior: smooth;
     }
 
     .hero-bg {
@@ -35,7 +36,7 @@
     }
     
     .hover-grow {
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, border-color 0.3s ease;
     }
     
     .hover-grow:hover {
@@ -55,41 +56,46 @@
         backdrop-filter: blur(10px);
     }
 
-    /* Ensure hero section starts at the top */
     .hero-section {
         margin-top: 0 !important;
         min-height: 90vh;
     }
 
-    /* Adjust content to account for fixed navbar */
     body {
         scroll-padding-top: 96px;
     }
 
-    /* Consistent accent color for both modes */
-    .accent-color {
-        color: #FFD700; /* premium-gold */
+    /* --- ANIMATION CLASSES --- */
+    
+    /* 1. Base state: Hidden and slightly lower */
+    .reveal-on-scroll {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.8s cubic-bezier(0.5, 0, 0, 1), transform 0.8s cubic-bezier(0.5, 0, 0, 1);
+        will-change: opacity, transform;
+    }
+
+    /* 2. Active state: Visible and in place */
+    .reveal-on-scroll.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* 3. Stagger Delays for "Fluid" feel */
+    .delay-100 { transition-delay: 0.1s; }
+    .delay-200 { transition-delay: 0.2s; }
+    .delay-300 { transition-delay: 0.3s; }
+    
+    /* 4. Hero Load Animation (Immediate, no scroll needed) */
+    @keyframes heroFadeUp {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
-    .accent-bg {
-        background-color: #FFD700; /* premium-gold */
-    }
-    
-    .accent-border {
-        border-color: #FFD700; /* premium-gold */
-    }
-    
-    .accent-hover:hover {
-        background-color: #E6C200; /* slightly darker gold */
-    }
-    
-    .text-accent {
-        color: #FFD700;
-    }
-    
-    .border-accent {
-        border-color: #FFD700;
-    }
+    .animate-hero-1 { animation: heroFadeUp 1s cubic-bezier(0.5, 0, 0, 1) forwards; opacity: 0; }
+    .animate-hero-2 { animation: heroFadeUp 1s cubic-bezier(0.5, 0, 0, 1) 0.2s forwards; opacity: 0; }
+    .animate-hero-3 { animation: heroFadeUp 1s cubic-bezier(0.5, 0, 0, 1) 0.4s forwards; opacity: 0; }
+
 </style>
 {% endblock %}
 
@@ -98,25 +104,27 @@
     <div class="hero-overlay absolute inset-0 z-0"></div>
 
     <div class="relative z-10 p-6 max-w-6xl mx-auto">
-        <h1 class="font-title text-7xl md:text-9xl mb-12 text-gray-900 dark:text-pure-white">
+        <h1 class="font-title text-7xl md:text-9xl mb-12 text-gray-900 dark:text-pure-white animate-hero-1">
             EggVision
         </h1>      
-        <p class="font-sans text-lg md:text-xl max-w-xl mx-auto mb-12 text-gray-700 dark:text-gray-300">
+        <p class="font-sans text-lg md:text-xl max-w-xl mx-auto mb-12 text-gray-700 dark:text-gray-300 animate-hero-2">
             Platform all-in-one untuk marketplace dan grading telur ayam konsumsi otomatis yang terjangkau
         </p>
         
-        {{ egg_cta('Bagaimana Kami <br class="sm:hidden"> Membantu Industri Telur?', onclick='openMenu()', extra_class='mx-auto') }}
+        <div class="animate-hero-3">
+            {{ egg_cta('Bagaimana Kami <br class="sm:hidden"> Membantu Industri Telur?', onclick='openMenu()', extra_class='mx-auto') }}
+        </div>
     </div>
 </section>
 
 <section id="layanan" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
+        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white reveal-on-scroll">
             Layanan dan Produk EggVision
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300 reveal-on-scroll">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/eggmart.jpeg') }}" alt="EggMart Platform" class="service-image hidden dark:block" onerror="this.src='https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                     <img src="{{ url_for('static', filename='img/eggmartdark.jpeg') }}" alt="EggMart Platform" class="service-image block dark:hidden" onerror="this.src='https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
@@ -130,7 +138,7 @@
                 </div>
             </div>
             
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300 reveal-on-scroll delay-100">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/3d.png') }}" alt="EggVision Grading Machine" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
@@ -143,7 +151,7 @@
                 </div>
             </div>
             
-            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300">
+            <div class="bg-gray-50 dark:bg-dark-gray p-8 flex flex-col font-sans hover-grow border border-gray-300 dark:border-gray-800 hover:border-premium-gold transition-all duration-300 reveal-on-scroll delay-200">
                 <div class="w-full h-56 mb-6 overflow-hidden">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="EggMonitor Dashboard" class="service-image" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
@@ -162,13 +170,14 @@
 
 <section id="berita" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white">
+        <h2 class="font-title text-5xl text-center mb-16 text-gray-800 dark:text-pure-white reveal-on-scroll">
             Berita Terkini dari EggMin
         </h2>
         <div class="space-y-8 max-w-4xl mx-auto font-sans">
             
             {% for news_item in news_list[:3] %}
-            <a href="{{ url_for('comprof_controller.comprof_berita', open_id=news_item.id) }}" class="group block border-b border-gray-300 dark:border-gray-800 pb-8 transition-all duration-300 hover:opacity-80">
+            <a href="{{ url_for('comprof_controller.comprof_berita', open_id=news_item.id) }}" 
+               class="group block border-b border-gray-300 dark:border-gray-800 pb-8 transition-all duration-300 hover:opacity-80 reveal-on-scroll delay-{{ loop.index }}00">
                 <div class="flex flex-col md:flex-row items-start gap-6">
                     <div class="flex-grow">
                         <h3 class="text-2xl mb-2 text-gray-800 dark:text-pure-white group-hover:text-premium-gold transition-colors">{{ news_item.title }}</h3>
@@ -187,7 +196,7 @@
                 </div>
             </a>
             {% else %}
-            <div class="text-center py-12">
+            <div class="text-center py-12 reveal-on-scroll">
                 <div class="w-32 h-32 rounded-full bg-gray-300 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
                     <img src="{{ url_for('static', filename='img/egg-display.jpg') }}" alt="No News" class="h-16 w-16 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span class="text-4xl text-gray-500" style="display: none;">📰</span>
@@ -196,7 +205,7 @@
                 <p class="text-gray-500 dark:text-gray-500">Berita akan segera tersedia</p>
             </div>
             {% endfor %}
-            <div>
+            <div class="reveal-on-scroll delay-300">
                 {{ egg_cta('Lihat Semua Berita', href=url_for('comprof_controller.comprof_berita'), type='link', extra_class='mx-auto') }}
             </div>
         </div>
@@ -205,12 +214,12 @@
 
 <section id="testimoni" class="py-24 bg-white dark:bg-primary-black text-gray-900 dark:text-pure-white relative overflow-hidden">
     <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
-        <h2 class="font-title text-5xl text-center mb-24 text-gray-800 dark:text-pure-white">
+        <h2 class="font-title text-5xl text-center mb-24 text-gray-800 dark:text-pure-white reveal-on-scroll">
             Apa Kata Mereka tentang EggVision?
         </h2>
         <div class="space-y-20 max-w-5xl mx-auto font-sans">
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative reveal-on-scroll">
                 <div class="w-full h-80 overflow-hidden shadow-lg z-10 relative">
                     <img src="{{ url_for('static', filename='img/fulan.jpg') }}" alt="Budi Santoso - Peternakan Maju Jaya" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'">
                 </div>
@@ -229,16 +238,15 @@
                         <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Fulan Setiawan</p>
                         <p class="text-primary-black dark:text-premium-gold mb-6">Pendiri Sinar Telur Abadi</p>
                         <div>
-                            {# REPLACE '3' WITH THE ACTUAL ID FOR FULAN'S NEWS ITEM #}
                             {{ egg_cta('Lihat Selengkapnya', href=url_for('comprof_controller.comprof_berita', open_id=3), type='link') }}
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative reveal-on-scroll delay-100">
                 <div class="text-left relative z-10 order-2 md:order-1">
-                     <div class="absolute -top-5 md:-top-11 text-premium-gold/50 dark:text-premium-gold/10 z-0 pointer-events-none">
+                      <div class="absolute -top-5 md:-top-11 text-premium-gold/50 dark:text-premium-gold/10 z-0 pointer-events-none">
                         <svg class="w-[60px] h-[48px] md:w-[100px] md:h-[80px]" viewBox="0 0 100 80" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path d="M41.3 80H0V41.3C0 18.5 18.5 0 41.3 0V15C26.8 15 15 26.8 15 41.3H41.3V80ZM100 80H58.7V41.3C58.7 18.5 77.2 0 100 0V15C85.5 15 73.7 26.8 73.7 41.3H100V80Z"/>
                         </svg>
@@ -251,7 +259,6 @@
                         <p class="text-lg font-bold text-gray-800 dark:text-pure-white">Rina Saraswati</p>
                         <p class="text-primary-black dark:text-premium-gold mb-6">Pendiri Sari Sehat Katering</p>
                         <div>
-                            {# REPLACE '6' WITH THE ACTUAL ID FOR RINA'S NEWS ITEM #}
                             {{ egg_cta('Lihat Selengkapnya', href=url_for('comprof_controller.comprof_berita', open_id=6), type='link') }}
                         </div>
                     </div>
@@ -267,7 +274,7 @@
 </section>
 
 <section id="cta" class="py-24 bg-white dark:bg-primary-black text-center text-gray-900 dark:text-pure-white">
-    <div class="container mx-auto px-6 lg:px-8 max-w-7xl">
+    <div class="container mx-auto px-6 lg:px-8 max-w-7xl reveal-on-scroll">
         <h2 class="font-title text-6xl mb-6 text-gray-800 dark:text-pure-white">
             Siap Mengubah Bisnis Anda?
         </h2>
@@ -285,31 +292,49 @@
         const navbar = document.getElementById('mainNav');
         const heroSection = document.querySelector('.hero-section');
         
-        // Create an intersection observer
-        const observer = new IntersectionObserver(
+        // --- 1. Navbar Transparency Logic ---
+        const navObserver = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
                     if (!entry.isIntersecting) {
-                        // Hero section is out of view - make navbar solid
+                        // Hero out of view - Solid Navbar
                         navbar.classList.remove('transparent-nav');
                         navbar.classList.add('solid-nav', 'bg-primary-black', 'border-dark-gray');
                     } else {
-                        // Hero section is in view - make navbar transparent
+                        // Hero in view - Transparent Navbar
                         navbar.classList.add('transparent-nav');
                         navbar.classList.remove('solid-nav', 'bg-primary-black', 'border-dark-gray');
                     }
                 });
             },
             {
-                rootMargin: '-100px 0px 0px 0px', // Trigger when hero is 100px from top
+                rootMargin: '-100px 0px 0px 0px',
                 threshold: 0
             }
         );
     
-        // Start observing the hero section
         if (heroSection) {
-            observer.observe(heroSection);
+            navObserver.observe(heroSection);
         }
+
+        // --- 2. Scroll Reveal Animations Logic ---
+        const scrollObserverOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of element is visible
+        };
+
+        const scrollObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target); // Only animate once
+                }
+            });
+        }, scrollObserverOptions);
+
+        const revealElements = document.querySelectorAll('.reveal-on-scroll');
+        revealElements.forEach(el => scrollObserver.observe(el));
     });
 
     function openMenu() {
@@ -319,5 +344,5 @@
         }
     }
     
-    </script>
+</script>
 {% endblock %}
