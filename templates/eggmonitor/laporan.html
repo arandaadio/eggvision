@@ -1,4 +1,5 @@
 {% extends "eggmonitor/base.html" %}
+{% block title %}Laporan Produksi · EggMonitor{% endblock %}
 
 {% block page_title %}Laporan Produksi{% endblock %}
 {% block page_subtitle %}Rekapitulasi data grading dan analisis kualitas.{% endblock %}
@@ -11,6 +12,23 @@
 
 {% block content %}
 <div x-data="laporanData">
+
+    <!-- Debug info - remove this in production
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4" x-show="debug.show">
+        <div class="flex justify-between items-center">
+            <h4 class="font-bold text-yellow-800">Debug Info</h4>
+            <button @click="debug.show = false" class="text-yellow-600 hover:text-yellow-800">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <div class="text-sm text-yellow-700 mt-2">
+            <p>Total Records: <span x-text="allRows.length"></span></p>
+            <p>Filtered Records: <span x-text="filteredRows.length"></span></p>
+            <p>Chart Data: <span x-text="JSON.stringify(debug.chartData)"></span></p>
+            <p>Chart Initialized: <span x-text="debug.chartInitialized"></span></p>
+            <p>Date Range: <span x-text="dateRange"></span></p>
+        </div>
+    </div>  -->
 
     <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl p-5 mb-8 shadow-sm flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 transition-colors duration-300">
         
@@ -26,9 +44,26 @@
                 <span class="text-gray-400">-</span>
                 <input type="date" x-model="endDate" class="flex-1 px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-700 dark:text-gray-300 dark:[color-scheme:dark]">
             </div>
+
+            <!-- Date Range Dropdown -->
+            <div class="relative flex-1 md:flex-none">
+                <select x-model="dateRange" @change="applyDateRange()" class="w-full px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <option value="custom">Rentang Kustom</option>
+                    <option value="7">7 Hari Terakhir</option>
+                    <option value="14">14 Hari Terakhir</option>
+                    <option value="30">30 Hari Terakhir</option>
+                    <option value="90">3 Bulan Terakhir</option>
+                    <option value="all">Semua Data</option>
+                </select>
+            </div>
         </div>
 
         <div class="flex flex-wrap gap-3 w-full xl:w-auto justify-end">
+            <!-- Debug button
+            <button @click="debug.show = !debug.show" class="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <i data-lucide="bug" class="w-4 h-4"></i>
+                <span>Debug</span>
+            </button>  -->
             
             <select x-model.number="pageSize" class="px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm focus:outline-none text-gray-700 dark:text-gray-300 cursor-pointer">
                 <option value="10">10 baris</option>
@@ -37,6 +72,7 @@
                 <option value="100">100 baris</option>
             </select>
 
+            <!-- Your existing column visibility and export buttons remain the same -->
             <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" @click.outside="open = false"
                         class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-dark-border rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-gray-700 dark:text-gray-200">
@@ -68,6 +104,7 @@
         </div>
     </div>
 
+    <!-- Your existing table remains the same -->
     <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl overflow-hidden shadow-sm mb-8 transition-colors duration-300">
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
@@ -145,15 +182,28 @@
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h3 class="font-canela font-normal text-xl text-gray-900 dark:text-white">Visualisasi Data</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Tren produksi berdasarkan Grade (Data Terfilter).</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400" x-text="chartSubtitle"></p>
+            </div>
+            <div class="flex gap-2">
+                <button @click="refreshChart()" class="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Refresh Chart
+                </button>
             </div>
         </div>
         
         <div class="h-[300px] w-full">
             <canvas id="histChart"></canvas>
         </div>
+        
+        <!-- Fallback message if no data -->
+        <div x-show="filteredRows.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <i data-lucide="bar-chart-3" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+            <p>Tidak ada data untuk ditampilkan dalam chart.</p>
+        </div>
     </div>
 
+    <!-- Export modal remains the same -->
     <div x-show="exportModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;" x-cloak>
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="exportModalOpen = false" x-transition.opacity></div>
         
@@ -228,15 +278,195 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
+    // Chart manager outside of Alpine to avoid reactivity issues
+    class ChartManager {
+        constructor() {
+            this.chart = null;
+            this.canvas = null;
+            this.ctx = null;
+        }
+
+        init(canvasId) {
+            this.canvas = document.getElementById(canvasId);
+            if (!this.canvas) {
+                console.error('Canvas not found:', canvasId);
+                return false;
+            }
+
+            this.ctx = this.canvas.getContext('2d');
+            
+            // Destroy existing chart
+            if (this.chart) {
+                this.chart.destroy();
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#ffffff' : '#333333';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+            // Define colors for each grade
+            const gradeColors = {
+                'A': 'rgba(34, 197, 94, 0.8)',    // Green
+                'B': 'rgba(59, 130, 246, 0.8)',   // Blue
+                'C': 'rgba(245, 158, 11, 0.8)',   // Amber
+                'Retak': 'rgba(239, 68, 68, 0.8)' // Red
+            };
+
+            const gradeBorders = {
+                'A': '#16a34a',
+                'B': '#2563eb', 
+                'C': '#d97706',
+                'Retak': '#dc2626'
+            };
+
+            try {
+                this.chart = new Chart(this.ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: []
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: textColor,
+                                    usePointStyle: true,
+                                    pointStyle: 'rect',
+                                    padding: 20,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                                titleColor: textColor,
+                                bodyColor: textColor,
+                                borderColor: '#FFD700',
+                                borderWidth: 1,
+                                cornerRadius: 6,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.dataset.label || '';
+                                        const value = context.parsed.y;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        return `${label}: ${value} butir`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                stacked: true,
+                                grid: { color: gridColor },
+                                ticks: { 
+                                    color: textColor,
+                                    stepSize: 1,
+                                    callback: function(value) {
+                                        return Number.isInteger(value) ? value : '';
+                                    }
+                                }
+                            },
+                            x: {
+                                stacked: true,
+                                grid: { display: false },
+                                ticks: { 
+                                    color: textColor,
+                                    maxRotation: 45
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 800,
+                            easing: 'easeOutQuart'
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+                return true;
+            } catch (error) {
+                console.error('Chart initialization failed:', error);
+                return false;
+            }
+        }
+
+        updateData(labels, datasets) {
+            if (!this.chart) {
+                console.warn('Chart not initialized');
+                return false;
+            }
+
+            try {
+                // Update data directly without triggering full reactivity
+                this.chart.data.labels = labels;
+                this.chart.data.datasets = datasets;
+
+                // Update colors for current theme
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#ffffff' : '#333333';
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+                this.chart.options.scales.y.ticks.color = textColor;
+                this.chart.options.scales.x.ticks.color = textColor;
+                this.chart.options.scales.y.grid.color = gridColor;
+                this.chart.options.plugins.legend.labels.color = textColor;
+                this.chart.options.plugins.tooltip.backgroundColor = isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.95)';
+                this.chart.options.plugins.tooltip.titleColor = textColor;
+                this.chart.options.plugins.tooltip.bodyColor = textColor;
+
+                // Use requestAnimationFrame to avoid call stack issues
+                requestAnimationFrame(() => {
+                    this.chart.update();
+                });
+                
+                return true;
+            } catch (error) {
+                console.error('Chart update failed:', error);
+                return false;
+            }
+        }
+
+        destroy() {
+            if (this.chart) {
+                this.chart.destroy();
+                this.chart = null;
+            }
+        }
+    }
+
+    // Global chart manager instance
+    const chartManager = new ChartManager();
+
     document.addEventListener('alpine:init', () => {
         Alpine.data('laporanData', () => ({
             // State Filters
             startDate: '',
             endDate: '',
             searchQuery: '',
+            dateRange: '30', // Default to 30 days
             
             // Data Table
             allRows: {{ records | tojson }},
+            
+            // Debug info
+            debug: {
+                show: true,
+                chartData: {},
+                chartInitialized: false
+            },
             
             // Pagination
             pageSize: 10,
@@ -267,21 +497,89 @@
                 format: 'xlsx'
             },
 
+            // --- COMPUTED PROPERTIES ---
+            get chartSubtitle() {
+                const rangeTexts = {
+                    '7': '7 Hari Terakhir',
+                    '14': '14 Hari Terakhir', 
+                    '30': '30 Hari Terakhir',
+                    '90': '3 Bulan Terakhir',
+                    'all': 'Semua Data',
+                    'custom': 'Rentang Kustom'
+                };
+                return `Distribusi Grade per Hari - ${rangeTexts[this.dateRange]}`;
+            },
+
             // --- INIT ---
             init() {
-                // Set default date range for export to match current filter or last 30 days
-                const today = new Date();
-                const lastMonth = new Date();
-                lastMonth.setDate(today.getDate() - 30);
+                console.log('🚀 Initializing laporanData with records:', this.allRows.length);
                 
-                this.startDate = ''; // Default show all
-                this.endDate = '';
+                // Set default date range to 30 days
+                this.applyDateRange();
 
-                this.exportConfig.start = lastMonth.toISOString().split('T')[0];
-                this.exportConfig.end = today.toISOString().split('T')[0];
+                // Initialize chart after Alpine is ready
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        this.initChart();
+                    }, 500);
+                });
 
-                // Watchers to update chart
-                this.$watch('filteredRows', () => this.updateChart());
+                // Watch for data changes with debouncing
+                let updateTimeout;
+                this.$watch('filteredRows', () => {
+                    clearTimeout(updateTimeout);
+                    updateTimeout = setTimeout(() => {
+                        this.updateChart();
+                    }, 200);
+                });
+
+                // Watch for date range changes
+                this.$watch('dateRange', () => {
+                    this.applyDateRange();
+                });
+            },
+
+            // --- METHODS ---
+            applyDateRange() {
+                if (this.dateRange === 'custom') {
+                    // Don't change dates if custom range is selected
+                    return;
+                }
+
+                const today = new Date();
+                const startDate = new Date();
+
+                if (this.dateRange === 'all') {
+                    this.startDate = '';
+                    this.endDate = '';
+                } else {
+                    const days = parseInt(this.dateRange);
+                    startDate.setDate(today.getDate() - days);
+                    
+                    this.startDate = startDate.toISOString().split('T')[0];
+                    this.endDate = today.toISOString().split('T')[0];
+                }
+            },
+
+            // Parse date from string (handles DD/MM/YYYY format)
+            parseDate(dateStr) {
+                if (!dateStr) return null;
+                
+                // Handle DD/MM/YYYY format
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split(' ')[0].split('/');
+                    if (parts.length === 3) {
+                        return new Date(parts[2], parts[1] - 1, parts[0]);
+                    }
+                }
+                
+                // Try parsing as ISO string
+                return new Date(dateStr);
+            },
+
+            // Format date to YYYY-MM-DD
+            formatDate(date) {
+                return date.toISOString().split('T')[0];
             },
 
             // --- COMPUTED PROPERTIES ---
@@ -293,26 +591,16 @@
                     const start = new Date(this.startDate);
                     start.setHours(0,0,0,0);
                     data = data.filter(r => {
-                        let dateStr = r.tanggal;
-                        if (dateStr.includes('/')) {
-                            const parts = dateStr.split(' ')[0].split('/');
-                            if (parts.length === 3) dateStr = `${parts[1]}/${parts[0]}/${parts[2]}`;
-                        }
-                        const rDate = new Date(dateStr);
-                        return rDate >= start;
+                        const rDate = this.parseDate(r.tanggal);
+                        return rDate && rDate >= start;
                     });
                 }
                 if (this.endDate) {
                     const end = new Date(this.endDate);
                     end.setHours(23,59,59,999);
                     data = data.filter(r => {
-                        let dateStr = r.tanggal;
-                        if (dateStr.includes('/')) {
-                            const parts = dateStr.split(' ')[0].split('/');
-                            if (parts.length === 3) dateStr = `${parts[1]}/${parts[0]}/${parts[2]}`;
-                        }
-                        const rDate = new Date(dateStr);
-                        return rDate <= end;
+                        const rDate = this.parseDate(r.tanggal);
+                        return rDate && rDate <= end;
                     });
                 }
 
@@ -320,7 +608,9 @@
                 if (this.searchQuery) {
                     const q = this.searchQuery.toLowerCase();
                     data = data.filter(row => {
-                        return Object.values(row).some(val => String(val).toLowerCase().includes(q));
+                        return Object.values(row).some(val => 
+                            val && String(val).toLowerCase().includes(q)
+                        );
                     });
                 }
 
@@ -329,7 +619,9 @@
                     let valA = a[this.sortCol];
                     let valB = b[this.sortCol];
                     
-                    // Numeric check
+                    if (valA === null || valA === undefined) valA = '';
+                    if (valB === null || valB === undefined) valB = '';
+                    
                     if (!isNaN(parseFloat(valA)) && isFinite(valA)) {
                         valA = parseFloat(valA);
                         valB = parseFloat(valB);
@@ -386,13 +678,112 @@
                 this.exportModalOpen = true;
             },
 
+            refreshChart() {
+                console.log('🔄 Manual chart refresh');
+                this.initChart();
+            },
+
+            // --- CHART METHODS ---
+            initChart() {
+                console.log('🎯 Initializing chart...');
+                const success = chartManager.init('histChart');
+                this.debug.chartInitialized = success;
+                
+                if (success) {
+                    console.log('✅ Chart initialized successfully');
+                    this.updateChart();
+                } else {
+                    console.error('❌ Chart initialization failed');
+                }
+            },
+
+            updateChart() {
+                console.log('🔄 Updating chart data...');
+                
+                // Define all possible grades
+                const allGrades = ['A', 'B', 'C', 'Retak'];
+                
+                // Define colors for each grade
+                const gradeColors = {
+                    'A': 'rgba(34, 197, 94, 0.8)',    // Green
+                    'B': 'rgba(59, 130, 246, 0.8)',   // Blue
+                    'C': 'rgba(245, 158, 11, 0.8)',   // Amber
+                    'Retak': 'rgba(239, 68, 68, 0.8)' // Red
+                };
+
+                const gradeBorders = {
+                    'A': '#16a34a',
+                    'B': '#2563eb',
+                    'C': '#d97706',
+                    'Retak': '#dc2626'
+                };
+
+                // Aggregate data by date and grade
+                const dailyData = {};
+                
+                this.filteredRows.forEach(r => {
+                    const dateObj = this.parseDate(r.tanggal);
+                    if (dateObj) {
+                        const dateKey = this.formatDate(dateObj);
+                        const grade = r.kategori || 'Unknown';
+                        
+                        if (!dailyData[dateKey]) {
+                            dailyData[dateKey] = { A: 0, B: 0, C: 0, Retak: 0 };
+                        }
+                        
+                        // Only count known grades
+                        if (allGrades.includes(grade)) {
+                            dailyData[dateKey][grade] = (dailyData[dateKey][grade] || 0) + 1;
+                        }
+                    }
+                });
+
+                // Sort dates and prepare chart data
+                const sortedDates = Object.keys(dailyData).sort();
+                const labels = sortedDates.map(date => {
+                    const d = new Date(date);
+                    return d.toLocaleDateString('id-ID', { 
+                        day: '2-digit', 
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                });
+
+                // Create datasets for each grade
+                const datasets = allGrades.map(grade => ({
+                    label: `Grade ${grade}`,
+                    data: sortedDates.map(date => dailyData[date][grade] || 0),
+                    backgroundColor: gradeColors[grade],
+                    borderColor: gradeBorders[grade],
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9
+                }));
+
+                this.debug.chartData = { labels, datasets };
+
+                console.log('📈 Chart data to display:', { labels, datasets });
+
+                // Update chart via manager
+                const success = chartManager.updateData(labels, datasets);
+                
+                if (success) {
+                    console.log('✅ Chart updated successfully');
+                } else {
+                    console.error('❌ Chart update failed');
+                }
+            },
+
             // --- EXPORT LOGIC ---
             executeExport() {
                 // 1. Filter Data based on export Modal Dates (not main filter)
                 let dataToExport = this.allRows;
                 
-                const start = new Date(this.exportConfig.start); start.setHours(0,0,0,0);
-                const end = new Date(this.exportConfig.end); end.setHours(23,59,59,999);
+                const start = new Date(this.exportConfig.start); 
+                start.setHours(0,0,0,0);
+                const end = new Date(this.exportConfig.end); 
+                end.setHours(23,59,59,999);
 
                 dataToExport = dataToExport.filter(r => {
                     let dateStr = r.tanggal;
@@ -451,77 +842,21 @@
                 }
 
                 this.exportModalOpen = false;
-            },
-
-            // --- CHART UPDATE ---
-            chartInstance: null,
-            
-            initChart() {
-                const ctx = document.getElementById('histChart').getContext('2d');
-                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                gradient.addColorStop(0, '#FFD700');
-                gradient.addColorStop(1, 'rgba(255, 215, 0, 0.1)');
-
-                // Check for Dark Mode on Init
-                const isDark = document.documentElement.classList.contains('dark');
-                const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(200, 200, 200, 0.1)';
-                const tickColor = isDark ? '#666' : '#888';
-
-                this.chartInstance = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: [], // populated dynamically
-                        datasets: [{
-                            label: 'Jumlah Butir',
-                            data: [],
-                            backgroundColor: gradient,
-                            borderRadius: 6,
-                            barThickness: 40,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { 
-                                beginAtZero: true, 
-                                grid: { color: gridColor }, 
-                                ticks: { color: tickColor } 
-                            },
-                            x: { 
-                                grid: { display: false }, 
-                                ticks: { color: tickColor } 
-                            }
-                        }
-                    }
-                });
-                this.updateChart();
-            },
-
-            updateChart() {
-                if (!this.chartInstance) return;
-
-                // Aggregate grades from filteredRows
-                const counts = {};
-                this.filteredRows.forEach(r => {
-                    const g = r.kategori || 'Unknown';
-                    counts[g] = (counts[g] || 0) + 1;
-                });
-
-                this.chartInstance.data.labels = Object.keys(counts);
-                this.chartInstance.data.datasets[0].data = Object.values(counts);
-                this.chartInstance.update();
             }
         }));
     });
 
-    // Start Chart after Alpine init
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            const el = document.querySelector('[x-data="laporanData"]');
-            if (el) el.__x.$data.initChart();
-        }, 200);
+    // Ensure everything loads properly
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🏠 DOM fully loaded');
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+        chartManager.destroy();
     });
 </script>
 {% endblock %}
