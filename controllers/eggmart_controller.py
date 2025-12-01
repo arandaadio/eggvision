@@ -38,12 +38,12 @@ def save_listing():
 
     if not grade or price is None or stock is None:
         flash('Grade, harga, dan stok wajib diisi.', 'error')
-        return redirect(url_for('eggmart_controller.eggmartDashboard'))
+        return redirect(url_for('eggmonitor_controller.eggmonitor_seller'))
 
     conn = get_db_connection()
     if not conn:
         flash('Gagal terhubung ke database.', 'error')
-        return redirect(url_for('eggmart_controller.eggmartDashboard'))
+        return redirect(url_for('eggmonitor_controller.eggmonitor_seller'))
 
     try:
         cur = conn.cursor(dictionary=True)
@@ -83,7 +83,7 @@ def save_listing():
                 f'Stok telur grade {grade} tidak mencukupi. Maksimum hanya {len(eggs)} butir.',
                 'error'
             )
-            return redirect(url_for('eggmart_controller.eggmartDashboard'))
+            return redirect(url_for('eggmonitor_controller.eggmonitor_seller'))
 
         egg_ids = [row['id'] for row in eggs]
 
@@ -165,7 +165,7 @@ def save_listing():
         cur.close()
         conn.close()
 
-    return redirect(url_for('eggmart_controller.eggmartDashboard'))
+    return redirect(url_for('eggmonitor_controller.eggmonitor_seller'))
 
 # ==============================================================================
 # 1. KATALOG
