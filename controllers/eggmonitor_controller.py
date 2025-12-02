@@ -30,14 +30,30 @@ def eggmonitor():
 
     data = build_dashboard_data(current_user.id)
 
-    # Ambil hasil scan terakhir dari session (sekali pakai, kayak with() Laravel)
-    last_scan = session.pop('last_scan', None)
-    if last_scan:
-        data.update(
-            uploaded_image = url_for('static', filename=last_scan["image_path"]),
-            prediction     = last_scan["prediction"],
-            confidence     = last_scan["confidence"],
-        )
+    # --- FIX: Calculate Reject Count Separately ---
+    conn = get_db_connection()
+    reject_count = 0
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT COUNT(*) FROM egg_scans 
+                WHERE user_id = %s AND grade = 'Reject'
+            """, (current_user.id,))
+            result = cur.fetchone()
+            if result:
+                reject_count = result[0]
+        except Exception as e:
+            print(f"Error fetching rejects: {e}")
+        finally:
+            conn.close()
+    
+    # Add to data context
+    data['reject_count'] = reject_count
+    
+    # Update grades total to include rejects if not already
+    # Assuming data['grades_total'] sums A+B+C, we add Rejects to it for the total scan count
+    data['grades_total'] = data.get('grades_total', 0) + reject_count
 
     # data sudah berisi header, grades, records, dll + (optional) hasil scan terakhir
     return render_template('eggmonitor/index.html', **data)
@@ -140,7 +156,6 @@ def eggmonitor_laporan():
         flash('Hanya Pengusaha yang dapat mengakses EggMonitor.', 'error')
         return redirect(url_for('comprof_controller.comprof_beranda'))
 
-    data = build_report_data(current_user.id)
     return render_template('eggmonitor/laporan.html', **data)
 
 
