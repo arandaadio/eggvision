@@ -55,9 +55,17 @@ def eggmonitor():
     # Assuming data['grades_total'] sums A+B+C, we add Rejects to it for the total scan count
     data['grades_total'] = data.get('grades_total', 0) + reject_count
 
+    # Ambil hasil scan terakhir dari session (sekali pakai, kayak with() Laravel)
+    last_scan = session.pop('last_scan', None)
+    if last_scan:
+        data.update(
+            uploaded_image = url_for('static', filename=last_scan["image_path"]),
+            prediction     = last_scan["prediction"],
+            confidence     = last_scan["confidence"],
+        )
+
     # data sudah berisi header, grades, records, dll + (optional) hasil scan terakhir
     return render_template('eggmonitor/index.html', **data)
-
 
 @eggmonitor_controller.route('/upload', methods=['POST'])
 @login_required
@@ -156,6 +164,7 @@ def eggmonitor_laporan():
         flash('Hanya Pengusaha yang dapat mengakses EggMonitor.', 'error')
         return redirect(url_for('comprof_controller.comprof_beranda'))
 
+    data = build_report_data(current_user.id)
     return render_template('eggmonitor/laporan.html', **data)
 
 
