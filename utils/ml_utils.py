@@ -8,11 +8,60 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
 # =============== LOAD MODEL & LABELS (sekali saja) ===============
 
+# =============== LOAD MODEL & LABELS (lazy) ===============
+
 IMG_SIZE = (224, 224)
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 STATIC_DIR.mkdir(exist_ok=True)
+
+# cache global (awal None)
+model_color = None
+model_keutuhan = None
+model_kebersih = None
+
+CLASS_NAMES_COLOR = None
+CLASS_NAMES_KEUTUHAN = None
+CLASS_NAMES_KEBERSIHAN = None
+
+
+def _load_class_names():
+    global CLASS_NAMES_COLOR, CLASS_NAMES_KEUTUHAN, CLASS_NAMES_KEBERSIHAN
+    if CLASS_NAMES_COLOR is None:
+        with open(STATIC_DIR / "model-ketebalan-class_names.json") as f:
+            CLASS_NAMES_COLOR = json.load(f)
+    if CLASS_NAMES_KEUTUHAN is None:
+        with open(STATIC_DIR / "model-keutuhan-class_names.json") as f:
+            CLASS_NAMES_KEUTUHAN = json.load(f)
+    if CLASS_NAMES_KEBERSIHAN is None:
+        with open(STATIC_DIR / "model-kebersihan-class_names.json") as f:
+            CLASS_NAMES_KEBERSIHAN = json.load(f)
+
+
+def get_model_color():
+    global model_color
+    if model_color is None:
+        path = download_if_not_exists("MODEL_COLOR_URL", "model-ketebalan.keras")
+        model_color = load_model(path)
+    return model_color
+
+
+def get_model_keutuhan():
+    global model_keutuhan
+    if model_keutuhan is None:
+        path = download_if_not_exists("MODEL_KEUTUHAN_URL", "model-keutuhan.keras")
+        model_keutuhan = load_model(path)
+    return model_keutuhan
+
+
+def get_model_kebersihan():
+    global model_kebersih
+    if model_kebersih is None:
+        path = download_if_not_exists("MODEL_KEBERSIHAN_URL", "model-kebersihan.keras")
+        model_kebersih = load_model(path)
+    return model_kebersih
+
 
 def download_if_not_exists(env_name: str, filename: str) -> pathlib.Path:
     """
@@ -39,30 +88,6 @@ def download_if_not_exists(env_name: str, filename: str) -> pathlib.Path:
 
     return dest
 
-# Sesuaikan path dengan punyamu
-path_model_color = download_if_not_exists(
-    "MODEL_COLOR_URL", "model-ketebalan.keras"
-)
-path_model_keutuhan = download_if_not_exists(
-    "MODEL_KEUTUHAN_URL", "model-keutuhan.keras"
-)
-path_model_kebersih = download_if_not_exists(
-    "MODEL_KEBERSIHAN_URL", "model-kebersihan.keras"
-)
-
-model_color    = load_model(path_model_color)
-model_keutuhan = load_model(path_model_keutuhan)
-model_kebersih = load_model(path_model_kebersih)
-
-with open("static/model-ketebalan-class_names.json") as f:
-    CLASS_NAMES_COLOR = json.load(f)          # ["Dark Brown","Brown","Light Brown"]
-
-with open("static/model-keutuhan-class_names.json") as f:
-    CLASS_NAMES_KEUTUHAN = json.load(f)      # ["Retak","Utuh"]
-
-with open("static/model-kebersihan-class_names.json") as f:
-    CLASS_NAMES_KEBERSIHAN = json.load(f)    # ["Noda","Bersih"]  (atau sebaliknya, sesuaikan)
-
 # =============== PREPROCESS & PREDICT PER MODEL ===============
 
 def _preprocess_image(file_path: str):
@@ -73,8 +98,10 @@ def _preprocess_image(file_path: str):
 
 def predict_keutuhan_image(file_path: str):
     try:
+        _load_class_names()
+        model = get_model_keutuhan()
         arr  = _preprocess_image(file_path)
-        pred = model_keutuhan.predict(arr, verbose=0)[0]
+        pred = model.predict(arr, verbose=0)[0]
         idx  = int(np.argmax(pred))
         label = CLASS_NAMES_KEUTUHAN[idx]
         conf  = float(np.max(pred) * 100)
@@ -85,8 +112,10 @@ def predict_keutuhan_image(file_path: str):
 
 def predict_color_image(file_path: str):
     try:
+        _load_class_names()
+        model = get_model_color()
         arr  = _preprocess_image(file_path)
-        pred = model_color.predict(arr, verbose=0)[0]
+        pred = model.predict(arr, verbose=0)[0]
         idx  = int(np.argmax(pred))
         label = CLASS_NAMES_COLOR[idx]
         conf  = float(np.max(pred) * 100)
@@ -97,8 +126,10 @@ def predict_color_image(file_path: str):
 
 def predict_kebersihan_image(file_path: str):
     try:
+        _load_class_names()
+        model = get_model_kebersihan()
         arr  = _preprocess_image(file_path)
-        pred = model_kebersih.predict(arr, verbose=0)[0]
+        pred = model.predict(arr, verbose=0)[0]
         idx  = int(np.argmax(pred))
         label = CLASS_NAMES_KEBERSIHAN[idx]
         conf  = float(np.max(pred) * 100)
