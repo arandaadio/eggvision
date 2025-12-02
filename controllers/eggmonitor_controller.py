@@ -665,10 +665,6 @@ def eggmonitor_settings():
     return render_template('eggmonitor/settings.html', **data, active_menu="settings")
 
 
-
-
-
-
 MQTT_BROKER   = "broker.emqx.io"
 MQTT_PORT     = 1883
 MQTT_USERNAME = "emqx"
