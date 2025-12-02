@@ -39,11 +39,13 @@
                     <div class="flex flex-col p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-border dark:border-dark-border transition-colors">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
-                            <span class="text-xs font-bold uppercase text-gray-500">Retak</span>
+                            <span class="text-xs font-bold uppercase text-gray-500">Reject</span>
                         </div>
                         <div class="flex items-end justify-between">
-                            <span class="text-lg font-bold text-foreground dark:text-white">0</span>
-                            <span class="text-[10px] font-mono opacity-70 text-gray-500">0%</span>
+                            <span class="text-lg font-bold text-foreground dark:text-white">{{ reject_count }}</span>
+                            
+                            {% set pct_reject = (reject_count / grades_total * 100)|round(1) if grades_total > 0 else 0 %}
+                            <span class="text-[10px] font-mono opacity-70 text-gray-500">{{ pct_reject }}%</span>
                         </div>
                     </div>
                 </div>
@@ -331,13 +333,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const isDark = document.documentElement.classList.contains('dark');
 
     const gradesData = [
-        {% for g in grades %}{{ g.count }},{% endfor %} 0 
+        {% for g in grades %}{{ g.count }},{% endfor %} {{ reject_count }} 
     ];
     const bgColors = [
         {% for g in grades %}'{{ g.color }}',{% endfor %} '#94a3b8'
     ];
     const labels = [
-        {% for g in grades %}'{{ g.label }}',{% endfor %} 'Retak'
+        {% for g in grades %}'{{ g.label }}',{% endfor %} 'Reject'
     ];
 
     new Chart(ctx, {

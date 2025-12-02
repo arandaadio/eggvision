@@ -59,7 +59,7 @@ def init_db():
                 kesegaran VARCHAR(50),
                 berat_telur DECIMAL(6,2),
 
-                grade ENUM('A','B','C') NOT NULL,
+                grade ENUM('A','B','C','Reject') NOT NULL,
                 confidence DECIMAL(5,2),
 
                 image_path VARCHAR(500),
@@ -336,7 +336,7 @@ def init_db():
 
         conn.commit()
         cur.close()
-        print("✅ Database initialized successfully !")
+        print("✅ Database initialized successfully!")
 
     except mysql.connector.Error as e:
         print(f"❌ Database initialization failed: {e}")

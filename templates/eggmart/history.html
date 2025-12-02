@@ -105,27 +105,40 @@
 x-init="initAutoRefresh()">
     
     <header class="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-dark-border bg-paper/90 dark:bg-dark-surface/90 backdrop-blur-md transition-colors duration-300">
-        <div class="container mx-auto px-4 h-20 flex items-center justify-between">
+        <div class="container mx-auto px-4 h-20 flex items-center justify-between relative">
             <a href="{{ url_for('eggmart_controller.eggmart') }}" class="flex items-center gap-4 group">
-                <div class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                    <i data-lucide="arrow-left" class="w-5 h-5 text-ink dark:text-white"></i>
-                </div>
-                <div class="h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
-                <img src="{{ url_for('static', filename='img/logomart.png') }}" alt="Logo" class="h-8 w-auto">
-                <span class="font-canela font-normal text-xl text-ink dark:text-white tracking-wide group-hover:text-primary transition-colors hidden sm:block">
-                    EggMart
-                </span>
+                <img src="{{ url_for('static', filename='img/logomart.png') }}" alt="Logo" class="h-8 sm:h-10 w-auto">
             </a>
 
-            <div class="hidden md:flex items-center gap-3 bg-white dark:bg-white/5 px-5 py-2 rounded-full border border-gray-200 dark:border-dark-border shadow-sm">
+            <div class="absolute left-1/2 transform -translate-x-1/2 hidden md:flex items-center gap-3 bg-white dark:bg-white/5 px-5 py-2 rounded-full border border-gray-200 dark:border-dark-border shadow-sm">
                 <i data-lucide="history" class="w-4 h-4 text-primary"></i>
                 <span class="text-sm font-bold text-ink dark:text-white">Riwayat Transaksi</span>
             </div>
 
             <div class="flex items-center gap-3">
-                <button onclick="toggleDarkMode()" class="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-primary transition-colors">
-                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
-                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                <button 
+                    onclick="toggleDarkMode()" 
+                    class="relative inline-flex items-center w-12 h-6 sm:w-14 sm:h-7 rounded-full transition-colors duration-300 ease-in-out 
+                        bg-gray-300 dark:bg-gray-600 hover:ring-2 hover:ring-premium-gold focus:outline-none"
+                    aria-label="Toggle dark mode"
+                >
+                    <span 
+                        class="absolute left-0.5 top-0.5 w-5 h-5 sm:left-1 sm:top-1 sm:w-5 sm:h-5 rounded-full bg-white dark:bg-primary-black transform transition-transform duration-300 ease-in-out 
+                            dark:translate-x-6 sm:dark:translate-x-7"
+                    ></span>
+                    
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="absolute left-1.5 w-3 h-3 sm:w-4 sm:h-4 text-gray-700 dark:hidden" 
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M12 3v1m0 16v1m8.66-9H21M3 12H2m15.36-6.36l.7.7M6.34 17.66l.7.7M17.66 17.66l.7-.7M6.34 6.34l.7-.7M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                    </svg>
+                    
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="absolute right-1.5 w-3 h-3 sm:w-4 sm:h-4 hidden dark:block text-yellow-400" 
+                        fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a8 8 0 107.446 5.032A6 6 0 0110 2z"/>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -242,7 +255,7 @@ x-init="initAutoRefresh()">
         {% endif %}
     </div>
 
-    <!-- TEMPORARY DEBUG - REMOVE LATER -->
+    <!-- TEMPORARY DEBUG - REMOVE LATER 
     <div class="bg-yellow-100 border border-yellow-400 p-4 rounded-lg mb-4">
         <h3 class="font-bold text-yellow-800">Debug Info:</h3>
         <p>Total Orders: {{ orders|length }}</p>
@@ -252,7 +265,7 @@ x-init="initAutoRefresh()">
             Category="<span x-text="getStatusCategory('{{ order.status }}')"></span>"
         </div>
         {% endfor %}
-    </div>
+    </div> -->
 
     <!-- Invoice Modal -->
     <div x-show="invoiceOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;" x-cloak>

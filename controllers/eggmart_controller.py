@@ -909,7 +909,10 @@ def api_buyer_send_chat():
 @eggmart_controller.route('/history')
 @login_required
 def eggmartHistory():
-    """Halaman riwayat transaksi"""
+    """
+    Halaman riwayat transaksi dengan fitur Auto-Sync ke Midtrans.
+    Memastikan status 'paid/settlement' muncul meskipun webhook tidak jalan di localhost.
+    """
     now = datetime.now()
     buyer_orders = []
 
@@ -921,7 +924,76 @@ def eggmartHistory():
     try:
         cur = conn.cursor(dictionary=True)
 
-        # 1. AUTO-EXPIRE LOGIC - Use 'expired' instead of 'expire'
+        # ==================================================================
+        # 1. SYNC STATUS DENGAN MIDTRANS (WAJIB UNTUK LOCALHOST)
+        # ==================================================================
+        # Ambil semua order user ini yang masih 'pending'
+        cur.execute("""
+            SELECT id, midtrans_order_id 
+            FROM orders 
+            WHERE buyer_id = %s AND status = 'pending'
+        """, (current_user.id,))
+        pending_list = cur.fetchall()
+
+        if pending_list:
+            server_key = current_app.config.get("MIDTRANS_SERVER_KEY")
+            is_prod = current_app.config.get("MIDTRANS_IS_PRODUCTION", False)
+            base_url = "https://api.midtrans.com" if is_prod else "https://api.sandbox.midtrans.com"
+            
+            # Header Auth untuk API Midtrans
+            auth_string = base64.b64encode((server_key + ':').encode()).decode('utf-8')
+            headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {auth_string}"
+            }
+
+            for p_order in pending_list:
+                try:
+                    # Cek status ke Midtrans
+                    url = f"{base_url}/v2/{p_order['midtrans_order_id']}/status"
+                    resp = requests.get(url, headers=headers, timeout=5)
+                    
+                    if resp.status_code == 200:
+                        res_data = resp.json()
+                        m_status = res_data.get('transaction_status')
+                        
+                        # Mapping status Midtrans ke Database Enum
+                        new_status = None
+                        if m_status == 'settlement':
+                            new_status = 'settlement'
+                        elif m_status == 'capture':
+                            new_status = 'capture'
+                        elif m_status in ['deny', 'cancel', 'expire']:
+                            new_status = 'expired' # Sesuai enum DB Anda
+                        
+                        # Jika status berubah menjadi sukses, update DB
+                        if new_status and new_status in ['settlement', 'capture']:
+                            # 1. Update Status Order
+                            cur.execute("UPDATE orders SET status = %s, updated_at = NOW() WHERE id = %s", (new_status, p_order['id']))
+                            
+                            # 2. Update Stok Telur jadi 'sold' (PENTING agar tidak menggantung)
+                            cur.execute("""
+                                UPDATE egg_scans es
+                                JOIN order_items oi ON oi.egg_scan_id = es.id
+                                SET es.status = 'sold'
+                                WHERE oi.order_id = %s AND es.status != 'sold'
+                            """, (p_order['id'],))
+                            
+                        elif new_status == 'expired':
+                             # Jika expired di midtrans, update di DB
+                             cur.execute("UPDATE orders SET status = 'expired', updated_at = NOW() WHERE id = %s", (p_order['id'],))
+
+                except Exception as e:
+                    print(f"Gagal sync order {p_order['midtrans_order_id']}: {e}")
+            
+            # Commit perubahan sync
+            conn.commit()
+
+        # ==================================================================
+        # 2. LOGIKA AUTO-EXPIRE LAMA (BACKUP)
+        # ==================================================================
+        # Tetap disimpan untuk membersihkan order yang tidak ada di Midtrans
         expiry_time = now - timedelta(hours=1) 
         cur.execute("""
             UPDATE orders 
@@ -930,7 +1002,9 @@ def eggmartHistory():
         """, (expiry_time,))
         conn.commit()
 
-        # 2. FETCH HISTORY (rest of your existing code remains the same)
+        # ==================================================================
+        # 3. FETCH DATA UNTUK TAMPILAN
+        # ==================================================================
         cur.execute("""
             SELECT 
                 o.id,
@@ -939,29 +1013,28 @@ def eggmartHistory():
                 o.total,
                 o.status,
                 o.created_at,
-                u.name AS seller_name,
+                s.name AS seller_name,
                 u.farm_name,
                 u.farm_location,
                 COALESCE(SUM(oi.quantity), 0) AS total_eggs
             FROM orders o
+            LEFT JOIN users s ON s.id = o.seller_id
             LEFT JOIN users u ON u.id = o.seller_id
             LEFT JOIN order_items oi ON oi.order_id = o.id
             WHERE o.buyer_id = %s
             GROUP BY 
                 o.id, o.midtrans_order_id, o.midtrans_transaction_id, o.total, o.status, 
-                o.created_at, u.name, u.farm_name, u.farm_location
+                o.created_at, seller_name, u.farm_name, u.farm_location
             ORDER BY o.created_at DESC
         """, (current_user.id,))
         
         rows = cur.fetchall()
-        print(f"DEBUG: Found {len(rows)} orders for user {current_user.id}")  # Debug line
 
-        # 3. Fetch Items Details
+        # Fetch Detail Item
         if rows:
             order_ids = [str(r['id']) for r in rows]
             placeholders = ','.join(order_ids)
             
-            # Use format safely here since order_ids are integers generated by system
             cur.execute(f"""
                 SELECT oi.order_id, oi.quantity, oi.price, es.grade
                 FROM order_items oi
@@ -979,6 +1052,7 @@ def eggmartHistory():
             for r in rows:
                 r_items = items_map.get(r['id'], [])
                 
+                # Generate Description text
                 grade_counts = {}
                 for i in r_items:
                     g = i['grade']
@@ -988,7 +1062,7 @@ def eggmartHistory():
                 buyer_orders.append({
                     "id": r['id'],
                     "code": r['midtrans_order_id'],
-                    "snap_token": r['snap_token'],
+                    "snap_token": r['snap_token'], 
                     "seller_name": r['farm_name'] or r['seller_name'],
                     "location": r['farm_location'],
                     "total": float(r['total'] or 0),
@@ -1001,10 +1075,11 @@ def eggmartHistory():
 
         cur.close()
     except mysql.connector.Error as e:
-        print("History DB Error:", e)
+        print("eggmartHistory DB error:", e)
     finally:
         conn.close()
 
+    # Cek new_order_code dari redirect pembayaran
     new_order_code = request.args.get('new_order_code')
     new_order_data = next((o for o in buyer_orders if o['code'] == new_order_code), None)
 
