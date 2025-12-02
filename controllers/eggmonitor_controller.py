@@ -62,6 +62,7 @@ def eggmonitor():
             uploaded_image = url_for('static', filename=last_scan["image_path"]),
             prediction     = last_scan["prediction"],
             confidence     = last_scan["confidence"],
+            scan_details   = last_scan.get("details", {})
         )
 
     # data sudah berisi header, grades, records, dll + (optional) hasil scan terakhir
@@ -143,12 +144,19 @@ def upload():
             conn.close()
 
     # ====== Simpan hasil ke session untuk 1x tampilan di dashboard ======
-    prediction_display = f"Grade {grade} · {keutuhan_pred or '-'} · {color_pred or '-'}"
+    prediction_display = f"Grade {grade}"
 
     session["last_scan"] = {
         "image_path": f"uploads/{filename}",
         "prediction": prediction_display,
         "confidence": f"{grade_conf:.2f}%",
+        "details": {
+                "Ketebalan": detail.get("ketebalan", "-"),
+                "Keutuhan": keutuhan_pred,
+                "Kebersihan": color_pred, # Mapping color logic if needed, or use specific field
+                "Kesegaran": detail.get("kesegaran", "-"),
+                "Berat": detail.get("berat_telur", "-")
+        }
     }
 
     flash("Scan telur berhasil disimpan.", "success")
