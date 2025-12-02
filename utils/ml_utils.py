@@ -1,5 +1,8 @@
+import os
 import json
 import numpy as np
+import pathlib
+import requests
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
@@ -7,10 +10,49 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
 IMG_SIZE = (224, 224)
 
+BASE_DIR = pathlib.Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+STATIC_DIR.mkdir(exist_ok=True)
+
+def download_if_not_exists(env_name: str, filename: str) -> pathlib.Path:
+    """
+    Download file dari URL (ENV[env_name]) ke static/filename
+    kalau belum ada. Mengembalikan path lokalnya.
+    """
+    url = os.environ.get(env_name)
+    if not url:
+        raise RuntimeError(f"Environment variable {env_name} belum diset di Railway.")
+
+    dest = STATIC_DIR / filename
+
+    if dest.exists():
+        return dest
+
+    # Download dari Supabase
+    resp = requests.get(url, stream=True)
+    resp.raise_for_status()
+
+    with open(dest, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+
+    return dest
+
 # Sesuaikan path dengan punyamu
-model_color     = load_model("static/model-ketebalan.keras")
-model_keutuhan  = load_model("static/model-keutuhan.keras")
-model_kebersih  = load_model("static/model-kebersihan.keras")
+path_model_color = download_if_not_exists(
+    "MODEL_COLOR_URL", "model-ketebalan.keras"
+)
+path_model_keutuhan = download_if_not_exists(
+    "MODEL_KEUTUHAN_URL", "model-keutuhan.keras"
+)
+path_model_kebersih = download_if_not_exists(
+    "MODEL_KEBERSIHAN_URL", "model-kebersihan.keras"
+)
+
+model_color    = load_model(path_model_color)
+model_keutuhan = load_model(path_model_keutuhan)
+model_kebersih = load_model(path_model_kebersih)
 
 with open("static/model-ketebalan-class_names.json") as f:
     CLASS_NAMES_COLOR = json.load(f)          # ["Dark Brown","Brown","Light Brown"]
