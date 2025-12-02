@@ -11,6 +11,10 @@
         <div class="bg-card bg-white dark:bg-dark-surface border border-border dark:border-dark-border rounded-2xl p-6 shadow-sm flex flex-col justify-between h-full transition-colors">
             <div class="flex justify-between items-start mb-4">
                 <h3 class="font-canela font-normal text-xl text-foreground dark:text-white">Distribusi Kualitas Telur</h3>
+                <a href="{{ url_for('eggmonitor_controller.eggmonitor_laporan') }}" 
+                   class="px-4 py-2 bg-primary text-black font-bold rounded-lg text-xs hover:bg-yellow-500 transition-colors shadow-sm">
+                   Lihat Selengkapnya
+                </a>
             </div>
             
             <div class="flex flex-col md:flex-row items-center gap-8">
@@ -39,11 +43,10 @@
                     <div class="flex flex-col p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-border dark:border-dark-border transition-colors">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
-                            <span class="text-xs font-bold uppercase text-gray-500">Reject</span>
+                            <span class="text-xs font-bold uppercase text-gray-500">Retak</span>
                         </div>
                         <div class="flex items-end justify-between">
                             <span class="text-lg font-bold text-foreground dark:text-white">{{ reject_count }}</span>
-                            
                             {% set pct_reject = (reject_count / grades_total * 100)|round(1) if grades_total > 0 else 0 %}
                             <span class="text-[10px] font-mono opacity-70 text-gray-500">{{ pct_reject }}%</span>
                         </div>
@@ -54,23 +57,26 @@
 
         <div class="bg-card bg-white dark:bg-dark-surface border border-border dark:border-dark-border rounded-2xl p-6 shadow-sm h-full overflow-y-auto custom-scrollbar max-h-[400px] transition-colors">
             <h3 class="font-canela font-normal text-xl mb-4 text-foreground dark:text-white">Notifikasi Sistem</h3>
-            <div class="space-y-3">
-                {% for n in notifications %}
-                <div class="flex items-start justify-between bg-gray-50 dark:bg-white/5 border border-border dark:border-dark-border rounded-xl px-4 py-3 transition-colors">
-                    <div class="flex items-start gap-3">
-                        <div class="mt-0.5 p-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                            <i data-lucide="info" class="w-3.5 h-3.5"></i>
+            <div class="space-y-3" x-data="{ notifications: {{ notifications | tojson }} }">
+                <template x-for="(n, index) in notifications" :key="index">
+                    <div class="flex items-start justify-between bg-gray-50 dark:bg-white/5 border border-border dark:border-dark-border rounded-xl px-4 py-3 transition-colors"
+                         x-show="true" x-transition.opacity.duration.300ms>
+                        <div class="flex items-start gap-3">
+                            <div class="mt-0.5 p-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                                <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <p class="text-sm text-gray-700 dark:text-gray-300 leading-snug" x-text="n.message"></p>
                         </div>
-                        <p class="text-sm text-gray-700 dark:text-gray-300 leading-snug">{{ n.message }}</p>
+                        <button @click="notifications.splice(index, 1)" class="text-gray-400 hover:text-red-500 transition-colors">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
                     </div>
-                    <button class="text-gray-400 hover:text-red-500 transition-colors"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
-                </div>
-                {% else %}
-                <div class="flex flex-col items-center justify-center h-32 text-gray-400 text-sm italic">
+                </template>
+                
+                <div x-show="notifications.length === 0" class="flex flex-col items-center justify-center h-32 text-gray-400 text-sm italic">
                     <i data-lucide="bell-off" class="w-8 h-8 mb-2 opacity-50"></i>
                     Tidak ada notifikasi baru.
                 </div>
-                {% endfor %}
             </div>
         </div>
     </div>
@@ -83,6 +89,10 @@
                     <h3 class="font-canela font-normal text-xl text-foreground dark:text-white">Analisis Manual</h3>
                     <p class="text-xs text-gray-500 mt-1">Unggah foto telur untuk grading AI.</p>
                 </div>
+                <a href="{{ url_for('eggmonitor_controller.detail_alat') }}" 
+                   class="px-4 py-2 bg-primary text-black font-bold rounded-lg text-xs hover:bg-yellow-500 transition-colors shadow-sm">
+                   Lihat Selengkapnya
+                </a>
             </div>
 
             <form action="{{ url_for('eggmonitor_controller.upload') }}" method="POST" enctype="multipart/form-data" class="space-y-4 flex-1 flex flex-col">
@@ -105,10 +115,44 @@
                 </div>
 
                 {% if prediction %}
-                <div class="mt-auto p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900 text-center">
-                    <p class="text-[10px] font-bold uppercase text-green-600 dark:text-green-400 mb-1">Hasil Prediksi</p>
-                    <div class="text-lg font-canela text-foreground dark:text-white">{{ prediction }}</div>
-                    <div class="text-xs text-gray-500 mt-1">Akurasi: {{ confidence }}</div>
+                <div class="mt-auto bg-gray-50 dark:bg-white/5 border border-border dark:border-dark-border rounded-xl p-4 animate-fade-in-up">
+                    <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+                         <div>
+                             <p class="text-[10px] font-bold uppercase text-gray-500 mb-0.5">Hasil Grading</p>
+                             <div class="text-xl font-canela text-primary">{{ prediction }}</div>
+                         </div>
+                         <div class="text-right">
+                             <p class="text-[10px] font-bold uppercase text-gray-500 mb-0.5">Akurasi</p>
+                             <span class="text-sm font-bold text-green-600 dark:text-green-400">{{ confidence }}</span>
+                         </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                        {% if scan_details %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Ketebalan:</span>
+                                <span class="font-medium dark:text-gray-200">{{ scan_details.get('Ketebalan', '-') }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Keutuhan:</span>
+                                <span class="font-medium dark:text-gray-200">{{ scan_details.get('Keutuhan', '-') }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Kebersihan:</span>
+                                <span class="font-medium dark:text-gray-200">{{ scan_details.get('Kebersihan', '-') }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Kesegaran:</span>
+                                <span class="font-medium dark:text-gray-200">{{ scan_details.get('Kesegaran', '-') }}</span>
+                            </div>
+                            <div class="flex justify-between col-span-2 border-t border-dashed border-gray-200 dark:border-gray-700 pt-2 mt-1">
+                                <span class="text-gray-500 font-bold">Berat:</span>
+                                <span class="font-bold dark:text-white">{{ scan_details.get('Berat', '-') }}</span>
+                            </div>
+                        {% else %}
+                            <div class="col-span-2 text-center text-xs text-gray-400 py-2">Detail parameter tidak tersedia.</div>
+                        {% endif %}
+                    </div>
                 </div>
                 {% endif %}
 
@@ -124,12 +168,10 @@
                     <h3 class="font-canela font-normal text-xl text-foreground dark:text-white">Status Perangkat</h3>
                     <p class="text-xs text-gray-500 mt-1">Monitoring sensor & aktuator.</p>
                 </div>
-                <div class="flex gap-3">
-                    <a href="{{ url_for('eggmonitor_controller.detail_alat') }}" 
-                       class="px-4 py-2 bg-primary text-black font-bold rounded-lg text-xs flex items-center gap-2 hover:bg-yellow-500 transition-colors shadow-sm">
-                        Lihat Selengkapnya <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                    </a>
-                </div>
+                <a href="{{ url_for('eggmonitor_controller.detail_alat') }}" 
+                   class="px-4 py-2 bg-primary text-black font-bold rounded-lg text-xs hover:bg-yellow-500 transition-colors shadow-sm">
+                   Lihat Selengkapnya
+                </a>
             </div>
 
             <div class="space-y-4 overflow-y-auto custom-scrollbar flex-1 max-h-[400px] pr-1">
@@ -180,8 +222,7 @@
                 <p class="text-sm text-gray-500">Menampilkan 10 data terakhir.</p>
             </div>
             <div class="flex gap-3">
-                <a href="{{ url_for('eggmonitor_controller.eggmonitor_laporan') }}" 
-                   class="px-4 py-2 bg-primary text-black font-bold rounded-lg text-xs flex items-center gap-2 hover:bg-yellow-500 transition-colors shadow-sm">
+                <a href="{{ url_for('eggmonitor_controller.eggmonitor_laporan') }}" class="px-4 py-2 bg-black dark:bg-white text-white dark:text-black font-bold rounded-lg text-xs flex items-center gap-2 hover:opacity-90 transition-opacity">
                     Lihat Selengkapnya <i data-lucide="arrow-right" class="w-3 h-3"></i>
                 </a>
             </div>
@@ -333,13 +374,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const isDark = document.documentElement.classList.contains('dark');
 
     const gradesData = [
-        {% for g in grades %}{{ g.count }},{% endfor %} {{ reject_count }} 
+        {% for g in grades %}{{ g.count }},{% endfor %} {{ reject_count }}
     ];
     const bgColors = [
         {% for g in grades %}'{{ g.color }}',{% endfor %} '#94a3b8'
     ];
     const labels = [
-        {% for g in grades %}'{{ g.label }}',{% endfor %} 'Reject'
+        {% for g in grades %}'{{ g.label }}',{% endfor %} 'Retak'
     ];
 
     new Chart(ctx, {
@@ -350,7 +391,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 data: gradesData,
                 backgroundColor: bgColors,
                 borderWidth: 0,
-                hoverOffset: 10,  // REMOVED default offset, kept hover
+                hoverOffset: 10,
             }]
         },
         options: {
@@ -360,7 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    enabled: true, // Ensure tooltips are ON
+                    enabled: true,
                     backgroundColor: isDark ? '#1a1a1a' : '#fff',
                     titleColor: isDark ? '#fff' : '#000',
                     bodyColor: isDark ? '#ccc' : '#666',
@@ -384,7 +425,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
             },
-            // Disable hover offset effect if you specifically meant that
             hover: {
                 mode: null 
             }
