@@ -7,13 +7,10 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
 # =============== LOAD MODEL & LABELS (sekali saja) ===============
-
-# =============== LOAD MODEL & LABELS (lazy) ===============
-
 IMG_SIZE = (224, 224)
 
-BASE_DIR = pathlib.Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static"
+# BASE_DIR = pathlib.Path(__file__).resolve().parent
+STATIC_DIR = pathlib.Path("static")
 STATIC_DIR.mkdir(exist_ok=True)
 
 # cache global (awal None)
