@@ -138,18 +138,21 @@ def seed_data():
                     if rand_val < prof["A"]:
                         grade = "A"
                         weight = random.uniform(60.0, 70.0)
+                        weight_cat = random.choice(["Sedang", "Besar"])
                         kebersihan = "Bersih"
                         keutuhan = "Utuh"
                     elif rand_val < prof["A"] + prof["B"]:
                         grade = "B"
                         weight = random.uniform(50.0, 59.9)
-                        kebersihan = random.choice(["Sedikit Kotor", "Bersih"])
+                        weight_cat = random.choice(["Kecil", "Sedang", "Besar"])
+                        kebersihan = random.choice(["Noda", "Bersih"])
                         keutuhan = "Utuh"
                     else:
                         grade = "C"
                         weight = random.uniform(40.0, 49.9)
-                        kebersihan = "Kotor"
-                        keutuhan = random.choice(["Retak Halus", "Utuh"])
+                        weight_cat = random.choice(["Kecil", "Sedang"])
+                        kebersihan = "Noda"
+                        keutuhan = random.choice(["Retak", "Utuh"])
 
                     # Tentukan status:
                     # - 60% Listed (Siap Jual di EggMart) -> Masuk perhitungan stok
@@ -181,6 +184,7 @@ def seed_data():
                         keutuhan,
                         "Segar",
                         weight,
+                        weight_cat,
                         grade,
                         random.uniform(85.0, 99.9),
                         status,
@@ -193,7 +197,7 @@ def seed_data():
                     cur.executemany('''
                         INSERT INTO egg_scans 
                         (user_id, numeric_id, scanned_at, ketebalan, kebersihan, keutuhan, kesegaran, berat_telur, berat_cat, grade, confidence, status, is_listed, listed_price)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ''', batch_values)
             
             # --- UPDATE EGG_LISTINGS SESUAI REAL COUNT DARI EGG_SCANS ---
