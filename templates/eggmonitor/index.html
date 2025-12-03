@@ -43,7 +43,7 @@
                     <div class="flex flex-col p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-border dark:border-dark-border transition-colors">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
-                            <span class="text-xs font-bold uppercase text-gray-500">Retak</span>
+                            <span class="text-xs font-bold uppercase text-gray-500">Reject</span>
                         </div>
                         <div class="flex items-end justify-between">
                             <span class="text-lg font-bold text-foreground dark:text-white">{{ reject_count }}</span>
@@ -147,7 +147,7 @@
                             </div>
                             <div class="flex justify-between col-span-2 border-t border-dashed border-gray-200 dark:border-gray-700 pt-2 mt-1">
                                 <span class="text-gray-500 font-bold">Berat:</span>
-                                <span class="font-bold dark:text-white">{{ scan_details.get('Berat', '-') }}</span>
+                                <span class="font-bold dark:text-white">{{ scan_details.get('Berat', '-') ~ ' ' ~ scan_details.get('BeratTelur', '-') }}</span>
                             </div>
                         {% else %}
                             <div class="col-span-2 text-center text-xs text-gray-400 py-2">Detail parameter tidak tersedia.</div>
@@ -240,7 +240,7 @@
                         <th @click="sortBy('ketebalan')" class="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none whitespace-nowrap">Ketebalan</th>
                         <th @click="sortBy('kebersihan')" class="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none whitespace-nowrap">Kebersihan</th>
                         <th @click="sortBy('keutuhan')" class="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none whitespace-nowrap">Keutuhan</th>
-                        <th @click="sortBy('beratTelur')" class="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none whitespace-nowrap">Berat (g)</th>
+                        <th @click="sortBy('berat')" class="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors select-none whitespace-nowrap">Berat (g)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border dark:divide-dark-border">
@@ -256,7 +256,7 @@
                                       x-text="r.kebersihan"></span>
                             </td>
                             <td class="px-4 py-3 text-foreground dark:text-white whitespace-nowrap" x-text="r.keutuhan"></td>
-                            <td class="px-4 py-3 font-mono text-foreground dark:text-white whitespace-nowrap" x-text="r.beratTelur"></td>
+                            <td class="px-4 py-3 font-mono text-foreground dark:text-white whitespace-nowrap" x-text="r.berat"></td>
                         </tr>
                     </template>
                     <tr x-show="sortedRows.length === 0">
@@ -288,7 +288,7 @@ document.addEventListener('alpine:init', () => {
                 id: 'conveyor', label: 'Konveyor Utama', icon: 'settings-2', isOn: true,
                 children: [
                     { id: 'motor', label: 'Motor Konveyor', isOn: true },
-                    { id: 'proximity', label: 'Sensor Proximity', isOn: true }
+                    { id: 'proximity', label: 'Sensor Proximity', isOn: true }G142810981
                 ]
             },
             {

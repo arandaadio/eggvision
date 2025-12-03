@@ -131,7 +131,7 @@
                             <td class="px-6 py-4" x-show="columns.kategori.visible">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-yellow-700 dark:text-yellow-500 border border-primary/20" x-text="r.kategori"></span>
                             </td>
-                            <td class="px-6 py-4 font-mono text-gray-700 dark:text-gray-300" x-show="columns.beratTelur.visible" x-text="r.beratTelur"></td>
+                            <td class="px-6 py-4 font-mono text-gray-700 dark:text-gray-300" x-show="columns.berat_cat.visible" x-text="r.berat_cat"></td>
                             <td class="px-6 py-4 text-gray-700 dark:text-gray-300" x-show="columns.kebersihan.visible" x-text="r.kebersihan"></td>
                             <td class="px-6 py-4 text-gray-700 dark:text-gray-300" x-show="columns.keutuhan.visible" x-text="r.keutuhan"></td>
                             <td class="px-6 py-4 text-right" x-show="columns.status.visible">
@@ -481,7 +481,7 @@
                 idNumerik: { label: 'ID Numerik', visible: true },
                 tanggal: { label: 'Waktu Scan', visible: true },
                 kategori: { label: 'Grade', visible: true },
-                beratTelur: { label: 'Berat (g)', visible: true },
+                berat_cat: { label: 'Berat', visible: true },
                 kebersihan: { label: 'Kebersihan', visible: true },
                 keutuhan: { label: 'Keutuhan', visible: true },
                 status: { label: 'Status', visible: true },
@@ -492,7 +492,7 @@
             exportConfig: {
                 start: '',
                 end: '',
-                cols: ['no', 'idNumerik', 'tanggal', 'kategori', 'beratTelur', 'kebersihan', 'keutuhan'],
+                cols: ['no', 'idNumerik', 'tanggal', 'kategori', 'berat_cat', 'kebersihan', 'keutuhan'],
                 format: 'xlsx'
             },
 

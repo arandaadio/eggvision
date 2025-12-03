@@ -46,6 +46,7 @@ def build_report_data(user_id: int):
                 keutuhan,
                 kesegaran,
                 berat_telur,
+                berat_cat,
                 grade,
                 kategori,
                 parameter_minus,
@@ -72,7 +73,8 @@ def build_report_data(user_id: int):
                     "kebersihan": row["kebersihan"] or "-",
                     "keutuhan": row["keutuhan"] or "-",
                     "kesegaran": row["kesegaran"] or "-",
-                    "beratTelur": f"{row['berat_telur']:.2f}"
+                    "berat": f"{row['berat_telur']:.2f}",
+                    "berat_cat": row["berat_cat"] or "-"
                     if row["berat_telur"] is not None
                     else "-",
                     "kategori": row["kategori"] or row["grade"],

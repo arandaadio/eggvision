@@ -168,7 +168,8 @@ def build_dashboard_data(user_id: int):
                 kebersihan,
                 keutuhan,
                 kesegaran,
-                berat_telur
+                berat_telur,
+                berat_cat
             FROM egg_scans
             WHERE user_id = %s
             ORDER BY scanned_at DESC
@@ -191,7 +192,8 @@ def build_dashboard_data(user_id: int):
                     "kebersihan": row["kebersihan"] or "-",
                     "keutuhan": row["keutuhan"] or "-",
                     "kesegaran": row["kesegaran"] or "-",
-                    "beratTelur": f"{row['berat_telur']:.2f}"
+                    "berat": f"{row['berat_telur']:.2f}",
+                    "berat_cat": row["berat_cat"] or "-"
                     if row["berat_telur"] is not None
                     else "-",
                 }

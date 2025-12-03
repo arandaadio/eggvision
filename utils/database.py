@@ -58,6 +58,7 @@ def init_db():
                 keutuhan VARCHAR(50),
                 kesegaran VARCHAR(50),
                 berat_telur DECIMAL(6,2),
+                berat_cat VARCHAR(20),
 
                 grade ENUM('A','B','C','Reject') NOT NULL,
                 confidence DECIMAL(5,2),

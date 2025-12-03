@@ -93,8 +93,14 @@ def upload():
     grade, grade_conf, detail = predict_image(file_path)
 
     # detail: {"keutuhan": "...", "color": "...", ...}
-    keutuhan_pred = detail.get("keutuhan")
-    color_pred    = detail.get("color")
+
+    keutuhan_pred   = detail.get("keutuhan")
+    color_pred      = detail.get("color")
+    kebersihan_pred = detail.get("kebersihan")
+    kesegaran_pred  = detail.get("kesegaran")
+    berat_val       = detail.get("berat_telur") # Numeric (e.g., 54.2)
+    berat_cat       = detail.get("berat")       # Category (e.g., "Sedang")
+    # ketebalan_pred  = detail.get("ketebalan") # Default if not detected
 
     # Simpan ke tabel egg_scans
     conn = get_db_connection()
@@ -112,24 +118,26 @@ def upload():
                     keutuhan,
                     kesegaran,
                     berat_telur,
+                    berat_cat,
                     grade,
                     confidence,
                     image_path,
                     status,
                     is_listed
                 ) VALUES (
-                    %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s,
                     'available', FALSE
                 )
                 """,
                 (
                     current_user.id,
                     None,             # numeric_id
-                    None,             # ketebalan
-                    color_pred,       # sementara taruh warna di "kebersihan"
+                    color_pred,       # ketebalan
+                    kebersihan_pred , # kebersihan
                     keutuhan_pred,    # keutuhan
-                    None,             # kesegaran
-                    None,             # berat_telur
+                    kesegaran_pred,   # kesegaran
+                    berat_val,        # berat_telur
+                    berat_cat,        # berat_cat
                     grade,
                     grade_conf,
                     f"uploads/{filename}",
@@ -151,11 +159,12 @@ def upload():
         "prediction": prediction_display,
         "confidence": f"{grade_conf:.2f}%",
         "details": {
-                "Ketebalan": detail.get("ketebalan", "-"),
-                "Keutuhan": keutuhan_pred,
-                "Kebersihan": color_pred, # Mapping color logic if needed, or use specific field
+                "Ketebalan": detail.get("color", "-"),
+                "Keutuhan": detail.get("keutuhan", "-"),
+                "Kebersihan": detail.get("kebersihan", "-"), # Mapping color logic if needed, or use specific field
                 "Kesegaran": detail.get("kesegaran", "-"),
-                "Berat": detail.get("berat_telur", "-")
+                "BeratTelur": detail.get("berat_telur", "-"),
+                "Berat": detail.get("berat", "-")
         }
     }
 

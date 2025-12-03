@@ -192,7 +192,7 @@ def seed_data():
                 if batch_values:
                     cur.executemany('''
                         INSERT INTO egg_scans 
-                        (user_id, numeric_id, scanned_at, ketebalan, kebersihan, keutuhan, kesegaran, berat_telur, grade, confidence, status, is_listed, listed_price)
+                        (user_id, numeric_id, scanned_at, ketebalan, kebersihan, keutuhan, kesegaran, berat_telur, berat_cat, grade, confidence, status, is_listed, listed_price)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ''', batch_values)
             
